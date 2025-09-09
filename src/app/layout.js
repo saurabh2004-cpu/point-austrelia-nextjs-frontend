@@ -1,5 +1,14 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
+import { League_Spartan } from "next/font/google";
+
+// Configure Spartan (League Spartan)
+const spartan = League_Spartan({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800", "900"], 
+  variable: "--font-spartan",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,8 +29,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Navbar />
         {children}
       </body>
     </html>

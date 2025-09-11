@@ -6,12 +6,12 @@ const Carousel = () => {
   const carouselImages = [
     {
       id: 1,
-      src: "/home-images/carousel-img-1.png", // Replace with your actual image path
+      src: "/home-images/home-carousel-1.avif", // Replace with your actual image path
       alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
     },
     {
       id: 2,
-      src: "/home-images/carousel-img-1.png", // Replace with your actual image path
+      src: "/home-images/home-carousel-1.avif", // Replace with your actual image path
       alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
     }
    
@@ -48,9 +48,9 @@ const Carousel = () => {
   };
 
   return (
-    <div className="w-full max-w-8xl mx-auto p-4 py-12">
+    <div className="w-full max-w-8xl mx-auto p-4 md:py-4">
       <div 
-        className="relative w-full overflow-hidden rounded-lg h-[15rem] md:h-[40rem] "
+        className="relative w-full overflow-hidden rounded-lg h-[15rem] md:h-[45rem] "
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         // style={{
@@ -59,11 +59,11 @@ const Carousel = () => {
       >
         {/* Carousel Container */}
         <div 
-          className={`flex transition-transform duration-1000 ease-in-out h-full ${
+          className={`flex transition-transform duration-2000 ease-in-out h-full ${
             carouselImages.length === 1 ? '' : 'animate-none'
           }`}
           style={{
-            transform: `translateX(-${currentIndex * 100}%)`,
+            transform: `translateX(-${currentIndex * (100)/ carouselImages.length}%)`,
             width: `${carouselImages.length * 100}%`
           }}
         >

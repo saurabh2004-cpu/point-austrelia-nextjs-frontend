@@ -6,25 +6,25 @@ const BrandCards = () => {
     {
       id: 1,
       name: "Matador Wholesale",
-      image: "/home-images/brand-1.png", // Replace with your actual image path
+      image: "/home-images/home-brand-1.avif", // Replace with your actual image path
       alt: "Matador Wholesale Logo"
     },
     {
       id: 2,
       name: "A&RA Aromas",
-      image: "/home-images/brand-2.png", // Replace with your actual image path
+      image: "/home-images/home-brand-2.avif", // Replace with your actual image path
       alt: "A&RA Aromas Logo"
     },
     {
       id: 3,
       name: "Point Accessories",
-      image: "/home-images/brand-3.png", // Replace with your actual image path
+      image: "/home-images/home-brand-3.avif", // Replace with your actual image path
       alt: "Point Accessories Logo"
     }
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 md:py-16">
+    <div className="w-full max-w-5xl mx-auto p-4 md:py-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {brands.map((brand) => (
           <div

@@ -9,7 +9,6 @@ export default function Home() {
     <>
       <BrandCards />
       <Carousel />
-      <Footer />
     </>
   );
 }

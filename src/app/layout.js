@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { League_Spartan } from "next/font/google";
+import { Footer } from "@/components/Footer";
 
 // Configure Spartan (League Spartan)
 const spartan = League_Spartan({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
       >
         <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );

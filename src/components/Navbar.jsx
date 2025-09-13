@@ -14,7 +14,7 @@ export function Navbar() {
   const navigationItems = ["HOME", "MATADOR WHOLESALE", "ASRA AROMAS", "POINT ACCESSORIES", "COMPANY"]
 
   return (
-    <nav className="w-full bg-white border-b border-b-3 border-[#2d2c70]">
+    <nav className="w-full bg-white md:border-b md:border-b-3 border-[#2d2c70]">
       {/* Top Bar */}
       <div className="border-b border-[#2d2c70] border-b-3  mt-8 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

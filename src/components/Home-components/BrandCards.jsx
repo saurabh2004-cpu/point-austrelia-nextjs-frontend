@@ -24,7 +24,7 @@ const BrandCards = () => {
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 md:py-6">
+    <div className="w-full max-w-5xl mx-auto p-4 md:py-6 ">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {brands.map((brand) => (
           <div

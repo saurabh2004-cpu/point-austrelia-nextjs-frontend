@@ -129,3 +129,17 @@
 .font-spartan {
   font-family: var(--font-spartan), sans-serif;
 }
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* For Firefox */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* For IE and old Edge */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+}

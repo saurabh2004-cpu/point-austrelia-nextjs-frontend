@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function Footer() {
   return (
     <footer className="bg-white  border-t border-[#2d2c70] border-t-2 py-12">
@@ -126,6 +128,23 @@ export function Footer() {
                 <div>Molendinar QLD 2214</div>
               </div>
               <div className="text-[#2d2c70]/80 text-[16px] font-[500] font-spartan">ABN: 92 108 558 489</div>
+
+              <div className="flex space-x-2 pt-6">
+                <Image
+                  src="/account-details/payment-images.png" 
+                  alt="Matador Wholesale Logo"
+                  width={60}
+                  height={60}
+                  className="object-contain"
+                />
+                <Image
+                  src="/account-details/visa-img-1.png" 
+                  alt="Matador Wholesale Logo"
+                  width={60}
+                  height={60}
+                  className="object-contain"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -133,7 +152,7 @@ export function Footer() {
         {/* Copyright */}
         <div className="mt-12 pt-2 border-t-2 border-[#2d2c70]">
           <div className=" md:text-right">
-            <p className=" text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight"><span className="text-[#2d2c70] text-sm font-[400]">© 2025</span> Point Australia</p>
+            <p className=" text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight"><span className="">© 2025</span> Point Australia</p>
           </div>
         </div>
       </div>

@@ -32,7 +32,7 @@ export function Navbar() {
     <>
       <nav className="w-full bg-white md:border-b md:border-b-3 border-[#2d2c70]">
         {/* Top Bar */}
-        <div className="border-b border-[#2d2c70] border-b-3  mt-8 py-4">
+        <div className="border-b border-[#2d2c70] border-b-3  mt-2 py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-12">
               {/* Left - Login/Signup */}
@@ -73,7 +73,8 @@ export function Navbar() {
                   className="relative bg-white"
                   onClick={() => setShowCartPopUp(!showCartPopup)}
                 >
-                  <ShoppingCart
+                  <img
+                    src="/home-images/cart-logo.png"
                     className="w-5 h-5 text-gray-600 cursor-pointer hover:text-gray-900"
                   />
                   <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs bg-red-500 hover:bg-red-500">2</Badge>
@@ -99,7 +100,7 @@ export function Navbar() {
         )}
 
         {/* Main Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 md:py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 md:py-2">
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center justify-center space-x-8 h-14">
             {navigationItems.map((item) => (

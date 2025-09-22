@@ -28,13 +28,13 @@ export default function ContactUs() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 font-spartan">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+        <div className="max-w-6xl mx-auto px-4 py-8 md:py-12 font-spartan">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-0">
                 {/* Left Column - Contact Information */}
-                <div className="space-y-6">
+                <div className="space-y-6 xl:max-w-[500px] ">
                     <div>
                         <h1 className="text-[2rem] font-semibold  mb-4">Contact Us</h1>
-                        <p className="text-[#000000]/50 text-sm font-[400] md:text-base leading-tight">
+                        <p className="text-[#000000]/50 text-sm font-[400] md:text-base leading-tight ">
                             We love connecting with our customers! Whether you have a question about our products, need some support,
                             or just want to share your feedback, drop us a line. We'll do our best to get back to you quickly.
                         </p>
@@ -72,17 +72,28 @@ export default function ContactUs() {
 
                     {/* Map */}
                     <div className="w-full h-48 md:w-[465px] md:h-[281px] bg-gray-200 rounded-lg overflow-hidden">
-                        <img
+                        {/* <img
                             src="/map-showing-location-in-molendinar-qld-australia.jpg"
                             alt="Map showing location at 25 Jade Drive, Molendinar QLD 4214"
                             className="w-full h-full object-cover"
+                        /> */}
+
+                        <iframe
+                            src="https://www.google.com/maps?q=Mumbai,India&z=12&output=embed"
+                            width="600"
+                            height="450"
+                            style={{ border: 0 }}
+                            allowFullScreen   // ✅ React version
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade" // ✅ React version
+                            title="Google Maps"  // ✅ Always add a title for accessibility
                         />
                     </div>
                 </div>
 
                 {/* Right Column - Contact Form */}
                 <div className="space-y-6">
-                    <div>
+                    <div className="-space-y-4">
                         <h2 className="text-[1.8rem]  font-medium ">We'd love to hear from you!</h2>
                         <p className="text-[#E9098D] text-[1.8rem]  font-medium ">Let's get in touch</p>
                     </div>
@@ -185,7 +196,7 @@ export default function ContactUs() {
 
                         <Button
                             type="submit"
-                            className="w-full bg-[#74C7F0] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg transition-colors"
+                            className="w-full bg-[#2D2C70] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg transition-colors"
                         >
                             Send Message
                         </Button>

@@ -22,6 +22,24 @@ const ShoppingCartPopup = () => {
       unit: "Each",
       inStock: true,
       image: "/cart/cart-popup-1.png"
+    },
+    {
+      id: 3,
+      name: "KIDS HAIR EXTENSION 3 COLOUR WITH BUTTERFLY OR STAR 2PK",
+      price: 4.48,
+      quantity: 1,
+      unit: "Each",
+      inStock: true,
+      image: "/cart/cart-popup-1.png"
+    },
+    {
+      id: 4,
+      name: "KIDS HAIR EXTENSION 3 COLOUR WITH BUTTERFLY OR STAR 2PK",
+      price: 4.48,
+      quantity: 1,
+      unit: "Each",
+      inStock: true,
+      image: "/cart/cart-popup-1.png"
     }
   ]);
 
@@ -60,93 +78,98 @@ const ShoppingCartPopup = () => {
   }
 
   return (
-    <div className="absolute inset-1 left-150 top-10 bg-transparent bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] max-h-[90vh] overflow-hidden">
+    <div className="absolute inset-1 left-150 top-10  bg-transparent bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 ">
-          <h2 className="text-lg font-semibold text-gray-800"></h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <div className="flex flex-col items-center justify-between px-4 ">
+          <div className='w-full flex justify-end'>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto hide-scrollbar max-h-96">
-          {cartItems.map((item) => (
-            <div key={item.id} className="p-4 border-b border-gray-100">
-              {/* Product Info */}
-              <div className="flex items-start space-x-8 mb-3">
-                <div className="  rounded-lg flex items-center justify-center flex-shrink-0">
-                  {/* Placeholder for hair extension product */}
-                  <div className="flex space-x-1 lg:mt-6">
-                    <Image src={item.image} alt="Product" width={96} height={96} />
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-0 space-y-6 ">
-                  <h3 className="text-[14px] font-medium line-clamp-2 mb-1">
-                    {item.name}
-                  </h3>
-                  <div className="flex items-center space-x-30 mb-2">
-                    <span className="text-[#E9098D] font-semibold text-[20px]">
-                      ${item.price.toFixed(2)}
-                    </span>
-                    {item.inStock && (
-                      <div className="flex items-center text-[10px] font-medium text-black p-2 rounded-full text-[10px] bg-[#E7FAEF]">
-                        <Check className="w-3 h-3 mr-1" />
-                        IN STOCK
-                      </div>
-                    )}
+          {/* Cart Items */}
+          <div className="flex-1 overflow-y-auto hide-scrollbar max-h-110">
+            {cartItems.map((item) => (
+              <div key={item.id} className="px-4 border-b border-gray-100">
+                {/* Product Info */}
+                <div className="flex items-start space-x-8 mb-3">
+                  <div className="  rounded-lg flex items-center justify-center flex-shrink-0">
+                    {/* Placeholder for hair extension product */}
+                    <div className="flex space-x-1 lg:mt-6">
+                      <Image src={item.image} alt="Product" width={96} height={96} />
+                    </div>
                   </div>
 
-                  <div className='flex items-center justify-between'>
-                    <div className="flex items-start space-x-2 space-y-2 flex-col">
-                      <span className="text-sm font-medium ">Quantity</span>
-                      <div className="flex items-center  rounded-lg">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="p-1 bg-black rounded-md py-1 px-2  transition-colors"
-                          disabled={item.quantity <= 1}
-                        >
-                          <Minus className="w-4 h-4 text-white" />
-                        </button>
-                        <span className="px-3 py-1 min-w-[2rem] text-center text-sm font-medium">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="p-1 bg-black rounded-md py-1 px-2 transition-colors"
-                        >
-                          <Plus className="w-4 h-4 text-white " />
-                        </button>
-                      </div>
+                  <div className="flex-1 min-w-0 space-y-2 ">
+                    <h3 className="text-[12px] font-medium line-clamp-2 mb-1">
+                      {item.name}
+                    </h3>
+                    <div className="flex items-center space-x-30 mb-2">
+                      <span className="text-[#E9098D] font-semibold text-[16px]">
+                        ${item.price.toFixed(2)}
+                      </span>
+                      {item.inStock && (
+                        <div className="flex items-center text-[10px] font-medium text-black p-1  text-[10px] bg-[#E7FAEF]">
+                          <Check className="w-3 h-3 mr-1" />
+                          IN STOCK
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center space-x-2 flex-col items-start space-x-2 space-y-2 ">
-                      <span className="text-[13px] font-medium ">Units</span>
-                      <select className="border rounded-lg border-gray-300 rounded px-12 py-1 text-sm bg-white">
-                        <option value="Each">{item.unit}</option>
-                      </select>
+                    <div className='flex items-center justify-between'>
+                      <div className="flex items-start space-x-2 space-y-2 flex-col">
+                        <span className="text-xs font-medium ">Quantity</span>
+                        <div className="flex items-center  rounded-lg">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="p-1 bg-black rounded-md  px-2  transition-colors"
+                            disabled={item.quantity <= 1}
+                          >
+                            <Minus className="w-3 h-3 text-white" />
+                          </button>
+                          <span className="px-3 py-1 min-w-[2rem] text-center text-xs font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="p-1 bg-black rounded-md  px-2 transition-colors"
+                          >
+                            <Plus className="w-3 h-3 text-white " />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 flex-col items-start space-x-2 space-y-2 ">
+                        <span className="text-[12px] font-medium ">Units</span>
+                        <select className="border rounded-lg border-gray-300 rounded px-12 py-1 text-sm bg-white">
+                          <option value="Each">{item.unit}</option>
+                        </select>
+                      </div>
+
                     </div>
 
+
+                    <div className='h-9 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
+                      <Image
+                        src='/cart/delete-icon-1.png'
+                        alt="Delete"
+                        height={15}
+                        width={15}
+                        onClick={() => removeItem(item.id)}
+                        className=""
+                      />
+                    </div>
                   </div>
-
-
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="flex items-center rounded-full space-x-2 bg-[#2D2C70] text-[13px] text-white px-4 py-2  text-sm font-medium transition-colors"
-                  >
-                    <span>Remove from cart</span>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
 
         {/* Footer */}
         <div className="p-4 border-t bg-gray-50">
@@ -162,7 +185,7 @@ const ShoppingCartPopup = () => {
 
           {/* Action Buttons */}
           <div className="flex space-x-2 text-[15px] font-medium">
-            <button className="flex-1 bg-[#E9098D]  text-white py-2 rounded-full  transition-colors">
+            <button className="flex-1 bg-[#2D2C70]  text-white py-2 rounded-full  transition-colors">
               View Cart
             </button>
             <button className="flex-1 bg-[#46BCF9]  text-white py-2 rounded-full  transition-colors">

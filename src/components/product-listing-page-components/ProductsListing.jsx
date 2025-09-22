@@ -1,13 +1,19 @@
 "use client"
 
-import Image from "next/image"
 import { useState } from "react"
+import ProductPopup from "../product-details-components/Popup"
+import Image from "next/image"
+
+// Mock ProductPopup component since it's imported but not provided
+
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Low to High")
     const [viewMode, setViewMode] = useState("grid")
-    const [selectedProduct, setSelectedProduct] = useState(0)
+    const [selectedProduct, setSelectedProduct] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
+    const [showProductPopup, setShowProductPopup] = useState(false)
+    const [perpageItrems, setPerpageItrems] = useState('12 Per Page')
 
     const categories = [
         { name: "New Arrivals", count: 200 },
@@ -34,7 +40,10 @@ const ProductListing = () => {
             image: "/product-listing-images/product-1.png",
             badge: "New",
             badgeColor: "bg-[#fc5732]",
-            badgeBackGround: '/product-listing-images/badge-bg-1.png'
+            badgeBackGround: '/product-listing-images/badge-bg-1.png',
+            price: "4.48",
+            quantity: 2,
+            cartQuantity: 2
         },
         {
             id: 2,
@@ -42,6 +51,9 @@ const ProductListing = () => {
             sku: "SKU JB375",
             image: "/product-listing-images/product-1.png",
             badge: null,
+            price: "4.48",
+            quantity: 1,
+            cartQuantity: 1
         },
         {
             id: 3,
@@ -49,6 +61,9 @@ const ProductListing = () => {
             sku: "SKU JB375",
             image: "/product-listing-images/product-1.png",
             badge: null,
+            price: "4.48",
+            quantity: 3,
+            cartQuantity: 2
         },
         {
             id: 4,
@@ -56,6 +71,9 @@ const ProductListing = () => {
             sku: "SKU JB375",
             image: "/product-listing-images/product-1.png",
             badge: null,
+            price: "4.48",
+            quantity: 1,
+            cartQuantity: 1
         },
         {
             id: 5,
@@ -64,6 +82,9 @@ const ProductListing = () => {
             image: "/product-listing-images/product-1.png",
             badge: "Sale",
             badgeColor: "bg-[#fc5732]",
+            price: "4.48",
+            quantity: 2,
+            cartQuantity: 2
         },
         {
             id: 6,
@@ -72,8 +93,16 @@ const ProductListing = () => {
             image: "/product-listing-images/product-1.png",
             badge: "Sale",
             badgeColor: "bg-[#fc5732]",
+            price: "4.48",
+            quantity: 1,
+            cartQuantity: 3
         },
     ]
+
+    const handleProductClick = (product) => {
+        setSelectedProduct(product)
+        setShowProductPopup(true)
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 ">
@@ -101,7 +130,7 @@ const ProductListing = () => {
             </div>
 
             <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-6">
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
                     {/* Mobile Filter Toggle Button */}
                     <div className="lg:hidden ">
                         <button
@@ -122,20 +151,16 @@ const ProductListing = () => {
 
                     {/* Sidebar Filter */}
                     <div className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                        <div className="bg-white p-4 min-h-screen lg:p-6 border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
-                            {/* <h3 className="text-xs sm:text-sm lg:text-[0.9rem] border-b mx-2 border-r border-l font-[400] max-w-[60px] sm:max-w-[80px] text-center rounded-lg p-2 text-black mb-4 shadow-bottom shadow-lg shadow-right shadow-left shadow-[#000000]/25 font-spartan">
-                                FILTER
-                            </h3> */}
-
+                        <div className="bg-white  min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
                             <div>
-                                <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 py-2 lg:py-4 font-spartan">Product Categories</h4>
-                                <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto lg:overflow-visible">
+                                <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">Product Categories</h4>
+                                <div className="space-y-2 max-h-64 lg:max-h-none  overflow-y-auto hide-scrollbar">
                                     {categories.map((category, index) => (
                                         <div
                                             key={index}
                                             className={`flex space-x-2 items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                         >
-                                            <span className="text-xs sm:text-sm lg:text-[16px] font-[400] text-black font-spartan">{category.name}</span>
+                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
                                             <span className="text-xs sm:text-sm">({category.count})</span>
                                         </div>
                                     ))}
@@ -147,19 +172,34 @@ const ProductListing = () => {
                     {/* Main Content */}
                     <div className="flex-1">
                         {/* Products Header */}
-                        <div className="bg-white rounded-lg p-3 lg:p-4 mb-4 lg:mb-6 ">
+                        <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 ">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
                                 <h2 className="text-lg lg:text-[1.2rem] font-[400] text-black">
                                     Products <span className="text-[#000000]/60">(6)</span>
                                 </h2>
 
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-4 w-full sm:w-auto">
+
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                                        <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span>
+                                        {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
+                                        <select
+                                            value={perpageItrems}
+                                            onChange={(e) => setPerpageItrems(e.target.value)}
+                                            className="border border-gray-300 rounded px-2 lg:px-6 py-1 lg:py-2 rounded-md text-xs sm:text-sm text-black font-[400] font-spartan focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-initial"
+                                        >
+                                            <option>12 Per Page</option>
+                                            <option>16 Per Page</option>
+                                            <option>20 Per Page</option>
+                                            <option>24 Per Page</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
                                         <select
                                             value={sortBy}
                                             onChange={(e) => setSortBy(e.target.value)}
-                                            className="border border-gray-300 rounded px-2 lg:px-3 py-1 lg:py-2 rounded-md text-xs sm:text-sm text-black font-[400] font-spartan focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-initial"
+                                            className="border border-gray-300 rounded px-2 lg:px-6 py-1 lg:py-2 rounded-md text-xs sm:text-sm text-black font-[400] font-spartan focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-initial"
                                         >
                                             <option>Low to High</option>
                                             <option>High to Low</option>
@@ -168,7 +208,8 @@ const ProductListing = () => {
                                         </select>
                                     </div>
 
-                                    <div className="flex border border-gray-300 rounded-md">
+
+                                    <div className="flex border border-gray-300 rounded-md ">
                                         <button
                                             onClick={() => setViewMode("grid")}
                                             className={`p-1 lg:p-2 border-r border-r-[2px] ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
@@ -199,12 +240,12 @@ const ProductListing = () => {
                         </div>
 
                         {/* Products Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-h-screen overflow-y-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-h-screen overflow-y-auto hide-scrollbar border-t-2 border-[#2D2C70]">
                             {products.map((product, index) => (
                                 <div
                                     key={product.id}
-                                    className="bg-white rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
-                                    onClick={() => setSelectedProduct(index)}
+                                    className="bg-white rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
+                                    onClick={() => handleProductClick(product)}
                                 >
                                     {/* Sale Badge */}
                                     {product.badge === 'Sale' && (
@@ -216,14 +257,14 @@ const ProductListing = () => {
                                     {/* New Badge with Background */}
                                     {product.badgeBackGround && product.badge === 'New' && (
                                         <>
-                                            <Image
-                                                src={product.badgeBackGround}
+                                            <img
+                                                src={product.badgeBackGround || "/placeholder.svg"}
                                                 height={60}
                                                 width={60}
                                                 className="absolute top-2 left-4 sm:left-6 sm:w-20 sm:h-20"
                                                 alt="Badge background"
                                             />
-                                            <p className="absolute top-6 sm:top-8 z-20 left-7 sm:left-10 text-white text-xs sm:text-sm font-[400] px-2 py-1 rounded-full">
+                                            <p className="absolute top-6 sm:top-8 z-20 left-7 sm:left-10 text-white text-[10px] sm:text-sm font-[400] px-2 py-1 rounded-full">
                                                 {product.badge}
                                             </p>
                                         </>
@@ -244,20 +285,27 @@ const ProductListing = () => {
 
                                     {/* Wishlist Icon */}
                                     <div className="absolute top-2 right-4 sm:right-6 z-10">
-                                        <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth={2}
-                                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                        <button
+                                            className=" rounded-full  hover:bg-gray-200 transition-colors"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Prevent triggering product popup
+                                                // Handle wishlist logic here
+                                            }}
+                                        >
+                                            <div className="h-8 w-8 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                                <Image
+                                                    src="/product-details/heart-1.png"
+                                                    alt="Heart"
+                                                    width={12}
+                                                    height={12}
+                                                    className=""
                                                 />
-                                            </svg>
+                                            </div>
                                         </button>
                                     </div>
 
                                     {/* Product Image */}
-                                    <div className="flex justify-center mb-3 sm:mb-4 pt-6 sm:pt-8">
+                                    <div className="flex justify-center mb-3 sm:mb-4 ">
                                         <img
                                             src={product.image || "/placeholder.svg"}
                                             alt={product.name}
@@ -275,7 +323,7 @@ const ProductListing = () => {
                                         {/* SKU */}
                                         <div className="space-y-1 flex space-x-9 items-center">
                                             <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                                SKU: {product.sku}
+                                                {product.sku}
                                             </p>
 
                                             {/* Stock Status */}
@@ -292,14 +340,17 @@ const ProductListing = () => {
                                         {/* Price */}
                                         <div className="">
                                             <span className="text-2xl md:text-[20px] font-semibold text-[#e9098d]">
-                                                ${product.price || '4.48'}
+                                                ${product.price}
                                             </span>
                                         </div>
 
                                         {/* Units Dropdown */}
                                         <div className="mb-3 flex space-x-8 align-center items-center font-spartan">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                                            <select className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500">
+                                            <select
+                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                                                onClick={(e) => e.stopPropagation()} // Prevent triggering product popup
+                                            >
                                                 <option value="each">Each</option>
                                                 <option value="pack">Pack</option>
                                                 <option value="box">Box</option>
@@ -307,47 +358,81 @@ const ProductListing = () => {
                                         </div>
 
                                         {/* Quantity Controls */}
-                                        <div className="mb-4 space-x-8 flex align-center items-center font-spartan">
+                                        <div className="mb-2 space-x-8 flex align-center items-center font-spartan">
                                             <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
                                             <div className="flex items-center space-x-4">
-                                                <button className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
-                                                    <span className="text-lg font-bold">−</span>
+                                                <button
+                                                    className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent triggering product popup
+                                                        // Handle quantity decrease
+                                                    }}
+                                                >
+                                                    <span className="text-xl font-bold flex items-center mt-1">−</span>
                                                 </button>
                                                 <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
-                                                    {product.quantity || 2}
+                                                    {product.quantity}
                                                 </span>
-                                                <button className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
-                                                    <span className="text-lg font-bold">+</span>
+                                                <button
+                                                    className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // Prevent triggering product popup
+                                                        // Handle quantity increase
+                                                    }}
+                                                >
+                                                    <span className="text-lg font-bold  mt-1">+</span>
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {/* Original View Product Button (keeping for compatibility) */}
-                                        <button className="w-full bg-white border hover:bg-[#2e2f7f] hover:text-white hover:border-[#2e2f7f] border-[#e9098d] rounded-lg text-center text-xs sm:text-sm lg:text-[16px] font-[600] text-black font-spartan py-3 px-3 sm:px-4 transition-colors font-medium mt-2">
-                                           Add To Cart
-                                        </button>
+                                        {/* Add to Cart Button */}
+                                        <div className="flex items-center space-x-3">
+                                            <button className="flex-1 text-[15px] font-semibold border border-[#E9098D] rounded-lg text-black py-2 px-6 rounded transition-colors">
+                                                <Image
+                                                    src="/product-details/cart-logo-2.png"
+                                                    alt="Shopping Bag"
+                                                    width={20}
+                                                    height={20}
+                                                    className="inline-block mr-2"
+                                                />
 
+                                                Add to Cart
+                                            </button>
+                                            {/* <div className="h-12 w-12 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                                <Image
+                                                    src="/product-details/heart-1.png"
+                                                    alt="Heart"
+                                                    width={20}
+                                                    height={20}
+                                                    className="w-5 h-5"
+                                                />
+                                            </div> */}
+                                        </div>
 
                                         {/* Action Buttons Row */}
-                                        <div className="flex space-x-2 mt-3">
-                                            <button className="flex-1 border-2 border-[#46bcf9] text-[#68b73b] rounded-lg py-2 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1">
+                                        <div className="flex space-x-2 mt-1">
+                                            <button
+                                                className="flex-1 border-2 border-[#46bcf9] text-[#68b73b] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                 </svg>
                                                 <span>Added</span>
                                             </button>
                                             <div className="w-px bg-black"></div>
-                                            <button className="flex-1  border-2 border-[#2d2c70]  text-pink-700 rounded-lg py-2 px-3 text-sm font-medium transition-colors">
+                                            <button
+                                                className="flex-1  border-2 border-[#2d2c70]  text-pink-700 rounded-lg py-1 px-3 text-sm font-medium transition-colors"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
                                                 Update
                                             </button>
                                         </div>
 
                                         {/* Cart Quantity Info */}
-                                        <div className="mt-2 text-sm text-[#000000]/80 font-spartan">
-                                            In Cart Quantity: <span className="font-medium">{product.cartQuantity || 2} (Each)</span>
+                                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan">
+                                            In Cart Quantity: <span className="font-medium">{product.cartQuantity} (Each)</span>
                                         </div>
-
-
                                     </div>
                                 </div>
                             ))}
@@ -355,6 +440,12 @@ const ProductListing = () => {
                     </div>
                 </div>
             </div>
+
+            <ProductPopup
+                isOpen={showProductPopup}
+                onClose={() => setShowProductPopup(false)}
+                product={selectedProduct}
+            />
         </div>
     )
 }

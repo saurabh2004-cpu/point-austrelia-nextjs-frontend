@@ -1,6 +1,7 @@
 "use client"
 
-import { ArrowRight, Heart, X } from "lucide-react"
+import { ArrowRight, Check, Heart, Minus, Plus, X } from "lucide-react"
+import Image from "next/image"
 import { useState } from "react"
 
 
@@ -21,10 +22,10 @@ export default function ProductPopup({ isOpen, onClose }) {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-medium font-spartan">Product Details</h2>
+        <div className="fixed inset-0  flex items-center justify-center z-50 p-4 ">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
+                <div className="flex justify-between items-center p-4 ">
+                    <h2 className="text-lg font-medium font-spartan"></h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
@@ -33,28 +34,15 @@ export default function ProductPopup({ isOpen, onClose }) {
                 <div className="p-6">
                     <div className="flex flex-col lg:flex-row gap-6">
                         <div className="flex-1">
-                            <div className="flex flex-col space-y-4">
-                                {/* Main Image */}
-                                <div className="relative">
-                                    <div className="rounded-lg p-4 bg-white border">
-                                        <span className="absolute top-2 left-2 bg-[#E35457] text-white text-[11px] font-[600] font-spartan tracking-widest px-2 py-1 rounded-lg z-10">
-                                            ON SALE
-                                        </span>
-                                        <img
-                                            src={productImages[selectedImage] || "/placeholder.svg"}
-                                            alt="Product"
-                                            className="w-full h-[140px] md:h-[200px] object-contain"
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex flex-col-reverse xl:flex-row space-x-8">
 
                                 {/* Thumbnail Images */}
-                                <div className="flex space-x-2 justify-center">
+                                <div className="flex xl:flex-col space-x-2 xl:space-x-0 space-y-2 justify-center">
                                     {productImages.map((image, index) => (
                                         <button
                                             key={index}
                                             onClick={() => setSelectedImage(index)}
-                                            className={`flex-shrink-0 rounded-lg p-2 bg-white border transition-all duration-300 ${selectedImage === index ? "border-[#E9098D]" : "border-gray-200"
+                                            className={`flex-shrink-0 rounded-lg p-2 bg-white border transition-all duration-300 shadow-xl ${selectedImage === index ? "" : "border-gray-200"
                                                 }`}
                                         >
                                             <img
@@ -65,23 +53,37 @@ export default function ProductPopup({ isOpen, onClose }) {
                                         </button>
                                     ))}
                                 </div>
+
+                                {/* Main Image */}
+                                <div className="relative">
+                                    <div className="rounded-lg p-4 bg-white ">
+                                        <span className="absolute top-2 left-2 bg-[#E35457] text-white text-[11px] font-[400] font-spartan tracking-widest px-2 py-1 rounded-sm z-10">
+                                            ON SALE
+                                        </span>
+                                        <img
+                                            src={productImages[selectedImage] || "/placeholder.svg"}
+                                            alt="Product"
+                                            className="w-full h-[140px] md:h-[200px] object-contain"
+                                        />
+                                    </div>
+                                </div>
+
+
                             </div>
                         </div>
 
-                        <div className="flex-1 space-y-4 font-spartan">
-                            {/* Stock Status */}
-                            <div className="flex items-center space-x-2">
-                                <span className="text-black bg-[#E7FAEF] text-sm px-2 py-1 rounded-lg text-[11px] font-semibold">
-                                    ✓ IN STOCK
-                                </span>
-                            </div>
-
+                        <div className="flex-1 space-y-2 font-spartan">
+                            <span className="text-black bg-[#E7FAEF] text-sm px-2 py-2 relative xl:bottom-4  text-[11px] font-semibold">
+                                ✓ IN STOCK
+                            </span>
                             {/* Product Name */}
-                            <h1 className="text-lg font-medium text-black">BARS BUGS WINDSCREEN CLEAN 375ML</h1>
+                            <h1 className="text-[20px] font-semibold text-black">BARS BUGS WINDSCREEN CLEAN 375ML</h1>
 
                             {/* SKU and Barcode */}
                             <div className="space-y-1 text-[13px] font-medium text-gray-600">
-                                <p>SKU BB375</p>
+                                <div className="flex items-center justify-between space-x-2">
+                                    <p>SKU BB375</p>
+                                </div>
                                 <p>Barcode: 9344479972387</p>
                             </div>
 
@@ -89,7 +91,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                             <div className="inline-block border rounded-full px-3 py-1 text-[14px] font-[400]">Category</div>
 
                             {/* Price */}
-                            <div className="text-[24px] font-semibold text-[#E9098D]">$4.48</div>
+                            <div className="text-[24px] font-semibold text-[#46BCF9]">$4.48</div>
 
                             {/* Quantity and Units */}
                             <div className="space-y-4">
@@ -99,18 +101,18 @@ export default function ProductPopup({ isOpen, onClose }) {
                                         <div className="flex items-center">
                                             <button
                                                 onClick={decrementQuantity}
-                                                className="px-3  rounded-lg text-xl text-white bg-black hover:bg-gray-800 transition-colors"
+                                                className="px-2  rounded-md py-1 text-xl text-white bg-black hover:bg-gray-800 transition-colors"
                                             >
-                                                -
+                                                <Minus className="w-4 h-4 text-white" />
                                             </button>
                                             <span className="px-4 py-2 text-[14px] font-medium text-black min-w-[3rem] text-center">
                                                 {quantity}
                                             </span>
                                             <button
                                                 onClick={incrementQuantity}
-                                                className="px-3  rounded-lg text-xl text-white bg-black hover:bg-gray-800 transition-colors"
+                                                className="px-2  py-1 rounded-md text-xl text-white bg-black hover:bg-gray-800 transition-colors"
                                             >
-                                                +
+                                                <Plus className="w-4 h-4 text-white" />
                                             </button>
                                         </div>
                                     </div>
@@ -134,21 +136,37 @@ export default function ProductPopup({ isOpen, onClose }) {
 
                             {/* Action Buttons */}
                             <div className="flex items-center space-x-3">
-                                <button className="flex-1 text-[14px] font-semibold border border-[#E9098D] rounded-lg text-black py-3 px-6 hover:bg-[#E9098D] hover:text-white transition-colors">
-                                    🛒 Add to cart
+                                <button className="flex-1 text-[1rem] font-semibold border border-[#E9098D] rounded-lg text-black py-1 px-6 rounded transition-colors">
+                                    <Image
+                                        src="/product-details/cart-logo-2.png"
+                                        alt="Shopping Bag"
+                                        width={20}
+                                        height={20}
+                                        className="inline-block mr-2"
+                                    />
+
+                                    Add to Cart
                                 </button>
-                                <div className="h-12 w-12 bg-[#D9D9D940] flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors cursor-pointer">
-                                    <Heart className="w-5 h-5" />
+                                <div className="h-12 w-12 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                    <Image
+                                        src="/product-details/heart-1.png"
+                                        alt="Heart"
+                                        width={15}
+                                        height={15}
+                                        className="w-5 h-5"
+                                    />
                                 </div>
                             </div>
 
                             {/* Status Buttons */}
-                            <div className="flex space-x-3 max-w-[235px]">
-                                <button className="flex-1 text-[12px] font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2 transition-colors">
-                                    Added
+                            <div className="flex justify-center font-semibold  flex-col  sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                                <button className="flex-1 text-[12px]  font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2   rounded transition-colors">
+                                    Added <span><Check className="inline-block ml-2 h-4 w-4 " /></span>
                                 </button>
-                                <div className="bg-black w-[1px] h-9"></div>
-                                <button className="flex-1 text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2 transition-colors">
+
+                                <div className="hidden sm:block bg-black w-[1px] h-9"></div>
+
+                                <button className="flex-1 text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2  rounded transition-colors">
                                     Update
                                 </button>
                             </div>

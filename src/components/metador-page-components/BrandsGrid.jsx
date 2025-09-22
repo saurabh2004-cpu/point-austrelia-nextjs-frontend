@@ -45,26 +45,26 @@ const BrandsGrid = () => {
     ];
 
     return (
-        <div className="w-full bg-gray-50 py-8 sm:py-12 lg:py-16  ">
+        <div className="w-full bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8  ">
             <div className="max-w-8xl mx-auto">
                 {/* Header Section */}
-                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                <div className="text-center mb-8 sm:mb-12 lg:mb-8">
                     <div className="flex items-center justify-center mb-4">
                         {/* Left decorative line */}
-                        <div className="flex-1 h-px bg-gray-400 max-w-32 sm:max-w-10 lg:max-w-18"></div>
+                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
 
                         {/* Title */}
-                        <h2 className="px-4 sm:px-6 lg:px-8 text-lg text-[24px] font-semibold text-[#2D2C70] whitespace-nowrap">
+                        <h2 className="px-1 text-lg text-[24px] font-semibold text-[#2D2C70] whitespace-nowrap">
                             Our Brands
                         </h2>
 
                         {/* Right decorative line */}
-                        <div className="flex-1 h-px bg-gray-400 max-w-32 sm:max-w-10 lg:max-w-18"></div>
+                         <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
                     </div>
                 </div>
 
                 {/* Brands Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12 lg:mb-16 max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12 lg:mb-16 max-w-8xl mx-auto xl:px-16">
                     <div className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
                         <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
                             <div className="flex-1 relative bg-white">
@@ -114,14 +114,14 @@ const BrandsGrid = () => {
                 </div>
 
                 {/* Why Choose Matador Wholesale Section */}
-                <div className="bg-[#2D2C70] w-full   h-[295px] flex flex-col mx-auto w-full  sm:p-8 lg:py-12 text-white">
-                    <h3 className="text-[20px] font-semibold mb-6 sm:mb-8 px-84">
+                <div className="bg-[#2D2C70] w-full h-full  lg:h-[295px] flex flex-col mx-auto w-full  sm:p-8  lg:py-12 text-white">
+                    <h3 className="text-[20px] font-semibold mb-6 sm:mb-8 p-4 lg:p-0 lg:px-58">
                         Why Choose Matador Wholesale?
                     </h3>
 
-                    <div className="space-y-4 sm:space-y-6 ">
+                    <div className="space-y-4 sm:space-y-6 p-4">
                         {features.map((feature, index) => (
-                            <div key={index} className="flex items-start space-x-2  px-84">
+                            <div key={index} className="flex items-start space-x-2  xl:px-54">
                                 <div className='flex'>
                                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1" />
                                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1 relative right-3" />

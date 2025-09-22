@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { ChevronDown, ArrowUpDown } from "lucide-react"
 import ProfileInformation from "./ProfileInformation"
+import Image from "next/image"
+import RecentPurchases from "./RecentPurchases"
 
 export default function MyAccount() {
   const [activeSection, setActiveSection] = useState("settings")
@@ -29,7 +31,7 @@ export default function MyAccount() {
   }
 
   return (
-    <div className="h-full lg:h-screen py-6 p-4 md:p-6 lg:p-8 font-spartan">
+    <div className="h-full  py-6 p-4 md:p-6 lg:p-8 font-spartan">
       <div className="max-w-8xl mx-auto">
         {/* Breadcrumb */}
         <div className="bg-white justify-items-center pt-4">
@@ -150,9 +152,7 @@ export default function MyAccount() {
 
                 {/* Purchase History Content */}
                 <div className="text-center py-6">
-                  <p className="text-[#E9098D] text-[24px] font-medium">
-                    You don't have any purchase in your account
-                  </p>
+                 <RecentPurchases />
                 </div>
               </>
             )}
@@ -184,9 +184,7 @@ export default function MyAccount() {
                           </div>
                         </div>
                         <div className="text-center py-8">
-                          <p className="text-[#E9098D] text-[24px] font-medium">
-                            You don't have any purchase in your account
-                          </p>
+                          <RecentPurchases />
                         </div>
                       </div>
                     </div>
@@ -328,15 +326,18 @@ export default function MyAccount() {
                 </div>
 
                 <div className="grid    grid-cols-1 md:grid-cols-2 lg:grid-cols-4  gap-6">
-                  {/* Address Card 1 */}
+                  {/*  Card 1 */}
                   <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
                     <div className="space-y-2 text-sm">
                       <p className="font-[600]">
                         Ending in <span className="font-[400]">6844</span>
                       </p>
-                      <p className="font-[600]">
-                        Expires in <span className="font-[400]">12/22</span>
-                      </p>
+                      <div className="flex justify-between align-center">
+                        <p className="font-[600]">
+                          Expires in <span className="font-[400]">12/22</span>
+                        </p>
+                        <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
+                      </div>
                       <p>2 Devendra Chandora</p>
                       <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
                     </div>
@@ -347,7 +348,7 @@ export default function MyAccount() {
                   </div>
 
 
-                  {/* Add New Address Card */}
+                  {/* Add New  Card */}
                   <div className="border shadow-md border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px] hover:border-gray-400 transition-colors cursor-pointer">
                     <div className="w-8 h-8 border-2 border-gray-400 rounded-full flex items-center justify-center mb-3">
                       <span className="text-[#000000]/50 text-xl font-light mt-1">+</span>

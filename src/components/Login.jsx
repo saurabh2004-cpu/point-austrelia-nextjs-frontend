@@ -27,30 +27,30 @@ export default function LoginComponent() {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email Address is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
-    
+
     if (!formData.password.trim()) {
       newErrors.password = 'Password is required'
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
-    
+
     setIsLoading(true)
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false)
@@ -110,7 +110,7 @@ export default function LoginComponent() {
         </motion.div>
 
         {/* Login Form */}
-        <motion.form 
+        <motion.form
           className="mt-8 space-y-6 bg-white p-6 sm:p-8 rounded-lg "
           onSubmit={handleLogin}
           variants={itemVariants}
@@ -187,11 +187,12 @@ export default function LoginComponent() {
           </div>
 
           {/* Login Button */}
-          <motion.div variants={itemVariants}>
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              className="
+          <div className='space-y-2'>
+            <motion.div variants={itemVariants}>
+              <motion.button
+                type="submit"
+                disabled={isLoading}
+                className="
                 group relative w-full flex justify-center py-1 px-4 
                 border border-transparent text-sm sm:text-base font-medium rounded-md 
                 text-white bg-[#74C7F0] rounded-lg hover:bg-sky-500 
@@ -199,52 +200,53 @@ export default function LoginComponent() {
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all duration-200 text-[1rem] font-[600]
               "
-              whileHover={{ scale: isLoading ? 1 : 1.02 }}
-              whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Logging in...
-                </div>
-              ) : (
-                'Log In'
-              )}
-            </motion.button>
-          </motion.div>
+                whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Logging in...
+                  </div>
+                ) : (
+                  'Log In'
+                )}
+              </motion.button>
+            </motion.div>
 
-          {/* Forgot Password Link */}
-          <motion.div className="text-end" variants={itemVariants}>
-            <button
-              type="button"
-              onClick={handleForgotPassword}
-              className="text-[13px] font-medium"
-            >
-              Forgot password?
-            </button>
-          </motion.div>
+            {/* Forgot Password Link */}
+            <motion.div className="text-end" variants={itemVariants}>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-[13px] font-medium"
+              >
+                Forgot password?
+              </button>
+            </motion.div>
 
-          {/* Wholesale Register Button */}
-          <motion.div variants={itemVariants}>
-            <motion.button
-              type="button"
-              onClick={handleWholesaleRegister}
-              className="
+            {/* Wholesale Register Button */}
+            <motion.div variants={itemVariants}>
+              <motion.button
+                type="button"
+                onClick={handleWholesaleRegister}
+                className="
                 w-full flex justify-center py-1 px-4 
                 border border-transparent text-sm sm:text-base font-medium rounded-md 
-                text-white bg-[#2D2B70] hover:bg-indigo-700 
+                text-white bg-[#2D2B70] 
                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                 transition-all duration-200 text-[1rem] font-[500]
               "
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Register for Wholesale Access
-            </motion.button>
-          </motion.div>
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Register for Wholesale Access
+              </motion.button>
+            </motion.div>
+          </div>
         </motion.form>
       </motion.div>
     </div>

@@ -16,8 +16,8 @@ export default function Home() {
     <>
       {currentIndex === 0 &&
         <>
-          <Carousel />
           <BrandCards />
+          <Carousel />
         </>
       }
 

@@ -2,11 +2,17 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, CreditCard, User, Phone, Shield, MenuIcon, Circle, LockIcon, ArrowDown, ArrowDown01 } from 'lucide-react';
 import Image from 'next/image';
+import { Plus } from 'lucide-react';
+import CheckoutFormUI from '@/components/checkout-components/CheckOutInformation';
+import Review from '@/components/checkout-components/Review';
+import { useRouter } from 'next/navigation';
+
 
 const CheckoutComponent = () => {
     const [deliveryMethod, setDeliveryMethod] = useState('free');
     const [paymentMethod, setPaymentMethod] = useState('credit-card');
     const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('');
+    const [step, setStep] = useState(1);
 
     const orderItems = [
         {
@@ -29,6 +35,25 @@ const CheckoutComponent = () => {
         }
     ];
 
+    const [selectedShippingAddress, setSelectedShippingAddress] = useState(0);
+    const [selectedBillingAddress, setSelectedBillingAddress] = useState(0);
+     const router = useRouter();
+
+    const addresses = [
+        {
+            id: 0,
+            name: "Devendra Chandara",
+            address: "2 Angove Rd Spencer Park Western Australia 6330 Australia",
+            phone: "7073737773"
+        },
+        {
+            id: 1,
+            name: "Devendra Chandara",
+            address: "2 Angove Rd Spencer Park Western Australia 6330 Australia",
+            phone: "7073737773"
+        }
+    ];
+
     const subtotal = 4.48;
     const matadorWholesale = 4.48;
     const pointAccessories = 4.48;
@@ -36,170 +61,149 @@ const CheckoutComponent = () => {
     const gst = 4.48;
     const total = 4.48;
 
+    const handleCompleteCheckout = () => {
+        router.push('/thank-you');
+    };
+
     return (
-        <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-16 font-spartan">
+        <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
             <div className="max-w-8xl px-4 sm:px-6 lg:px-8 mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl lg:text-[24px] font-medium mb-4">Checkout</h1>
+                    <h1 className="text-xl sm:text-2xl lg:text-[24px] font-semibold  mb-4">Checkout Process</h1>
 
                     {/* Progress Steps */}
-                    <div className="flex items-center text-sm sm:text-base lg:text-[1rem] font-medium mb-6">
-                        <span className="font-medium">1. Checkout Information</span>
-                        <span className="mx-2">/</span>
-                        <span className='text-[#2D2C70]'>2. Review</span>
+                    <div className="flex items-center text-base   font-semibold mb-6 text-[#00000080]/50">
+                        <span className={`font-medium ${step === 1 ? 'text-[#2D2C70]' : ''}`}>1. Select Addresses</span>
+                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>/</span>
+                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>2. Checkout Information</span>
+                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>/</span>
+                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>3. Review</span>
                     </div>
 
                     <hr className="border-2 sm:border-3 border-[#2D2C70]" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {/* Main Checkout Form */}
-                    <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-                        {/* Selected Address & Billing Address */}
-                        <div>
-                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">
-                                Selected Address & Billing Address
-                            </h2>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                {/* Shipping Address */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-                                    <h3 className="text-sm font-medium text-blue-800 mb-3">Shipping Address</h3>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-semibold text-gray-900">Devendra Chandora</p>
-                                        <p className="text-xs sm:text-sm text-gray-600">
-                                            2 Angoon Rd Spencer Park Western Australia 6330 Australia
-                                        </p>
-                                        <p className="text-xs sm:text-sm text-gray-600">7073737773</p>
-                                    </div>
-                                    <button className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2">
-                                        Edit
-                                    </button>
-                                </div>
-
-                                {/* Billing Address */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
-                                    <h3 className="text-sm font-medium text-blue-800 mb-3">Billing Address</h3>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-semibold text-gray-900">Devendra Chandora</p>
-                                        <p className="text-xs sm:text-sm text-gray-600">
-                                            2 Angoon Rd Spencer Park Western Australia 6330 Australia
-                                        </p>
-                                        <p className="text-xs sm:text-sm text-gray-600">7073737773</p>
-                                    </div>
-                                    <button className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-2">
-                                        Edit
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Delivery Method */}
-                        <div>
-                            <h2 className="text-lg sm:text-xl lg:text-[24px] font-medium mb-4">
-                                Delivery method
-                            </h2>
-
-                            <div className="space-y-3 border border-2 p-1 rounded-2xl">
-                                <label className="flex items-center space-x-2 cursor-pointer px-2 py-1 sm:py-0">
-                                    <Circle className="w-3 h-3 text-pink-500" />
-                                    <span className="text-sm sm:text-base lg:text-[1rem] font-[400]">Free</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        {/* Order Comments */}
-                        <div>
-                            <h2 className="text-lg sm:text-xl lg:text-[24px] font-medium mb-2">
-                                Order Comments
-                            </h2>
-                            <textarea
-                                className="w-full border border-gray-300 rounded-lg p-3 sm:p-4 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                rows="4"
-                                placeholder=""
-                            ></textarea>
-                        </div>
-
-                        {/* Payment */}
-                        <div>
-                            <h2 className="text-lg sm:text-xl lg:text-[24px] font-medium text-[#2D2C70] mb-2">
-                                Payment
-                            </h2>
-
-                            <div className="mb-4">
-                                <h3 className="text-base sm:text-lg lg:text-[20px] font-medium mb-3">Payment Method</h3>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-2">
+                    {step === 1 &&
+                        <div className="min-w-full col-span-2 mx-auto  bg-gray-50 min-h-screen ">
+                            {/* Shipping Address Section */}
+                            <div className="mb-8 ">
+                                <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-2">Select Shipping Address</h2>
+                                <p className="text-[20px] mb-4">Shipping Address (2)</p>
 
                                 <div className="space-y-3">
-                                    {/* Credit Card */}
-                                    <div className="border border-gray-300 rounded-lg p-3 sm:p-4">
-                                        <label className="flex items-center space-x-3 cursor-pointer">
-                                            <Circle className="w-3 h-3 text-[#E9098D]" />
-                                            <CreditCard className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm sm:text-base lg:text-[16px] font-[400]">Credit card</span>
-                                            <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
-                                        </label>
-                                    </div>
+                                    {addresses.map((address, index) => (
+                                        <div key={`shipping-${address.id}`} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                            <div className="p-4">
+                                                <div className="flex items-center space-x-20">
+                                                    <div className="flex-shrink-0 mt-1">
+                                                        <input
+                                                            type="radio"
+                                                            name="shipping-address"
+                                                            value={address.id}
+                                                            checked={selectedShippingAddress === address.id}
+                                                            onChange={() => setSelectedShippingAddress(address.id)}
+                                                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 text-[14px]">
+                                                        <h3 className=" font-semibold  mb-1">{address.name}</h3>
+                                                        <p className=" font-mnedium mb-1">{address.address}</p>
+                                                        <p className="font-medium mb-3">{address.phone}</p>
 
-                                    {/* Account Customer */}
-                                    <div className="border border-gray-300 rounded-lg p-3 sm:p-4">
-                                        <label className="flex items-center space-x-3 cursor-pointer">
-                                            <Circle className="w-3 h-3 text-[#E9098D]" />
-                                            <User className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm sm:text-base lg:text-[16px] font-[400]">Account customer</span>
-                                            <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
-                                        </label>
-                                    </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <button className=" text-[#2D2C70] underline font-medium">
+                                                                Edit
+                                                            </button>
+                                                            <span className="text-gray-300">|</span>
+                                                            <button className=" text-[#46BCF9] underline font-medium">
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
 
-                                    {/* Contact for Payment */}
-                                    <div className="border border-gray-300 rounded-lg p-3 sm:p-4">
-                                        <label className="flex items-center space-x-3 cursor-pointer">
-                                            <Circle className="w-3 h-3 text-[#E9098D]" />
-                                            <Phone className="w-4 h-4 text-gray-400" />
-                                            <span className="text-sm sm:text-base lg:text-[16px] font-[400]">Contact me for payment</span>
-                                            <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
-                                        </label>
-                                    </div>
+                                    {/* Add New Shipping Address */}
+                                    <button className="w-full bg-white rounded-lg  p-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
+                                        <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
+                                            <Plus className="w-4 h-4 text-gray-600 " />
+                                        </div>
+                                        <span className="text-sm text-[#2D2C70] text-[14px] font-semibold">Add a new shipping address</span>
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Security Info */}
-                            <div className="flex items-start space-x-2 text-xs sm:text-sm lg:text-[14px] font-[400] mb-6 align-center">
-                                <LockIcon className="w-4 h-4 mt-0.5 text-black flex-shrink-0" />
-                                <span>Learn more about safe and secure shopping</span>
+                            {/* Billing Address Section */}
+                            <div className="mb-8 ">
+                                <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-2">Select Billing Address</h2>
+                                <p className="text-[20px] mb-4">Billing Address (2)</p>
+
+                                <div className="space-y-3">
+                                    {addresses.map((address, index) => (
+                                        <div key={`shipping-${address.id}`} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                            <div className="p-4">
+                                                <div className="flex items-center space-x-20">
+                                                    <div className="flex-shrink-0 mt-1">
+                                                        <input
+                                                            type="radio"
+                                                            name="shipping-address"
+                                                            value={address.id}
+                                                            checked={selectedShippingAddress === address.id}
+                                                            onChange={() => setSelectedShippingAddress(address.id)}
+                                                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 text-[14px]">
+                                                        <h3 className=" font-semibold  mb-1">{address.name}</h3>
+                                                        <p className=" font-mnedium mb-1">{address.address}</p>
+                                                        <p className="font-medium mb-3">{address.phone}</p>
+
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <button className=" text-[#2D2C70] underline font-medium">
+                                                                Edit
+                                                            </button>
+                                                            <span className="text-gray-300">|</span>
+                                                            <button className=" text-[#46BCF9] underline font-medium">
+                                                                Remove
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Add New Shipping Address */}
+                                    <button className="w-full bg-white rounded-lg  p-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
+                                        <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
+                                            <Plus className="w-4 h-4 text-gray-600 " />
+                                        </div>
+                                        <span className="text-sm text-[#2D2C70] text-[14px] font-semibold">Add a new shipping address</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </div>}
 
-                        {/* Purchase Order Number */}
-                        <div>
-                            <h2 className="text-lg sm:text-xl lg:text-[24px] font-medium mb-4">
-                                Purchase order number
-                            </h2>
-                            <p className="text-sm sm:text-base lg:text-[1rem] font-medium mb-3">Enter purchase order number (Optional)</p>
-                            <input
-                                type="text"
-                                value={purchaseOrderNumber}
-                                onChange={(e) => setPurchaseOrderNumber(e.target.value)}
-                                className="w-full lg:w-2/3 border border-gray-300 rounded-full p-3 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                placeholder=""
-                            />
-                        </div>
+                    {step === 2 &&
+                        <>
+                            <CheckoutFormUI />
+                        </>
+                    }
 
-                        {/* Review Notice */}
-                        <div className="mb-4">
-                            <p className="text-xs sm:text-sm lg:text-[14px] font-[400]">
-                                You will have an opportunity to review your order on the next step.
-                            </p>
-                        </div>
+                    {step === 3 &&
+                        <>
+                            <Review />
+                        </>
+                    }
 
-                        {/* Continue Button */}
-                        <button className="w-full sm:w-3/5 lg:w-2/5 bg-[#E9098D] text-white py-3 rounded-2xl text-sm sm:text-base font-medium">
-                            Continue
-                        </button>
-                    </div>
+
 
                     {/* Order Summary Sidebar */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 ">
                         <div className="bg-white rounded-lg sticky top-6">
                             <div className="md:p-4 ">
                                 <div className="flex items-center justify-center mb-4">
@@ -248,9 +252,20 @@ const CheckoutComponent = () => {
                                 </div>
 
                                 {/* Continue Button */}
-                                <button className="w-full bg-[#E9098D] text-white py-3 rounded-2xl text-sm sm:text-base font-medium my-4">
+                                {step < 3 ? <button
+                                    className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
+                                    onClick={() => setStep(step + 1)}
+                                >
                                     Continue
                                 </button>
+                                    :
+                                    <button
+                                        className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
+                                        onClick={handleCompleteCheckout}
+                                    >
+                                        Complete Checkout
+                                    </button>
+                                }
 
                                 {/* Order Items */}
                                 <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg p-3 sm:p-4">
@@ -292,6 +307,11 @@ const CheckoutComponent = () => {
                                         ))}
                                     </div>
                                 </div>
+                                <button
+                                    className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
+                                >
+                                    Edit Cart
+                                </button>
                             </div>
                         </div>
                     </div>

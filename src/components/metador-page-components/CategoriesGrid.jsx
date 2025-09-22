@@ -78,21 +78,21 @@ const CategoriesGrid = () => {
     ];
 
     return (
-        <div className="w-full bg-white py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
+        <div className="w-full bg-white py-8 sm:py-12 lg:py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-8xl mx-auto">
                 {/* Header Section */}
-                <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+                <div className="text-center mb-8 sm:mb-12 lg:mb-8">
                     <div className="flex items-center justify-center mb-4">
                         {/* Left decorative line */}
-                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 "></div>
+                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
 
                         {/* Title */}
-                        <h2 className="px-4 sm:px-6 lg:px-3 text-lg text-[24px] text-[#2D2C70] font-semibold  ">
+                        <h2 className="px-1 text-lg text-[24px] text-[#2D2C70] font-semibold  ">
                             Our Categories
                         </h2>
 
                         {/* Right decorative line */}
-                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 "></div>
+                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
                     </div>
                 </div>
 

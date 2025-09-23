@@ -36,11 +36,11 @@ export default function ProfileInformation({ setShowForm }) {
     }
 
     return (
-        <div className="h-full font-spartan">
+        <div className="h-full font-spartan px-4">
             <div className="max-w-8xl ">
                 {/* Header */}
                 <div className="bg-white rounded-lg ">
-                    <div className="  pb-16">
+                    <div className="pb-16">
 
                         <div className="border-b-2 border-black pb-4 mb-8">
                             <h1 className="text-[24px]  font-medium text-black">
@@ -51,7 +51,7 @@ export default function ProfileInformation({ setShowForm }) {
                         {/* Form Content */}
                         <div className="max-w-md  sm:max-w-lg">
                             {/* Required Field Notice */}
-                            <div className="mb-6 sm:mb-8">
+                            <div className="mb-4">
                                 <span className="text-[14px] font-[400]">Required </span>
                                 <span className="text-[#E9098D] text-[16px] font-bold">*</span>
                             </div>
@@ -85,10 +85,11 @@ export default function ProfileInformation({ setShowForm }) {
                                         />
                                     </div>
 
+                                    {/* Update Button */}
                                     <div className="">
                                         <button
-                                            onClick={handlePasswordUpdate}
-                                            className="w-3/8 bg-[#E9098D] text-white py-1 rounded-2xl text-[20px] font-medium hover:bg-[#d1087e] focus:outline-none focus:ring-2 focus:ring-[#E9098D] focus:ring-offset-2 transition-colors"
+                                            onClick={handleUpdate}
+                                            className="w-[200px] h-[42px] bg-[#2D2C70] text-white hover:bg-[#1a1945] py-1 rounded-2xl text-[20px] font-medium  "
                                         >
                                             Update
                                         </button>
@@ -96,7 +97,7 @@ export default function ProfileInformation({ setShowForm }) {
 
                                 </>
                                 :
-                                <div>
+                                <div className="max-w-[470px]">
                                     {/* Company Name Field */}
                                     <div className="mb-6 text-[1rem] font-medium ">
                                         <label className="block text-black mb-2">
@@ -152,7 +153,7 @@ export default function ProfileInformation({ setShowForm }) {
                                     <div className="">
                                         <button
                                             onClick={handleUpdate}
-                                            className="w-3/8 bg-[#E9098D] text-white py-1 rounded-2xl text-[20px] font-medium hover:bg-[#d1087e] focus:outline-none focus:ring-2 focus:ring-[#E9098D] focus:ring-offset-2 transition-colors"
+                                            className="w-[200px] h-[42px] bg-[#2D2C70] text-white hover:bg-[#1a1945] py-1 rounded-2xl text-[20px] font-medium  "
                                         >
                                             Update
                                         </button>

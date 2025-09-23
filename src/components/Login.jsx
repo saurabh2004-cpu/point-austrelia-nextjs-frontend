@@ -89,9 +89,9 @@ export default function LoginComponent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
+    <div className=" py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
       <motion.div
-        className="max-w-md w-full space-y-8"
+        className="max-w-md w-full "
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -111,7 +111,7 @@ export default function LoginComponent() {
 
         {/* Login Form */}
         <motion.form
-          className="mt-8 space-y-6 bg-white p-6 sm:p-8 rounded-lg "
+          className=" space-y-6 bg-white p-6 sm:p-8 rounded-lg "
           onSubmit={handleLogin}
           variants={itemVariants}
         >
@@ -187,8 +187,8 @@ export default function LoginComponent() {
           </div>
 
           {/* Login Button */}
-          <div className='space-y-2'>
-            <motion.div variants={itemVariants}>
+          <div className=''>
+            <motion.div variants={itemVariants} className='mb-1'>
               <motion.button
                 type="submit"
                 disabled={isLoading}
@@ -218,7 +218,7 @@ export default function LoginComponent() {
             </motion.div>
 
             {/* Forgot Password Link */}
-            <motion.div className="text-end" variants={itemVariants}>
+            <motion.div className="text-end mb-1" variants={itemVariants}>
               <button
                 type="button"
                 onClick={handleForgotPassword}

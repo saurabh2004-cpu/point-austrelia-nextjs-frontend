@@ -9,14 +9,16 @@ import Image from "next/image"
 import { label } from "framer-motion/client"
 import useNavStateStore from "@/zustand/navigations"
 import ShoppingCartPopup from "./CartPopup"
+import { useRouter } from "next/navigation"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [showCartPopup, setShowCartPopUp] = useState(false)
+  const router = useRouter()
 
   const navigationItems = [
-    { label: "HOME", index: 0 },
+    { label: "HOME", index: 0, link: '/' },
     { label: "MATADOR WHOLESALE", index: 1 },
     { label: "ASRA AROMAS", index: 2 },
     { label: "POINT ACCESSORIES", index: 3 },
@@ -25,19 +27,21 @@ export function Navbar() {
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex) // get function
 
   const handleNavigation = (index) => {
-    setCurrentIndex(index)
+    if (index === 0) {
+      router.push('/')
+    }
   }
 
   return (
     <>
-      <nav className="w-full bg-white md:border-b md:border-b-3 border-[#2d2c70]">
+      <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         {/* Top Bar */}
-        <div className="border-b border-[#2d2c70] border-b-3  mt-2 py-4">
+        <div className="border-b border-[#2d2c70] border-b-1  mt-2 py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-12">
+            <div className="flex items-center justify-between h-18">
               {/* Left - Login/Signup */}
               <div className="hidden md:flex text-[1rem] font-[600] text-[#2d2c70] items-center space-x-1 text-sm ">
-                <User className="w-5 h-5 mb-2 mx-2" />
+                <User fill="#2d2c70" className="w-4 h-4 mb-2 mx-2 mt-1" />
                 <span className="hover:text-gray-900 cursor-pointer font-Spartan">LOGIN</span>
                 <span className=" font-Spartan text-[#2d2c70] mx-4">|</span>
                 <span className="hover:text-gray-900 cursor-pointer font-Spartan">SIGN UP</span>
@@ -49,8 +53,8 @@ export function Navbar() {
                   <Image
                     src="/logo/point-austrelia-logo.png"
                     alt="Logo"
-                    width={160}
-                    height={160}
+                    width={219}
+                    height={100}
                   />
                 </div>
               </div>
@@ -58,27 +62,29 @@ export function Navbar() {
               {/* Right - Search and Cart */}
               <div className="flex items-center space-x-24">
                 {/* Desktop Search */}
-                <div className="hidden md:flex items-center space-x-2 text-[1rem] font-[600] text-[#2d2c70]">
-                  <Search className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Search</span>
-                </div>
 
                 {/* Mobile Search Toggle */}
                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsSearchOpen(!isSearchOpen)}>
                   <Search className="w-4 h-4" />
                 </Button>
+                <div className="space-x-16 flex">
+                  <div className="hidden md:flex items-center spac text-[1rem] font-semibold text-[#2d2c70]">
+                    <Search className="w-4 h-4 " />
+                    <span className="text-sm text-[#2d2c70]">Search</span>
+                  </div>
 
-                {/* Cart */}
-                <button
-                  className="relative bg-white"
-                  onClick={() => setShowCartPopUp(!showCartPopup)}
-                >
-                  <img
-                    src="/home-images/cart-logo.png"
-                    className="w-5 h-5 text-gray-600 cursor-pointer hover:text-gray-900"
-                  />
-                  <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs bg-red-500 hover:bg-red-500">2</Badge>
-                </button>
+                  {/* Cart */}
+                  <button
+                    className="relative bg-white"
+                    onClick={() => setShowCartPopUp(!showCartPopup)}
+                  >
+                    <img
+                      src="/home-images/cart-logo.png"
+                      className="w-5 h-5 text-gray-600 cursor-pointer hover:text-gray-900"
+                    />
+                    <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 text-xs bg-[#E9098D] ">2</Badge>
+                  </button>
+                </div>
 
                 {/* Mobile Menu Toggle */}
                 <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -102,12 +108,12 @@ export function Navbar() {
         {/* Main Navigation */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 md:py-2">
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center justify-center space-x-8 h-14">
+          <div className="hidden md:flex items-center justify-center space-x-[36px] h-14">
             {navigationItems.map((item) => (
               <button
                 key={item.index}
                 onClick={() => handleNavigation(item.index)}
-                className="text-[1rem] font-[500] text-[#2d2c70] transition-colors duration-200 whitespace-nowrap"
+                className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap"
               >
                 {item.label}
               </button>
@@ -142,7 +148,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      {showCartPopup&& <ShoppingCartPopup onClose={() => setShowCartPopUp(false)} />}
-      </>
+      {showCartPopup && <ShoppingCartPopup onClose={() => setShowCartPopUp(false)} />}
+    </>
   )
 }

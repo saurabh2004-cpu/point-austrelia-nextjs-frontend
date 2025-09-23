@@ -57,7 +57,7 @@ export default function ProductDetail() {
   return (
     <>
       {/* Breadcrumb */}
-      <div className="bg-white justify-items-center pt-4">
+      <div className="bg-white justify-items-center pt-4 overflow-x-hidden">
         <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
           <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
             <span>Home</span>
@@ -75,10 +75,7 @@ export default function ProductDetail() {
           <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5">
             Bars Bugs
           </h1>
-          <p className="text-sm sm:text-base lg:text-[1rem] text-black font-[400] font-spartan max-w-8xl px-2 sm:px-0">
-            Bars Bugs is a range of insect repellent products including sprays, coils, and diffusers that are designed
-            to keep bugs away both indoors and outdoors.
-          </p>
+
         </div>
       </div>
 
@@ -93,7 +90,7 @@ export default function ProductDetail() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className="flex-shrink-0 rounded-lg p-2 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.15)] transition-all duration-300 ease-out hover:scale-[1.02]"
+                  className="flex-shrink-0 rounded-lg p-2 bg-white  transition-all duration-300 ease-out hover:scale-[1.02] shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
                 >
                   <img
                     src={image || "/placeholder.svg"}
@@ -101,6 +98,7 @@ export default function ProductDetail() {
                     className="w-[80px] h-[60px] sm:w-[120px] sm:h-[90px] lg:w-[9.875rem] lg:h-[7.0625rem] object-contain rounded-md"
                   />
                 </button>
+
               ))}
             </div>
 
@@ -129,7 +127,7 @@ export default function ProductDetail() {
 
 
                 <div className="relative order-1 lg:order-2 ">
-                  <div className=" rounded-lg bg-white">
+                  <div className=" rounded-lg bg-[#FAFAFA]">
 
                     <img
                       src={productImages[selectedImage] || "/placeholder.svg"}
@@ -146,116 +144,119 @@ export default function ProductDetail() {
           </div>
 
           {/* Product Information */}
-          <div className="space-y-3 font-spartan">
+          <div className="space-y-[17px] font-spartan max-w-[360px] mt-5">
             {/* Header */}
-            <div className="flex items-start justify-between">
-              <div>
-
-                <h1 className="text-lg sm:text-xl lg:text-[1.3rem] font-medium  text-black my-2">
-                  BARS BUGS WINDSCREEN CLEAN 375ML
-                </h1>
-                <div className="flex items-center space-x-2  mt-4 justify-between">
-                  <p className="text-[13px] font-medium ">SKU BB375</p>
-                  <span className="text-black bg-[#E7FAEF] text-sm p-1 rounded-lg text-[11px] font-semibold">
-                    ✓ IN STOCK
-                  </span>
-                </div>
-                <p className="text-[1rem] font-[400] mt-2 border inline-block pt-1 px-3 relative xl:right-2 rounded-full">
-                  Category
-                </p>
+            <div>
+              <h1 className="text-lg sm:text-xl lg:text-[1.3rem] font-medium text-black ">
+                BARS BUGS WINDSCREEN CLEAN 375ML
+              </h1>
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-[13px] font-medium">SKU BB375</p>
+                <span className="text-[14px] bg-[#E7FAEF] p-2 font-semibold font-spartan text-black   py-1 rounded">
+                  ✓ IN STOCK
+                </span>
               </div>
             </div>
 
             {/* Price */}
-            <div className="text-[24px] font-semibold text-[#E9098D]  mb-2">$4.48</div>
+            <div className="text-[24px] font-semibold text-[#E9098D]">$4.48</div>
 
-            {/* Quantity and Unit Selection */}
-            <div className="space-y-4 ">
-              <div className="flex  sm:items-center align-middle sm:space-x-8 space-y-4 sm:space-y-0">
-                <div className="flex items-start space-x-2 space-y-2 flex-col">
-                  <span className="text-sm font-[400] ">Quantity</span>
-                  <div className="flex items-center  rounded-lg">
-                    <button
-                      className="p-1 bg-black rounded-md  px-2 py-1 transition-colors"
-                    >
-                      <Minus className="w-4 h-4 text-white" />
-                    </button>
-                    <span className="px-3 py-1 min-w-[2rem] text-center text-base font-medium">
-                      2
-                    </span>
-                    <button
-                      className="p-1 bg-black rounded-md py-1  px-2 transition-colors"
-                    >
-                      <Plus className="w-4 h-4 text-white " />
-                    </button>
-                  </div>
+            {/* Quantity & Units */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-[48px] space-y-4 sm:space-y-0">
+              {/* Quantity */}
+              <div className="flex flex-col space-y-2">
+                <span className="text-sm font-[400]">Quantity</span>
+                <div className="flex items-center">
+                  <button className="p-1 px-2 bg-black rounded-md">
+                    <Minus className="w-4 h-4 text-white" />
+                  </button>
+                  <span className="px-3 py-1 min-w-[2rem] text-center text-base font-medium">
+                    2
+                  </span>
+                  <button className="p-1 px-2 bg-black rounded-md">
+                    <Plus className="w-4 h-4 text-white" />
+                  </button>
                 </div>
+              </div>
 
-                <div className="hidden sm:block bg-gray-300 w-[1px] h-15 ml-8"></div>
-                <div className="flex flex-col  justify-between mx-8 relative bottom-4 xl:bottom-0 ">
-                  <span className="text-[1rem] font-[400] relative py-1 block mb-2">Units</span>
+              {/* Divider */}
+              <div className="hidden sm:block bg-gray-300 w-[1px] h-14"></div>
+
+              {/* Units */}
+              <div className="flex flex-col space-y-2 min-w-[167px]">
+                <span className="text-sm font-[400]">Units</span>
+                <div className="relative w-full">
                   <select
-                    value={selectedUnit}
-                    onChange={(e) => setSelectedUnit(e.target.value)}
-                    className="border border-gray-300 rounded-lg relative  px-8 py-2 bg-white w-full sm:w-auto"
+                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                                    focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 
+                                                    appearance-none"
                   >
-                    <option value="Each">Each</option>
-                    <option value="Box">Box</option>
-                    <option value="Case">Case</option>
+                    <option value="each">Each</option>
+                    <option value="pack">Pack</option>
+                    <option value="box">Box</option>
                   </select>
-                </div>
-              </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-row  justify-center w-full lg:w-3/4 flex-col sm:flex-row space-y-3 sm:space-y-0 space-x-4">
-              <button className="flex-1 text-[1rem] text-[#2D2C70] text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-black py-1 px-6 rounded transition-colors">
-                <Image
-                  src="/product-details/cart-logo-2.png"
-                  alt="Shopping Bag"
-                  width={20}
-                  height={20}
-                  className="inline-block mr-2"
-                />
-
-                Add to Cart
-              </button>
-              <div className="flex justify-center sm:block">
-                <div className="h-10 w-10 bg-[#D9D9D940] items-center justify-center flex rounded-full ">
-                  <div className="h-8 w-8 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
-                    <Image
-                      src="/product-details/heart-1.png"
-                      alt="Heart"
-                      width={18}
-                      height={18}
-                      className=""
-                    />
+                  {/* Custom Arrow */}
+                  <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                    <svg
+                      className="w-4 h-4 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-center font-semibold md:w-[92.5%] lg:w-[18.5625rem] xl:w-[395px] flex-col  sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <button className="flex-1 text-[12px]  font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2   rounded transition-colors">
-                Added <span><Check className="inline-block ml-2 h-4 w-4 " /></span>
+            {/* Action Buttons - Row 1 */}
+            <div className="flex items-center space-x-7 ">
+              <div className="flex space-x-5">
+                <button className="flex-1 min-w-[360px] text-sm sm:text-base font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-4 flex items-center justify-center">
+                  <Image
+                    src="/icons/cart-image.png"
+                    alt="Shopping Bag"
+                    width={20}
+                    height={20}
+                    className="inline-block mr-2"
+                  />
+                  Add to Cart
+                </button>
+                <button className="h-10   w-10 flex items-center justify-center rounded-full bg-[#D9D9D940]">
+                  <Image
+                    src="/product-details/heart-1.png"
+                    alt="Heart"
+                    width={18}
+                    height={18}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons - Row 2 */}
+            <div className="flex items-center space-x-3">
+              <button className="flex-1 text-xs sm:text-sm font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2 flex justify-center items-center">
+                Added <Check className="ml-2 h-4 w-4" />
               </button>
-
-              <div className="hidden sm:block bg-black w-[1px] h-9"></div>
-
-              <button className="flex-1 text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2  rounded transition-colors">
+              <button className="flex-1 text-xs sm:text-sm font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2 flex justify-center">
                 Update
               </button>
             </div>
-            <div className="text-[1rem] font-medium text-black">In Cart Quantity: 2 (Each)</div>
 
-            {/* Product Details */}
+            {/* Cart Info */}
+            <div className="text-sm sm:text-base font-medium text-black">
+              In Cart Quantity: 2 (Each)
+            </div>
           </div>
 
-          <div className="space-y-4 lg:col-span-2">
-            <div className="font-spartan">
-              <h3 className=" text-[1rem] font-medium text-black">Details of the product:</h3>
-              <ul className="space-y-2 text-black text-[15px] font-[400]">
+
+          <div className="lg:col-span-2 space-y-[15px]">
+            <div className="font-spartan space-y-[15px] ">
+              <h3 className=" text-[1rem] font-medium text-black">Details of the product :</h3>
+              <ul className="space-y-[15px] text-black text-[15px] font-[400]">
                 <li className="flex items-start">
                   <span className="text-[#2E2F7F] mr-2 flex-shrink-0">●</span>
                   <span>Bars Bugs is a non-stain environmentally friendly windscreen cleaner</span>
@@ -271,14 +272,14 @@ export default function ProductDetail() {
               </ul>
             </div>
             {/* Barcode */}
-            <div className="space-y-2 text-[1rem] font-[400] text-black">
-              <h4 className=" text-black">Barcode:</h4>
+            <div className=" text-[1rem] font-[400] text-black">
+              <h4 className=" text-black">Barcode</h4>
               <p className="">9344479972387</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-300 min-w-8xl h-[1px] flex my-16"></div>
+        <div className="bg-gray-300 min-w-[90vw] h-[1px] flex my-8  relative lg:right-34"></div>
 
         {/* People Also Bought Section */}
         <div className="space-y-8 lg:space-y-12 pb-18">
@@ -287,7 +288,7 @@ export default function ProductDetail() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {relatedProducts.map((product) => (
-              <div key={product.id} className="bg-white  rounded-lg p-4  transition-shadow">
+              <div key={product.id} className="bg-white  rounded-lg p-4  ">
                 <div className="relative flex justify-center py-6  mb-4 border border-gray-200 rounded-xl">
                   <button className="absolute top-2 right-2  text-gray-400 hover:text-gray-600">
                     <div className="h-5 w-5  flex items-center justify-center rounded-full  transition-colors cursor-pointer">

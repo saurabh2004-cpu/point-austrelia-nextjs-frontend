@@ -3,17 +3,19 @@
 import { useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
+import { Minus, Plus } from "lucide-react"
 
 // Mock ProductPopup component since it's imported but not provided
 
 
 const ProductListing = () => {
-    const [sortBy, setSortBy] = useState("Low to High")
+    const [sortBy, setSortBy] = useState("Best Seller")
     const [viewMode, setViewMode] = useState("grid")
     const [selectedProduct, setSelectedProduct] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
     const [showProductPopup, setShowProductPopup] = useState(false)
     const [perpageItrems, setPerpageItrems] = useState('12 Per Page')
+    const [producTQuantity, setProductQuantity] = useState(0)
 
     const categories = [
         { name: "New Arrivals", count: 200 },
@@ -160,8 +162,8 @@ const ProductListing = () => {
                                             key={index}
                                             className={`flex space-x-2 items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                         >
-                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
-                                            <span className="text-xs sm:text-sm">({category.count})</span>
+                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
+                                            <span className="">({category.count})</span>
                                         </div>
                                     ))}
                                 </div>
@@ -178,43 +180,86 @@ const ProductListing = () => {
                                     Products <span className="text-[#000000]/60">(6)</span>
                                 </h2>
 
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-4 w-full sm:w-auto">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-[27px] w-full sm:w-auto">
 
-                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    <div className="flex items-center gap-2 w-full ">
                                         {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
-                                        <select
-                                            value={perpageItrems}
-                                            onChange={(e) => setPerpageItrems(e.target.value)}
-                                            className="border border-gray-300 rounded px-2 lg:px-6 py-1 lg:py-2 rounded-md text-xs sm:text-sm text-black font-[400] font-spartan focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-initial"
-                                        >
-                                            <option>12 Per Page</option>
-                                            <option>16 Per Page</option>
-                                            <option>20 Per Page</option>
-                                            <option>24 Per Page</option>
-                                        </select>
+                                        <div className="relative inline-block   ">
+                                            <select
+                                                value={perpageItrems}
+                                                onChange={(e) => setPerpageItrems(e.target.value)}
+                                                className="border border-gray-300 rounded pl-3 py-1 lg:py-1 rounded-[10px] 
+                                                            text-xs sm:text-sm text-black font-[400] font-spartan 
+                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                                            appearance-none  w-[135px]"
+                                            >
+                                                <option className="text-[15px] font-medium">12 Per Page</option>
+                                                <option className="text-[15px] font-medium">16 Per Page</option>
+                                                <option className="text-[15px] font-medium">20 Per Page</option>
+                                                <option className="text-[15px] font-medium">24 Per Page</option>
+                                            </select>
+
+                                            {/* Custom Arrow (Lucide React or SVG) */}
+                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                {/* Lucide Icon Example */}
+                                                {/* import { ChevronDown } from "lucide-react"; */}
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="w-4 h-4 "
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
                                     </div>
 
                                     <div className="flex items-center gap-2 w-full sm:w-auto">
                                         {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
-                                        <select
-                                            value={sortBy}
-                                            onChange={(e) => setSortBy(e.target.value)}
-                                            className="border border-gray-300 rounded px-2 lg:px-6 py-1 lg:py-2 rounded-md text-xs sm:text-sm text-black font-[400] font-spartan focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-initial"
-                                        >
-                                            <option>Low to High</option>
-                                            <option>High to Low</option>
-                                            <option>Name A-Z</option>
-                                            <option>Name Z-A</option>
-                                        </select>
+                                        <div className="relative inline-block  ">
+                                            <select
+                                                value={perpageItrems}
+                                                onChange={(e) => setPerpageItrems(e.target.value)}
+                                                className="border border-gray-300 rounded pl-3  py-1 lg:py-1 rounded-[10px] 
+                                                            text-xs sm:text-sm text-black font-[400] font-spartan 
+                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                                            appearance-none w-[132px]"
+                                            >
+                                                <option className="text-[15px] font-medium">Best Seller</option>
+                                                <option className="text-[15px] font-medium">16 Per Page</option>
+                                                <option className="text-[15px] font-medium">20 Per Page</option>
+                                                <option className="text-[15px] font-medium">24 Per Page</option>
+                                            </select>
+
+                                            {/* Custom Arrow (Lucide React or SVG) */}
+                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                {/* Lucide Icon Example */}
+                                                {/* import { ChevronDown } from "lucide-react"; */}
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="w-4 h-4 "
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
 
 
-                                    <div className="flex border border-gray-300 rounded-md ">
+                                    <div className="flex border border-gray-300  px-3 rounded-md justify-between ">
                                         <button
                                             onClick={() => setViewMode("grid")}
-                                            className={`p-1 lg:p-2 border-r border-r-[2px] ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
+                                            className={`p-1 lg:px-2 border-r border-r-[2px] flex items-center justify-start w-full align-middle ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
                                         >
-                                            <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className=" relative right-3 w-[20px] h-[18px] " fill="#2E2F7F" viewBox="0 0 20 20">
                                                 <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                                             </svg>
                                         </button>
@@ -222,7 +267,7 @@ const ProductListing = () => {
                                             onClick={() => setViewMode("list")}
                                             className={`p-1 lg:p-2 ${viewMode === "list" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
                                         >
-                                            <svg className="w-4 h-4 lg:w-5 lg:h-5" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="currentColor">
+                                            <svg className=" w-[20px] h-[13px] relative left-3" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="#2E2F7F80">
                                                 <rect x="10" y="10" width="20" height="20" rx="3" />
                                                 <rect x="40" y="10" width="20" height="20" rx="3" />
                                                 <rect x="70" y="10" width="20" height="20" rx="3" />
@@ -240,59 +285,45 @@ const ProductListing = () => {
                         </div>
 
                         {/* Products Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-h-screen overflow-y-auto hide-scrollbar border-t-2 border-[#2D2C70]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-12 max-h-full  border-t-2 border-[#2D2C70] pt-16">
                             {products.map((product, index) => (
                                 <div
                                     key={product.id}
                                     className="bg-white rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
-                                    onClick={() => handleProductClick(product)}
+
                                 >
-                                    {/* Sale Badge */}
-                                    {product.badge === 'Sale' && (
-                                        <div className={`absolute top-2 left-4 sm:left-6 ${product.badgeColor} text-white text-xs px-2 py-1 rounded-full z-10`}>
-                                            {product.badge}
-                                        </div>
-                                    )}
+
 
                                     {/* New Badge with Background */}
-                                    {product.badgeBackGround && product.badge === 'New' && (
+                                    {product.badgeBackGround && product.badge && (
                                         <>
                                             <img
                                                 src={product.badgeBackGround || "/placeholder.svg"}
                                                 height={60}
                                                 width={60}
-                                                className="absolute top-2 left-4 sm:left-6 sm:w-20 sm:h-20"
+                                                className="absolute top-0 left-4 sm:left-0 sm:w-20 sm:h-20"
                                                 alt="Badge background"
+                                                
+
                                             />
-                                            <p className="absolute top-6 sm:top-8 z-20 left-7 sm:left-10 text-white text-[10px] sm:text-sm font-[400] px-2 py-1 rounded-full">
+                                            <p className="absolute top-6 sm:top-[24px] z-20 left-[25px] sm:left-[17px]  text-white text-[10px] sm:text-sm font-semibold px-2 py-1 rounded-full">
                                                 {product.badge}
                                             </p>
                                         </>
                                     )}
 
-                                    {/* Simple New Badge (Red Star-burst style) */}
-                                    {product.badge === 'New' && !product.badgeBackGround && (
-                                        <div className="absolute top-2 left-2 z-10">
-                                            <div className="relative">
-                                                <div className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full transform rotate-12 shadow-lg">
-                                                    New
-                                                </div>
-                                                {/* Star-burst effect */}
-                                                <div className="absolute inset-0 bg-red-500 rounded-full transform scale-110 -z-10 opacity-30"></div>
-                                            </div>
-                                        </div>
-                                    )}
+
 
                                     {/* Wishlist Icon */}
                                     <div className="absolute top-2 right-4 sm:right-6 z-10">
                                         <button
-                                            className=" rounded-full  hover:bg-gray-200 transition-colors"
+                                            className=" rounded-full   transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation(); // Prevent triggering product popup
                                                 // Handle wishlist logic here
                                             }}
                                         >
-                                            <div className="h-8 w-8 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                            <div className="h-8 w-8 bg-[#D9D9D940] hover:bg-gray-200 flex mt-3 items-center justify-center rounded-full  transition-colors cursor-pointer">
                                                 <Image
                                                     src="/product-details/heart-1.png"
                                                     alt="Heart"
@@ -305,33 +336,34 @@ const ProductListing = () => {
                                     </div>
 
                                     {/* Product Image */}
-                                    <div className="flex justify-center mb-3 sm:mb-4 ">
+                                    <div className="flex justify-center mb-3 sm:mb-4 bg-[#FAFAFA] ">
                                         <img
                                             src={product.image || "/placeholder.svg"}
                                             alt={product.name}
                                             className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
+                                            onClick={() => handleProductClick(product)}
                                         />
                                     </div>
 
                                     {/* Product Info */}
-                                    <div className="text-start space-y-2">
+                                    <div className="text-start space-y-2 lg:max-w-[229px]">
                                         {/* Product Name */}
                                         <h3 className="text-sm sm:text-base lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
                                             {product.name}
                                         </h3>
 
                                         {/* SKU */}
-                                        <div className="space-y-1 flex space-x-9 items-center">
+                                        <div className="space-y-1 flex justify-between items-center">
                                             <p className="text-xs sm:text-sm text-gray-600 font-spartan">
                                                 {product.sku}
                                             </p>
 
                                             {/* Stock Status */}
-                                            <div className="flex items-center space-x-2 bg-green-100 px-2">
-                                                <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <div className="flex items-center space-x-2 bg-[#E7FAEF]  px-2">
+                                                <svg className="w-5 h-5 " fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                 </svg>
-                                                <span className="text-[11px] font-semibold font-spartan text-black   py-1 rounded">
+                                                <span className="text-[14px] font-semibold font-spartan text-black   py-1 rounded">
                                                     IN STOCK
                                                 </span>
                                             </div>
@@ -339,36 +371,59 @@ const ProductListing = () => {
 
                                         {/* Price */}
                                         <div className="">
-                                            <span className="text-2xl md:text-[20px] font-semibold text-[#e9098d]">
+                                            <span className="text-2xl md:text-[24px] font-semibold text-[#e9098d]">
                                                 ${product.price}
                                             </span>
                                         </div>
 
                                         {/* Units Dropdown */}
-                                        <div className="mb-3 flex space-x-8 align-center items-center font-spartan">
+                                        <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                                            <select
-                                                className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
-                                                onClick={(e) => e.stopPropagation()} // Prevent triggering product popup
-                                            >
-                                                <option value="each">Each</option>
-                                                <option value="pack">Pack</option>
-                                                <option value="box">Box</option>
-                                            </select>
+                                            <div className="relative w-full">
+                                                <select
+                                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                                    focus:outline-none focus:ring-2 focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                    appearance-none"
+                                                >
+                                                    <option value="each">Pack Of 6</option>
+                                                    <option value="pack">Pack Of 12</option>
+                                                    <option value="box">Carton of 60</option>
+                                                </select>
+
+                                                {/* Custom Arrow */}
+                                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                    <svg
+                                                        className="w-4 h-4 text-gray-500"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+
                                         </div>
 
                                         {/* Quantity Controls */}
-                                        <div className="mb-2 space-x-8 flex align-center items-center font-spartan">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                                        <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
+                                            <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
                                             <div className="flex items-center space-x-4">
                                                 <button
-                                                    className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
+                                                    className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
                                                     onClick={(e) => {
                                                         e.stopPropagation(); // Prevent triggering product popup
-                                                        // Handle quantity decrease
+                                                        setProductQuantity(product.quantity - 1);
                                                     }}
                                                 >
-                                                    <span className="text-xl font-bold flex items-center mt-1">−</span>
+                                                    <span className="text-xl font-bold flex items-center ">
+                                                        <Image src="/icons/minus-icon.png"
+                                                            alt="Minus"
+                                                            width={12}
+                                                            height={12}
+                                                        />
+                                                    </span>
                                                 </button>
                                                 <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
                                                     {product.quantity}
@@ -376,20 +431,24 @@ const ProductListing = () => {
                                                 <button
                                                     className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
                                                     onClick={(e) => {
-                                                        e.stopPropagation(); // Prevent triggering product popup
-                                                        // Handle quantity increase
+                                                        e.stopPropagation();
+                                                        setProductQuantity(product.quantity + 1);
                                                     }}
                                                 >
-                                                    <span className="text-lg font-bold  mt-1">+</span>
+                                                    <Image src="/icons/plus-icon.png"
+                                                        alt="Plus"
+                                                        width={12}
+                                                        height={12}
+                                                    />
                                                 </button>
                                             </div>
                                         </div>
 
                                         {/* Add to Cart Button */}
                                         <div className="flex items-center space-x-3">
-                                            <button className="flex-1 text-[15px] font-semibold border border-[#E9098D] rounded-lg text-black py-2 px-6 rounded transition-colors">
+                                            <button className="flex-1 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 rounded transition-colors">
                                                 <Image
-                                                    src="/product-details/cart-logo-2.png"
+                                                    src="/icons/cart-image.png"
                                                     alt="Shopping Bag"
                                                     width={20}
                                                     height={20}
@@ -412,17 +471,17 @@ const ProductListing = () => {
                                         {/* Action Buttons Row */}
                                         <div className="flex space-x-2 mt-1">
                                             <button
-                                                className="flex-1 border-2 border-[#46bcf9] text-[#68b73b] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
+                                                className="flex-1 space-x-[6px] border-1 border-[#46bcf9] text-[#68b73b] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <span>Added</span>
+                                                <svg className="w-5 h-5 mt-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                 </svg>
-                                                <span>Added</span>
                                             </button>
-                                            <div className="w-px bg-black"></div>
+                                            <div className="w-px bg-black h-[20px] mt-2"></div>
                                             <button
-                                                className="flex-1  border-2 border-[#2d2c70]  text-pink-700 rounded-lg py-1 px-3 text-sm font-medium transition-colors"
+                                                className="flex-1  border-1 border-[#2D2C70]  text-pink-700 rounded-lg py-1 px-3 text-sm font-medium transition-colors"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 Update

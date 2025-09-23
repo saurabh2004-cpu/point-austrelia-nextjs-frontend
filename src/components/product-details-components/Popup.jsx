@@ -42,7 +42,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                                         <button
                                             key={index}
                                             onClick={() => setSelectedImage(index)}
-                                            className={`flex-shrink-0 rounded-lg p-2 bg-white border transition-all duration-300 shadow-xl ${selectedImage === index ? "" : "border-gray-200"
+                                            className={`flex-shrink-0  p-2 bg-white  transition-all duration-300 shadow-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] ${selectedImage === index ? "" : "border-gray-200"
                                                 }`}
                                         >
                                             <img
@@ -56,14 +56,14 @@ export default function ProductPopup({ isOpen, onClose }) {
 
                                 {/* Main Image */}
                                 <div className="relative">
-                                    <div className="rounded-lg p-4 bg-white ">
-                                        <span className="absolute top-2 left-2 bg-[#E35457] text-white text-[11px] font-[400] font-spartan tracking-widest px-2 py-1 rounded-sm z-10">
-                                            ON SALE
+                                    <div className="rounded-lg p-4 bg-[#FAFAFA] ">
+                                        <span className="absolute top-2 left-2 bg-[#E35457] text-white text-[11px] font-[400] font-spartan tracking-widest px-1 py-[2px] rounded-sm z-10">
+                                            IN SALE
                                         </span>
                                         <img
                                             src={productImages[selectedImage] || "/placeholder.svg"}
                                             alt="Product"
-                                            className="w-full h-[140px] md:h-[200px] object-contain"
+                                            className="w-full h-[140px] md:h-[260px] object-contain"
                                         />
                                     </div>
                                 </div>
@@ -73,9 +73,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                         </div>
 
                         <div className="flex-1 space-y-2 font-spartan">
-                            <span className="text-black bg-[#E7FAEF] text-sm px-2 py-2 relative xl:bottom-4  text-[11px] font-semibold">
-                                ✓ IN STOCK
-                            </span>
+
                             {/* Product Name */}
                             <h1 className="text-[20px] font-semibold text-black">BARS BUGS WINDSCREEN CLEAN 375ML</h1>
 
@@ -83,12 +81,22 @@ export default function ProductPopup({ isOpen, onClose }) {
                             <div className="space-y-1 text-[13px] font-medium text-gray-600">
                                 <div className="flex items-center justify-between space-x-2">
                                     <p>SKU BB375</p>
+                                    <div className="flex items-center space-x-2 bg-[#E7FAEF]  px-2">
+                                        <svg className="w-5 h-5 " fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-[14px] font-semibold font-spartan text-black   py-1 rounded">
+                                            IN STOCK
+                                        </span>
+                                    </div>
                                 </div>
-                                <p>Barcode: 9344479972387</p>
+
+                                <p>Barcode :</p>
+                                <p> 9344479972387</p>
                             </div>
 
                             {/* Category */}
-                            <div className="inline-block border rounded-full px-3 py-1 text-[14px] font-[400]">Category</div>
+                            {/* <div className="inline-block border rounded-full px-3 py-1 text-[14px] font-[400]">Category</div> */}
 
                             {/* Price */}
                             <div className="text-[24px] font-semibold text-[#46BCF9]">$4.48</div>
@@ -119,26 +127,41 @@ export default function ProductPopup({ isOpen, onClose }) {
 
                                     <div className="bg-gray-300 w-[1px] h-12"></div>
 
-                                    <div>
-                                        <span className="text-[14px] font-[400] block mb-2">Units</span>
-                                        <select
-                                            value={selectedUnit}
-                                            onChange={(e) => setSelectedUnit(e.target.value)}
-                                            className="border border-gray-300 rounded-lg px-3 py-2 bg-white text-[14px]"
-                                        >
-                                            <option value="Each">Each</option>
-                                            <option value="Box">Box</option>
-                                            <option value="Case">Case</option>
-                                        </select>
+                                    <div className="flex flex-col space-y-2 w-full">
+                                        <span className="text-sm font-[400]">Units</span>
+                                        <div className="relative w-full">
+                                            <select
+                                                className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                                    focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 
+                                                    appearance-none"
+                                            >
+                                                <option value="each">Each</option>
+                                                <option value="pack">Pack</option>
+                                                <option value="box">Box</option>
+                                            </select>
+
+                                            {/* Custom Arrow */}
+                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                <svg
+                                                    className="w-4 h-4 text-gray-500"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2.5"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Action Buttons */}
                             <div className="flex items-center space-x-3">
-                                <button className="flex-1 text-[1rem] font-semibold border border-[#E9098D] rounded-lg text-black py-1 px-6 rounded transition-colors">
+                                <button className="flex-1 text-[1rem] font-semibold border border-[#2D2C70] rounded-lg text-black py-1 px-6 rounded transition-colors">
                                     <Image
-                                        src="/product-details/cart-logo-2.png"
+                                        src="/icons/cart-image.png"
                                         alt="Shopping Bag"
                                         width={20}
                                         height={20}
@@ -147,13 +170,13 @@ export default function ProductPopup({ isOpen, onClose }) {
 
                                     Add to Cart
                                 </button>
-                                <div className="h-12 w-12 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                <div className="h-10 w-10 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
                                     <Image
                                         src="/product-details/heart-1.png"
                                         alt="Heart"
                                         width={15}
                                         height={15}
-                                        className="w-5 h-5"
+                                        className="w-[20px] h-[18.49px]"
                                     />
                                 </div>
                             </div>

@@ -2,13 +2,13 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="bg-white  border-t border-[#2d2c70] border-t-2 py-12">
+    <footer className="bg-white  border-t border-[#2d2c70] border-t-1 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Navigation Column */}
-          <div className="md:max-w-[200px] min-w-[300px] md:min-w-[200px]">
+          <div className="md:max-w-[00px] min-w-[300px] md:min-w-[125px]">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">NAVIGATION</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan">
+            <ul className="space-y-3 text-[16px] font-[500] font-spartan xl:min-w-[200px]">
               <li>
                 <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
                   Home
@@ -33,9 +33,9 @@ export function Footer() {
           </div>
 
           {/* Quick Links Column */}
-          <div className="md:max-w-[200px] min-w-[300px] md:min-w-[200px] relative md:right-20">
+          <div className="md:max-w-[00px] min-w-[300px] md:min-w-[125px] relative md:right-20">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan">
+            <ul className="space-y-3 text-[16px] font-[500] font-spartan xl:min-w-[160px]">
               <li>
                 <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
                   Login
@@ -116,10 +116,10 @@ export function Footer() {
 
           {/* About Us Column */}
           <div className="md:ml-19 relative md:right-10 ]">
-            <h3 className="text-[20px] md:min-w-[300px] min-w-[300px]  font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
+            <h3 className="text-[20px] md:min-w-[244px] min-w-[300px]  font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               ABOUT POINT AUSTRALIA
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-[280px]">
               <p className="text-[#2d2c70]/80 text-[16px] font-[500] font-spartan leading-relaxed">
                 Point Australia has combined all our wholesale stores into one easy to use online shop.
               </p>
@@ -150,9 +150,9 @@ export function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-12 pt-2 border-t-2 border-[#2d2c70]">
+        <div className="mt-12 pt-2 border-t-1 border-[#2d2c70]">
           <div className=" md:text-right">
-            <p className=" text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight"><span className="">© 2025</span> Point Australia</p>
+            <p className=" text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight"><span className="font-medium text-[#00000080]">© 2025</span> Point Australia</p>
           </div>
         </div>
       </div>

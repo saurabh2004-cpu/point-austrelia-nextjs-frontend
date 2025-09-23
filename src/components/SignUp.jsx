@@ -102,9 +102,9 @@ export default function SignUpComponent() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 font-spartan py-4 sm:py-6 md:py-8">
+    <div className="   bg-white flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 font-spartan ">
       <motion.div
-        className="max-w-4xl w-full space-y-6 sm:space-y-8"
+        className="max-w-4xl w-full space-y-6 sm:space-y-8 py-12"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -127,7 +127,7 @@ export default function SignUpComponent() {
 
         {/* Sign Up Form */}
         <motion.form 
-          className="mt-6 sm:mt-8 space-y-4 sm:space-y-6 bg-white p-4 sm:p-6 lg:p-8 rounded-lg"
+          className=" space-y-4 sm:space-y-6 bg-white px-4 sm:px-6 lg:px-8 rounded-lg"
           onSubmit={handleSubmit}
           variants={itemVariants}
         >
@@ -485,12 +485,12 @@ export default function SignUpComponent() {
               type="submit"
               disabled={isLoading}
               className="
-                group relative w-3/6 flex justify-center align-middle items-center  px-4 
+                group relative w-[403px] h-[44px] flex justify-center align-middle items-center   
                 border border-transparent text-sm sm:text-base lg:text-[1rem] font-medium rounded-lg 
                 text-white bg-[#2D2C70]   
                 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
                 disabled:opacity-50 disabled:cursor-not-allowed
-                transition-all duration-200 font-[600] min-h-[48px] sm:min-h-[52px]
+                transition-all duration-200 font-[600] 
               "
               whileHover={{ scale: isLoading ? 1 : 1.02 }}
               whileTap={{ scale: isLoading ? 1 : 0.98 }}

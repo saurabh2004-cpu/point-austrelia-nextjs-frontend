@@ -123,6 +123,11 @@
   }
 }
 
+.body{
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
 .font-Spartan {
   font-family: var(--font-spartan), sans-serif;
 }

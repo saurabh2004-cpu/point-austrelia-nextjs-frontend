@@ -40,7 +40,7 @@ export default function RecentPurchases() {
   }
 
   return (
-    <div className="w-full bg-white font-spartan">
+    <div className="w-full bg-white font-spartan pl-4">
 
       {/* Desktop Table View */}
       <div className="hidden lg:block overflow-x-auto">
@@ -48,12 +48,12 @@ export default function RecentPurchases() {
           <table className="w-full border-collapse text-base">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="py-4 px-4 border-r border-gray-200 text-left font-semibold">Date</th>
-                <th className="py-4 px-4 border-r border-gray-200 text-left font-semibold">Product Image</th>
-                <th className="py-4 px-4 border-r border-gray-200 text-left font-semibold">Product name</th>
-                <th className="py-4 px-4 border-r border-gray-200 text-left font-semibold">Pack Of Quantity</th>
-                <th className="py-4 px-4 border-r border-gray-200 text-left font-semibold">Unit quantity</th>
-                <th className="py-4 px-4 text-left font-semibold">Final amount</th>
+                <th className="py-4  pl-4  border-r border-gray-200 text-left font-semibold">Date</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Product Image</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Product name</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Pack Of Quantity</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Unit quantity</th>
+                <th className="py-4 pl-16 text-left font-semibold">Final amount</th>
               </tr>
             </thead>
             <tbody>

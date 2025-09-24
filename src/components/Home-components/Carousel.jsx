@@ -6,12 +6,12 @@ const Carousel = () => {
   const carouselImages = [
     {
       id: 1,
-      src: "/home-images/home-carousel-1.avif", // Replace with your actual image path
+      src: "/home-images/carousel-img.avif", // Replace with your actual image path
       alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
     },
     {
       id: 2,
-      src: "/home-images/home-carousel-1.avif", // Replace with your actual image path
+      src: "/home-images/carousel-img.avif", // Replace with your actual image path
       alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
     }
    
@@ -48,9 +48,9 @@ const Carousel = () => {
   };
 
   return (
-    <div className="w-full max-w-8xl mx-auto p-4 md:py-4">
+    <div className="w-full max-w-8xl mx-auto p-4 md:py-4 xl:pb-12">
       <div 
-        className="relative w-full overflow-hidden rounded-lg h-[15rem] md:h-[45rem] "
+        className="relative w-full overflow-hidden rounded-lg  "
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         // style={{
@@ -73,10 +73,10 @@ const Carousel = () => {
               className="relative flex-shrink-0 w-full h-full"
               style={{ width: `${100 / carouselImages.length}%` }}
             >
-              <Image
+              <img
                 src={image.src}
                 alt={image.alt}
-                fill
+                className='h-[80%]'
                 // className="object-contain" // Use object-contain to maintain aspect ratio
                 // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
                 priority={image.id === 1} // Prioritize loading the first image
@@ -86,7 +86,7 @@ const Carousel = () => {
         </div>
 
         {/* Navigation Dots - Only show if multiple images */}
-        {carouselImages.length > 1 && (
+        {/* {carouselImages.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
             {carouselImages.map((_, index) => (
               <button
@@ -101,7 +101,7 @@ const Carousel = () => {
               />
             ))}
           </div>
-        )}
+        )} */}
 
         
       </div>

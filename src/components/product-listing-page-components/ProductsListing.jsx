@@ -4,6 +4,7 @@ import { useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
 import { Minus, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 // Mock ProductPopup component since it's imported but not provided
 
@@ -16,6 +17,7 @@ const ProductListing = () => {
     const [showProductPopup, setShowProductPopup] = useState(false)
     const [perpageItrems, setPerpageItrems] = useState('12 Per Page')
     const [producTQuantity, setProductQuantity] = useState(0)
+    const router = useRouter()
 
     const categories = [
         { name: "New Arrivals", count: 200 },
@@ -102,6 +104,10 @@ const ProductListing = () => {
     ]
 
     const handleProductClick = (product) => {
+        router.push(`/product-details`);
+    }
+
+    const handleProductImageClick = (product) => {
         setSelectedProduct(product)
         setShowProductPopup(true)
     }
@@ -153,16 +159,16 @@ const ProductListing = () => {
 
                     {/* Sidebar Filter */}
                     <div className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                        <div className="bg-white  min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
+                        <div className="bg-white  xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
                             <div>
                                 <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">Product Categories</h4>
                                 <div className="space-y-2 max-h-64 lg:max-h-none  overflow-y-auto hide-scrollbar">
                                     {categories.map((category, index) => (
                                         <div
                                             key={index}
-                                            className={`flex space-x-2 items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                            className={`flex space-x-2 items-center py-1 px-2 hover:text-[#e9098d]/70 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                         >
-                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
+                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
                                             <span className="">({category.count})</span>
                                         </div>
                                     ))}
@@ -218,82 +224,94 @@ const ProductListing = () => {
 
                                     </div>
 
-                                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                                        {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
-                                        <div className="relative inline-block  ">
-                                            <select
-                                                value={perpageItrems}
-                                                onChange={(e) => setPerpageItrems(e.target.value)}
-                                                className="border border-gray-300 rounded pl-3  py-1 lg:py-1 rounded-[10px] 
-                                                            text-xs sm:text-sm text-black font-[400] font-spartan 
-                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                                            appearance-none w-[132px]"
-                                            >
-                                                <option className="text-[15px] font-medium">Best Seller</option>
-                                                <option className="text-[15px] font-medium">16 Per Page</option>
-                                                <option className="text-[15px] font-medium">20 Per Page</option>
-                                                <option className="text-[15px] font-medium">24 Per Page</option>
-                                            </select>
-
-                                            {/* Custom Arrow (Lucide React or SVG) */}
-                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                {/* Lucide Icon Example */}
-                                                {/* import { ChevronDown } from "lucide-react"; */}
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    className="w-4 h-4 "
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full">
+                                        {/* Sort Dropdown */}
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                            {/* <span className="text-xs sm:text-sm text-black font-[400] font-spartan whitespace-nowrap">Sort by</span> */}
+                                            <div className="relative inline-block w-full sm:w-auto">
+                                                <select
+                                                    value={perpageItrems}
+                                                    onChange={(e) => setPerpageItrems(e.target.value)}
+                                                    className="border border-gray-300 rounded pl-3 pr-8 py-2 sm:py-1 lg:py-1 rounded-[10px] 
+                                                                text-sm sm:text-xs md:text-sm text-black font-[400] font-spartan 
+                                                                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                                                appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
                                                 >
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                </svg>
+                                                    <option className="text-sm sm:text-[15px] font-medium">Best Seller</option>
+                                                    <option className="text-sm sm:text-[15px] font-medium">16 Per Page</option>
+                                                    <option className="text-sm sm:text-[15px] font-medium">20 Per Page</option>
+                                                    <option className="text-sm sm:text-[15px] font-medium">24 Per Page</option>
+                                                </select>
+
+                                                {/* Custom Arrow */}
+                                                <div className="pointer-events-none absolute inset-y-0 right-2 sm:right-3 flex items-center">
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="w-4 h-4 sm:w-4 sm:h-4"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth="3"
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
+                                        {/* View Mode Toggle */}
+                                        <div className="flex border border-gray-300 px-2 sm:px-3 rounded-md justify-between w-full sm:w-auto sm:min-w-[80px] md:min-w-[90px]">
+                                            {/* Grid View Button */}
+                                            <button
+                                                onClick={() => setViewMode("grid")}
+                                                className={`p-2 sm:p-1 lg:px-2 border-r border-r-[2px] flex items-center justify-center w-full sm:w-auto align-middle transition-colors duration-200 ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600 hover:text-[#2e2f7f]"}`}
+                                            >
+                                                <svg
+                                                    className="w-5 h-5 sm:w-[18px] sm:h-[16px] md:w-[20px] md:h-[18px]"
+                                                    fill="#2E2F7F"
+                                                    viewBox="0 0 20 20"
+                                                >
+                                                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                                </svg>
+                                            </button>
 
-                                    <div className="flex border border-gray-300  px-3 rounded-md justify-between ">
-                                        <button
-                                            onClick={() => setViewMode("grid")}
-                                            className={`p-1 lg:px-2 border-r border-r-[2px] flex items-center justify-start w-full align-middle ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
-                                        >
-                                            <svg className=" relative right-3 w-[20px] h-[18px] " fill="#2E2F7F" viewBox="0 0 20 20">
-                                                <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={() => setViewMode("list")}
-                                            className={`p-1 lg:p-2 ${viewMode === "list" ? "text-[#2e2f7f]/30" : "text-gray-600"}`}
-                                        >
-                                            <svg className=" w-[20px] h-[13px] relative left-3" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="#2E2F7F80">
-                                                <rect x="10" y="10" width="20" height="20" rx="3" />
-                                                <rect x="40" y="10" width="20" height="20" rx="3" />
-                                                <rect x="70" y="10" width="20" height="20" rx="3" />
-                                                <rect x="10" y="40" width="20" height="20" rx="3" />
-                                                <rect x="40" y="40" width="20" height="20" rx="3" />
-                                                <rect x="70" y="40" width="20" height="20" rx="3" />
-                                                <rect x="10" y="70" width="20" height="20" rx="3" />
-                                                <rect x="40" y="70" width="20" height="20" rx="3" />
-                                                <rect x="70" y="70" width="20" height="20" rx="3" />
-                                            </svg>
-                                        </button>
+                                            {/* List View Button */}
+                                            <button
+                                                onClick={() => setViewMode("list")}
+                                                className={`p-2 sm:p-1 lg:p-2 flex items-center justify-center w-full sm:w-auto transition-colors duration-200 ${viewMode === "list" ? "text-[#2e2f7f]/30" : "text-gray-600 hover:text-[#2e2f7f]"}`}
+                                            >
+                                                <svg
+                                                    className="w-5 h-4 sm:w-[18px] sm:h-[12px] md:w-[20px] md:h-[13px]"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="100"
+                                                    height="100"
+                                                    viewBox="0 0 100 100"
+                                                    fill="#2E2F7F80"
+                                                >
+                                                    <rect x="10" y="10" width="20" height="20" rx="3" />
+                                                    <rect x="40" y="10" width="20" height="20" rx="3" />
+                                                    <rect x="70" y="10" width="20" height="20" rx="3" />
+                                                    <rect x="10" y="40" width="20" height="20" rx="3" />
+                                                    <rect x="40" y="40" width="20" height="20" rx="3" />
+                                                    <rect x="70" y="40" width="20" height="20" rx="3" />
+                                                    <rect x="10" y="70" width="20" height="20" rx="3" />
+                                                    <rect x="40" y="70" width="20" height="20" rx="3" />
+                                                    <rect x="70" y="70" width="20" height="20" rx="3" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Products Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-12 max-h-full  border-t-2 border-[#2D2C70] pt-16">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-12 max-h-full  border-t-2 border-[#2D2C70] pt-16">
                             {products.map((product, index) => (
                                 <div
                                     key={product.id}
                                     className="bg-white rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
-
                                 >
-
-
                                     {/* New Badge with Background */}
                                     {product.badgeBackGround && product.badge && (
                                         <>
@@ -303,10 +321,10 @@ const ProductListing = () => {
                                                 width={60}
                                                 className="absolute top-0 left-4 sm:left-0 sm:w-20 sm:h-20"
                                                 alt="Badge background"
-                                                
+
 
                                             />
-                                            <p className="absolute top-6 sm:top-[24px] z-20 left-[25px] sm:left-[17px]  text-white text-[10px] sm:text-sm font-semibold px-2 py-1 rounded-full">
+                                            <p className="absolute top-[18px]  xl:top-[24px] z-20 left-[26px] xl:left-[17px]  text-white text-[10px] sm:text-sm font-semibold px-2 py-1 rounded-full">
                                                 {product.badge}
                                             </p>
                                         </>
@@ -341,14 +359,16 @@ const ProductListing = () => {
                                             src={product.image || "/placeholder.svg"}
                                             alt={product.name}
                                             className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
-                                            onClick={() => handleProductClick(product)}
+                                            onClick={() => handleProductImageClick(product)}
                                         />
                                     </div>
 
                                     {/* Product Info */}
                                     <div className="text-start space-y-2 lg:max-w-[229px]">
                                         {/* Product Name */}
-                                        <h3 className="text-sm sm:text-base lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
+                                        <h3
+                                            onClick={() => handleProductClick(product)}
+                                            className="text-sm sm:text-base hover:text-[#E9098D]  lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
                                             {product.name}
                                         </h3>
 
@@ -382,7 +402,7 @@ const ProductListing = () => {
                                             <div className="relative w-full">
                                                 <select
                                                     className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                    focus:outline-none focus:ring-2 focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
                                                     appearance-none"
                                                 >
                                                     <option value="each">Pack Of 6</option>
@@ -446,27 +466,19 @@ const ProductListing = () => {
 
                                         {/* Add to Cart Button */}
                                         <div className="flex items-center space-x-3">
-                                            <button className="flex-1 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 rounded transition-colors">
-                                                <Image
-                                                    src="/icons/cart-image.png"
-                                                    alt="Shopping Bag"
-                                                    width={20}
-                                                    height={20}
-                                                    className="inline-block mr-2"
-                                                />
-
+                                            <button className="flex items-center justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                                                <svg
+                                                    className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                                                    viewBox="0 0 21 21"
+                                                    fill="currentColor"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                                </svg>
                                                 Add to Cart
                                             </button>
-                                            {/* <div className="h-12 w-12 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
-                                                <Image
-                                                    src="/product-details/heart-1.png"
-                                                    alt="Heart"
-                                                    width={20}
-                                                    height={20}
-                                                    className="w-5 h-5"
-                                                />
-                                            </div> */}
                                         </div>
+
 
                                         {/* Action Buttons Row */}
                                         <div className="flex space-x-2 mt-1">
@@ -489,7 +501,7 @@ const ProductListing = () => {
                                         </div>
 
                                         {/* Cart Quantity Info */}
-                                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan">
+                                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
                                             In Cart Quantity: <span className="font-medium">{product.cartQuantity} (Each)</span>
                                         </div>
                                     </div>

@@ -86,10 +86,10 @@ const page = () => {
     };
 
     const ProductCard = ({ product }) => (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 font-spartan lg:h-[312px] lg:w-[622px] "
-            // style={{ height: '312px', width: '622px', minWidth: '622px' }}
-            >
-            <div className="flex flex-col lg:flex-row h-full gap-7 mt-4">
+        <div className="bg-white border  border-gray-200 rounded-lg shadow-sm p-4 font-spartan  xl:h-[312px] xl:w-[622px] "
+        // style={{ height: '312px', width: '622px', minWidth: '622px' }}
+        >
+            <div className="flex flex-col xl:flex-row h-full gap-7 mt-4 ">
                 {/* Product Image */}
                 <div className="flex-shrink-0 mr-4 ">
                     <div className="xl:w-39 h-full rounded-lg flex items-center justify-center align-middle relative">
@@ -98,7 +98,7 @@ const page = () => {
                 </div>
 
                 {/* Product Details */}
-                <div className="flex-1 min-w-0 space-y-2 max-w-[270px] ">
+                <div className="flex-1 min-w-0 space-y-2 max-w-[270px] mx-auto xl:mx-0">
                     <h3 className="text-[15px] font-semibold line-clamp-2 mb-2">
                         {product.name}
                     </h3>
@@ -107,7 +107,7 @@ const page = () => {
                             SKU: {product.sku}
                         </span>
                         {product.inStock && (
-                            <div className="flex items-center text-[10px] font-medium text-black p-1 font-semibold  text-[11px] bg-[#E7FAEF]">
+                            <div className="flex items-center text-[14px] font-medium text-black p-1 font-semibold  text-[11px] bg-[#E7FAEF]">
                                 <Check strokeWidth={2} className="w-4 h-4 mr-1" />
                                 IN STOCK
                             </div>
@@ -115,18 +115,40 @@ const page = () => {
                     </div>
 
                     <div>
-                        <span className="text-[#E9098D] font-semibold text-[24px]">
+                        <span className="text-[#46BCF9] font-semibold text-[24px]">
                             ${product.price.toFixed(2)}
                         </span>
                     </div>
 
                     <div className='flex items-center justify-between'>
 
-                        <div className="flex items-center space-x-2 flex-col items-start space-x-2 space-y-2 ">
-                            <span className="text-[13px] font-medium ">Units</span>
-                            <select className="border rounded-lg border-gray-300 rounded px-6 py-2 text-sm bg-white">
-                                <option value="Each">{product.unit}</option>
-                            </select>
+                        <div className="mb-3  space-x-12 align-center items-center font-spartan">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                            <div className="relative w-full">
+                                <select
+                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
+                                                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                                                    appearance-none"
+                                >
+                                    <option value="each">Pack Of 6</option>
+                                    <option value="pack">Pack Of 12</option>
+                                    <option value="box">Carton of 60</option>
+                                </select>
+
+                                {/* Custom Arrow */}
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                    <svg
+                                        className="w-4 h-4 text-gray-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div className="flex items-start space-x-2 space-y-2 flex-col justify-between">
@@ -153,11 +175,11 @@ const page = () => {
                         </div>
                     </div>
 
-                    <div className='text-[13px] font-semibold mt-4'>
+                    <div className='text-[16px] font-semibold mt-4 gap-2 flex'>
                         <span>
                             Amount:
                         </span>
-                        <span className="text-[#46BCF9] ">
+                        <span className="text-[#46BCF9] text-[18px]">
                             ${product.price.toFixed(2)}
                         </span>
                     </div>
@@ -166,40 +188,32 @@ const page = () => {
                         <button className="text-[13px] font-semibold bg-[#2D2C70] text-white rounded-lg py-1 px-6">
                             Update
                         </button>
-                        <button className="text-[13px] text-[#2D2C70] font-semibold border border-[#2D2C70]  rounded-lg py-1 px-3">
-                            <Image
-                                src="/product-details/cart-logo-2.png"
-                                alt="Shopping Bag"
-                                width={20}
-                                height={20}
-                                className="inline-block mr-2"
-                            />
+                        <button className=" flex py-2 gap-2 text-[13px] text-[#2D2C70] font-semibold border border-[#2D2C70]  rounded-lg py-1 px-3">
+                            <svg
+                                className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                                viewBox="0 0 21 21"
+                                fill="currentColor"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                            </svg>
 
                             Add to Cart
                         </button>
 
-                        <button className="text-[13px] font-semibold text-white rounded-lg ">
-                            <Image
-                                src='/cart/delete-icon-1.png'
-                                alt="Delete"
-                                height={15}
-                                width={15}
-                                onClick={() => removeItem(item.id)}
-                                className=""
-                            />
-                        </button>
-
+                        <div className='h-9 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
+                            <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
+                            </svg>
+                        </div>
                     </div>
-
-
-
                 </div>
             </div>
         </div>
     );
 
     return (
-        <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
+        <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan ">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-6">
@@ -210,18 +224,18 @@ const page = () => {
                 </div>
 
                 {/* Product Grid */}
-                <div className="grid gap-6">
+                <div className="grid gap-6 ">
                     {/* Large screens: 2 cards per row */}
-                    <div className="hidden xl:grid xl:grid-cols-2 xl:gap-6">
+                    <div className="hidden md:grid md:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0  ">
                         {products.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>
 
                     {/* Medium and smaller screens: 1 card per row with horizontal scroll */}
-                    <div className="xl:hidden">
+                    <div className="md:hidden  ">
                         {products.map((product) => (
-                            <div key={product.id} className="mb-6 overflow-x-auto">
+                            <div key={product.id} className="mb-6 overflow-x-auto ">
                                 <ProductCard product={product} />
                             </div>
                         ))}

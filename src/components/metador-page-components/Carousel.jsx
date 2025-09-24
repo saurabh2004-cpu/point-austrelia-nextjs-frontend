@@ -58,7 +58,7 @@ const TrustedByCarousel = () => {
   const totalSlides = Math.ceil(brands.length / visibleCount);
 
   return (
-    <div className="w-full bg-white py-8 sm:py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
+    <div className="w-full bg-white py-8 sm:py-12 lg:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-8">

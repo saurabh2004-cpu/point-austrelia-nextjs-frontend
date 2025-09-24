@@ -22,7 +22,7 @@ export default function HeroSection() {
           <h2 className="text-xl sm:text-2xl font-semibold text-[#2D2C70] lg:mb-2">
             Matador Wholesale
           </h2>
-          <p className="text-[18px] font-[400] tracking-relaxed  ">
+          <p className="text-[18px] font-medium text-black tracking-relaxed  ">
             Matador Wholesale is a leading wholesale distributor of general merchandise, automotive products, and everyday convenience items. We specialise in supplying service stations, discount stores, and independent retailers with trusted brands and high-turnover essentials.
           </p>
         </div>

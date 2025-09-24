@@ -37,7 +37,7 @@ const CheckoutComponent = () => {
 
     const [selectedShippingAddress, setSelectedShippingAddress] = useState(0);
     const [selectedBillingAddress, setSelectedBillingAddress] = useState(0);
-     const router = useRouter();
+    const router = useRouter();
 
     const addresses = [
         {
@@ -69,32 +69,42 @@ const CheckoutComponent = () => {
         <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
             <div className="max-w-8xl px-4 sm:px-6 lg:px-8 mx-auto">
                 {/* Header */}
-                <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl lg:text-[24px] font-semibold  mb-4">Checkout Process</h1>
+                <div className="mb-6 sm:mb-4 relative top-6">
+                    <h1 className="text-lg sm:text-xl lg:text-[24px] font-semibold mb-4 text-center sm:text-left">
+                        Checkout Process
+                    </h1>
 
                     {/* Progress Steps */}
-                    <div className="flex items-center text-base   font-semibold mb-6 text-[#00000080]/50">
-                        <span className={`font-medium ${step === 1 ? 'text-[#2D2C70]' : ''}`}>1. Select Addresses</span>
-                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>/</span>
-                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>2. Checkout Information</span>
-                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>/</span>
-                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>3. Review</span>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start text-sm sm:text-base font-semibold mb-2 text-[#00000080]/50 gap-x-1 sm:gap-x-2">
+                        <span className={`font-medium ${step === 1 ? 'text-[#2D2C70]' : ''}`}>
+                            1. Select Addresses
+                        </span>
+                        <span className="mx-1">/</span>
+                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>
+                            2. Checkout Information
+                        </span>
+                        <span className="mx-1">/</span>
+                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>
+                            3. Review
+                        </span>
                     </div>
 
-                    <hr className="border-2 sm:border-3 border-[#2D2C70]" />
+                    <hr className="border-[1.5px] sm:border-[1px] border-[#2D2C70]" />
                 </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-2">
                     {step === 1 &&
-                        <div className="min-w-full col-span-2 mx-auto  bg-gray-50 min-h-screen ">
+                        <div className="min-w-full col-span-2 mx-auto  bg-gray-50 xl:min-h-screen ">
                             {/* Shipping Address Section */}
                             <div className="mb-8 ">
-                                <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-2">Select Shipping Address</h2>
-                                <p className="text-[20px] mb-4">Shipping Address (2)</p>
+                                <h2 className="text-[24px] font-semibold text-[#2D2C70]  py-6">Select Shipping Address</h2>
 
                                 <div className="space-y-3">
+                                    <p className="text-[20px] mb-4">Shipping Address (2)</p>
                                     {addresses.map((address, index) => (
-                                        <div key={`shipping-${address.id}`} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                        <div key={`shipping-${address.id}`}
+                                            className={`bg-white rounded-lg border  overflow-hidden ${selectedShippingAddress === address.id ? 'border-[#2D2C70]' : ''}`}>
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
                                                     <div className="flex-shrink-0 mt-1">
@@ -128,7 +138,7 @@ const CheckoutComponent = () => {
                                     ))}
 
                                     {/* Add New Shipping Address */}
-                                    <button className="w-full bg-white rounded-lg  p-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
+                                    <button className="w-full bg-white rounded-lg  py-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
                                         <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
                                             <Plus className="w-4 h-4 text-gray-600 " />
                                         </div>
@@ -144,7 +154,8 @@ const CheckoutComponent = () => {
 
                                 <div className="space-y-3">
                                     {addresses.map((address, index) => (
-                                        <div key={`shipping-${address.id}`} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                        <div key={`shipping-${address.id}`}
+                                            className={`bg-white rounded-lg border  overflow-hidden ${selectedShippingAddress === address.id ? 'border-[#2D2C70]' : ''}`}>
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
                                                     <div className="flex-shrink-0 mt-1">
@@ -178,7 +189,7 @@ const CheckoutComponent = () => {
                                     ))}
 
                                     {/* Add New Shipping Address */}
-                                    <button className="w-full bg-white rounded-lg  p-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
+                                    <button className="w-full bg-white rounded-lg  py-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors">
                                         <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
                                             <Plus className="w-4 h-4 text-gray-600 " />
                                         </div>
@@ -203,23 +214,23 @@ const CheckoutComponent = () => {
 
 
                     {/* Order Summary Sidebar */}
-                    <div className="lg:col-span-1 ">
+                    <div className={`lg:col-span-1   ${step ===  1  ? 'xl:mt-27' : 'xl:mt-18'}`}>
                         <div className="bg-white rounded-lg sticky top-6">
                             <div className="md:p-4 ">
-                                <div className="flex items-center justify-center mb-4">
-                                    <h2 className="text-lg sm:text-xl lg:text-[20px] font-medium">Order Summary</h2>
-                                </div>
 
                                 {/* Price Summary */}
-                                <div className="border-2 border-gray-300 rounded-lg p-4 space-y-3 font-spartan">
-                                    <div className="flex justify-between">
+                                <div className="border-2 border-gray-300 rounded-lg   space-y-3 font-spartan">
+                                    <div className="flex items-center justify-center mb-4 py-4 border-b">
+                                        <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
+                                    </div>
+                                    <div className="flex justify-between px-4">
                                         <span className="text-base sm:text-lg lg:text-[20px] font-medium">
                                             Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>43 Items</span>
                                         </span>
-                                        <span className="text-pink-500 font-semibold text-base sm:text-lg">${subtotal.toFixed(2)}</span>
+                                        <span className="text-[#46BCF9] font-semibold text-[20px]">${subtotal.toFixed(2)}</span>
                                     </div>
 
-                                    <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3'>
+                                    <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
                                         <div className="mb-2">
                                             Subtotal does not include shipping or taxes
                                         </div>
@@ -245,7 +256,7 @@ const CheckoutComponent = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
+                                    <div className=" p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
                                         <span>Total</span>
                                         <span>${total.toFixed(2)}</span>
                                     </div>
@@ -268,12 +279,12 @@ const CheckoutComponent = () => {
                                 }
 
                                 {/* Order Items */}
-                                <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg p-3 sm:p-4">
-                                    <div className='flex items-center justify-between flex-row border-2 border-gray-400 rounded-lg px-3 py-2'>
+                                <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg ">
+                                    <div className='flex items-center justify-between flex-row border-2 border-gray-400 rounded-lg  px-3 py-2'>
                                         <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship (43)</p>
                                         <span><ChevronDown className="w-4 h-4 text-black" /></span>
                                     </div>
-                                    <div className='space-y-4 mt-4'>
+                                    <div className='space-y-4 mt-4 p-3 sm:p-4'>
                                         {orderItems.map((item) => (
                                             <div key={item.id} className="flex items-start space-x-3 p-2 justify-between">
                                                 <div className="w-12 h-12 bg-gray-100 mt-14  rounded-lg flex items-center justify-center flex-shrink-0">
@@ -281,17 +292,17 @@ const CheckoutComponent = () => {
                                                 </div>
 
                                                 <div className="flex-1 min-w-0">
-                                                    <h3 className="text-xs sm:text-sm lg:text-[12px] font-medium mb-1 line-clamp-2">
+                                                    <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
                                                         {item.name}
                                                     </h3>
-                                                    <p className="text-xs sm:text-sm lg:text-[14px] text-[#E9098D] font-semibold mb-1">
+                                                    <p className=" text-[18px] text-[#E9098D] font-semibold mb-1">
                                                         ${item.price.toFixed(2)}
                                                     </p>
                                                     <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
                                                         <p className="mb-1">{item.sku}</p>
                                                         <p className="mb-1">Units: Pack of 12</p>
 
-                                                        <div className="flex items-center text-[10px] font-[600] text-black py-1 px-2 w-[90px] rounded-2xl bg-[#E7FAEF] mb-2">
+                                                        <div className="flex items-center text-[12px] font-[600] text-black py-1 px-2 w-[90px]  bg-[#E7FAEF] mb-2">
                                                             <Check className="w-3 h-3 mr-1" />
                                                             IN STOCK
                                                         </div>
@@ -306,12 +317,14 @@ const CheckoutComponent = () => {
                                             </div>
                                         ))}
                                     </div>
+                                    <div className='px-4 '>
+                                        <button
+                                            className="w-full bg-[#2D2C70] text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4  "
+                                        >
+                                            Edit Cart
+                                        </button>
+                                    </div>
                                 </div>
-                                <button
-                                    className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
-                                >
-                                    Edit Cart
-                                </button>
                             </div>
                         </div>
                     </div>

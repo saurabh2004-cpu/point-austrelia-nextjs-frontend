@@ -132,7 +132,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                                         <div className="relative w-full">
                                             <select
                                                 className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                    focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 
+                                                    focus:outline-none focus:ring focus:ring-pink-500 focus:border-pink-500 
                                                     appearance-none"
                                             >
                                                 <option value="each">Each</option>
@@ -159,15 +159,15 @@ export default function ProductPopup({ isOpen, onClose }) {
 
                             {/* Action Buttons */}
                             <div className="flex items-center space-x-3">
-                                <button className="flex-1 text-[1rem] font-semibold border border-[#2D2C70] rounded-lg text-black py-1 px-6 rounded transition-colors">
-                                    <Image
-                                        src="/icons/cart-image.png"
-                                        alt="Shopping Bag"
-                                        width={20}
-                                        height={20}
-                                        className="inline-block mr-2"
-                                    />
-
+                                <button className="flex items-center justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                                    <svg
+                                        className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                                        viewBox="0 0 21 21"
+                                        fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                    </svg>
                                     Add to Cart
                                 </button>
                                 <div className="h-10 w-10 bg-[#D9D9D940] flex items-center justify-center rounded-full  transition-colors cursor-pointer">
@@ -195,7 +195,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                             </div>
 
                             {/* Cart Quantity */}
-                            <div className="text-[14px] font-medium text-black">In Cart Quantity: 2 (Each)</div>
+                            <div className="text-[14px] font-medium text-black hover:text-[#E9098D]">In Cart Quantity: 2 (Each)</div>
 
                             {/* View Product Details Link */}
                             <button className=" flex justify-center items-center  text-[14px] text-black underline hover:no-underline transition-all">

@@ -2,30 +2,30 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="bg-white  border-t border-[#2d2c70] border-t-1 py-12">
+    <footer className="bg-white border-t border-[#2d2c70] border-t-1 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Navigation Column */}
-          <div className="md:max-w-[00px] min-w-[300px] md:min-w-[125px]">
+          <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[125px]">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">NAVIGATION</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan xl:min-w-[200px]">
+            <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[200px] lg:min-w-0 xl:min-w-[200px]">
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Home
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Matador Wholesale
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Asra Aromas
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Point Accessories
                 </a>
               </li>
@@ -33,41 +33,41 @@ export function Footer() {
           </div>
 
           {/* Quick Links Column */}
-          <div className="md:max-w-[00px] min-w-[300px] md:min-w-[125px] relative md:right-20">
+          <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[300px] relative md:right-0 lg:right-20">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan xl:min-w-[160px]">
+            <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Login
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Register for wholesale access
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Sales Rep Login
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Contact us
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Our Story
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Terms & Conditions
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Privacy Policy
                 </a>
               </li>
@@ -75,18 +75,18 @@ export function Footer() {
           </div>
 
           {/* Keep in Touch Column */}
-          <div className="min-w-[300px] md:min-w-[400px] relative md:right-32">
+          <div className="xl:min-w-[300px] max-w-[175px] md:max-w-none lg:max-w-[175px] md:min-w-[350px] lg:min-w-[400px] relative md:right-0 lg:right-32">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               KEEP IN TOUCH
             </h3>
 
-            <div className="space-y-4 md:min-w-[400px] ">
+            <div className="space-y-4 md:min-w-[350px] lg:min-w-[400px] min-w-[300px]">
               {/* Row 1 */}
               <div className="flex justify-between">
                 <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan">
                   Matador Wholesale
                 </div>
-                <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan ">
+                <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan">
                   +91 1234567891
                 </div>
               </div>
@@ -96,7 +96,7 @@ export function Footer() {
                 <div className="text-[#4cbcf9] text-[16px] font-[700] font-spartan">
                   Asra Aromas
                 </div>
-                <div className="text-[#4cbcf9] text-[16px] font-[700] font-spartan ">
+                <div className="text-[#4cbcf9] text-[16px] font-[700] font-spartan">
                   +91 1234564587
                 </div>
               </div>
@@ -106,17 +106,16 @@ export function Footer() {
                 <div className="text-[#e9098d] text-[16px] font-[700] font-spartan">
                   Point Accessories
                 </div>
-                <div className="text-[#e9098d] text-[16px] font-[700] font-spartan ">
+                <div className="text-[#e9098d] text-[16px] font-[700] font-spartan">
                   +91 1235789124
                 </div>
               </div>
             </div>
           </div>
 
-
           {/* About Us Column */}
-          <div className="md:ml-19 relative md:right-10 ]">
-            <h3 className="text-[20px] md:min-w-[244px] min-w-[300px]  font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
+          <div className="md:ml-0 lg:ml-19 relative md:right-0 lg:right-10">
+            <h3 className="text-[20px] md:min-w-[280px] lg:min-w-[244px] xl:min-w-[300px] max-w-[250px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               ABOUT POINT AUSTRALIA
             </h3>
             <div className="space-y-4 min-w-[280px]">
@@ -151,8 +150,10 @@ export function Footer() {
 
         {/* Copyright */}
         <div className="mt-12 pt-2 border-t-1 border-[#2d2c70]">
-          <div className=" md:text-right">
-            <p className=" text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight"><span className="font-medium text-[#00000080]">© 2025</span> Point Australia</p>
+          <div className="md:text-right">
+            <p className="text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight">
+              <span className="font-medium text-[#00000080]">© 2025</span> Point Australia
+            </p>
           </div>
         </div>
       </div>

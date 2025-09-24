@@ -19,11 +19,11 @@ const Review = () => {
     };
 
     return (
-        <div className="w-full  col-span-2  p-4 sm:px-6 bg-white min-h-screen font-spartan">
+        <div className="w-full  col-span-2 md:px-3 xl:px-0 py-6 bg-white xl:min-h-screen font-spartan">
             <h1 className='text-[24px] font-semibold text-[#2D2C70]'>Review</h1>
-            <div className="space-y-2 border-2 rounded-xl p-4 mt-3 px-8">
+            <div className="space-y-2 border-2 rounded-xl p-4 mt-3 px-8 mt-6 ">
                 {/* Shipping Address */}
-                <div className="border-b border-gray-100 pb-6">
+                <div className="border-b border-gray-100 pb-6 ">
                     <h2 className="text-base text-[#2D2C70] mb-3">Shipping Address</h2>
                     <div className="space-y-1 text-[14px]">
                         <p className=" font-semibold ">{orderData.shippingAddress.name}</p>
@@ -33,7 +33,7 @@ const Review = () => {
                 </div>
 
                 {/* Billing Address */}
-                <div className="border-b border-gray-100 pb-6">
+                <div className="border-b border-gray-100 pb-6 ">
                     <h2 className="text-base text-[#2D2C70] mb-3">Billing Address</h2>
                     <div className="space-y-1 text-[14px]">
                         <p className=" font-semibold ">{orderData.billingAddress.name}</p>
@@ -57,7 +57,7 @@ const Review = () => {
                 {/* Payment Method */}
                 <div className="border-b border-gray-100 pb-6">
                     <h2 className="text-base font-semibold text-[#2D2C70] ">Payment Method</h2>
-                    <p className="text-base font-[400]">Payment Method</p>
+                    <p className="text-base font-[400]">Credit Card</p>
                 </div>
 
                 {/* Purchase Order Number */}

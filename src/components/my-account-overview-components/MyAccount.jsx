@@ -7,14 +7,14 @@ import Image from "next/image"
 import RecentPurchases from "./RecentPurchases"
 
 export default function MyAccount() {
-  const [activeSection, setActiveSection] = useState("settings")
+  const [activeSection, setActiveSection] = useState("overview")
   const [showPurchaseHistory, setShowPurchaseHistory] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
   const [sidebarItems, setSidebarItems] = useState([
     { id: "overview", label: "OVERVIEW", isExpandable: false, image: '/icons/search-icon-1.png' },
-    { id: "purchases", label: "PURCHASES", isExpandable: true, isExpanded: false, image: '/icons/cart-icon-2.png' },
-    { id: "address", label: "ADDRESS BOOK", isExpandable: true, isExpanded: false, image: '/icons/home-icon-2.png' },
-    { id: "payment", label: "PAYMENT METHOD", isExpandable: true, isExpanded: false, image: '/icons/wallet-icon-1.png' },
+    { id: "purchases", label: "PURCHASES", isExpandable: false, isExpanded: false, image: '/icons/cart-icon-2.png' },
+    { id: "address", label: "ADDRESS BOOK", isExpandable: false, isExpanded: false, image: '/icons/home-icon-2.png' },
+    { id: "payment", label: "PAYMENT METHOD", isExpandable: false, isExpanded: false, image: '/icons/wallet-icon-1.png' },
     {
       id: "settings",
       label: "SETTINGS",
@@ -28,6 +28,16 @@ export default function MyAccount() {
     },
   ])
 
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+  })
+
+  const handleUpdate = () => {
+    console.log("Profile updated:", formData)
+  }
+
+
 
   const toggleSidebarItem = (id) => {
     setSidebarItems((items) =>
@@ -35,14 +45,6 @@ export default function MyAccount() {
         item.id === id ? { ...item, isExpanded: !item.isExpanded } : item
       )
     )
-  }
-
-   const MockIcon = ({ className }) => (
-    <div className={`bg-gray-300 rounded ${className || 'w-5 h-5'}`}></div>
-  );
-
-  const handleViewPurchaseHistory = () => {
-    setShowPurchaseHistory(!showPurchaseHistory)
   }
 
   return (
@@ -68,40 +70,65 @@ export default function MyAccount() {
             <h1 className="text-[24px] font-bold mb-8">MY ACCOUNT</h1>
             <div className="bg-white rounded-lg ">
               {sidebarItems.map((item) => (
-                <div key={item.id} className="border-b-2 b border-gray-200 ">
-                  <button
-                    onClick={() => {
-                      setActiveSection(item.id)
-                      if (item.isExpandable) {
-                        toggleSidebarItem(item.id)
-                      }
-                    }}
-                    className={`w-full px-4 py-3 text-left flex items-center space-x-4  hover:bg-gray-50 transition-colors`}
-                  >
-                    <Image
-                      src={item.image}
-                      alt={item.label}
-                      width={20.9}
-                      height={21.24}
-                      className="mr-2"
-                    />
-                    <div className="flex justify-between w-full ml-2">
-                      <span
-                        className={`${item.label === "OVERVIEW"
-                          ? "text-[20px] font-[500] text-[#E9098D]"
-                          : "text-[1rem] font-[500] text-[#000000]/50"
-                          } ${activeSection === item.id ? "text-[#2D2C70]" : ""} ${item.id === 'payment' ? 'text-[#2D2C70]' : ''}`}
-                      >
-                        {item.label}
-                      </span>
-                      {item.isExpandable && (
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${item.isExpanded ? "rotate-180" : ""
-                            }`}
-                        />
-                      )}
+                <div key={item.id}>
+                  <div className="border-b-2 b border-gray-200 ">
+                    <button
+                      onClick={() => {
+                        if (item.id !== 'settings') {
+                          setActiveSection(item.id)
+                        }
+                        if (item.isExpandable) {
+                          toggleSidebarItem(item.id)
+                        }
+                      }}
+                      className={`w-full px-4 py-3 text-left flex items-center space-x-4  hover:bg-gray-50 transition-colors`}
+                    >
+                      <Image
+                        src={item.image}
+                        alt={item.label}
+                        width={20.9}
+                        height={21.24}
+                        className="mr-2"
+                      />
+                      <div className="flex justify-between w-full ml-2">
+                        <span
+                          className={`${item.label === "OVERVIEW"
+                            ? "text-[20px] font-[500] text-[#E9098D]"
+                            : "text-[1rem] font-[500] text-[#000000]/50"
+                            } ${activeSection === item.id ? "text-[#2D2C70]" : ""} ${item.id === 'payment' ? 'text-[#2D2C70]' : ''}`}
+                        >
+                          {item.label}
+                        </span>
+                        {item.isExpandable && (
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${item.isExpanded ? "rotate-180" : ""
+                              }`}
+                          />
+                        )}
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Children items */}
+                  {item.isExpanded && item.childrens && (
+                    <div className="bg-gray-50 ">
+                      {item.childrens.map((child) => (
+                        <div key={child.id} className="border-b-2 border-gray-200  px-8">
+                          <button
+                            onClick={() => setActiveSection(child.id)}
+                            className={`w-full px-8 py-2 text-left hover:bg-gray-100 transition-colors`}
+                          >
+                            <span
+                              className={`text-[14px] font-[400] ${activeSection === child.id ? "text-[#2D2C70] font-[500]" : "text-[#000000]/70"
+                                }`}
+                            >
+                              {child.label}
+                            </span>
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -111,7 +138,7 @@ export default function MyAccount() {
           <div className="flex-1">
             {/* Show Purchases only if Purchases tab is active */}
             {activeSection === "purchases" && (
-              <>
+              <div className="xl:h-screen h-full">
                 <div className="border-b-2 ml-8 border-black pb-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-[24px] font-medium ">
@@ -213,118 +240,117 @@ export default function MyAccount() {
                 <div className="text-center ">
                   <RecentPurchases />
                 </div>
-              </>
+              </div>
             )}
 
             {/* Show Settings (default tab) → Recent Purchases + My Settings */}
-            {activeSection === "settings" && (
+            {activeSection === "overview" && (
               <>
                 {/* Recent Purchases Section */}
-                {showEditForm ?
-                  <>
-                    <ProfileInformation setShowForm={setShowEditForm} />
-                  </>
-                  :
-                  <div>
-                    <div className="bg-white rounded-lg">
-                      <div>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 border-b-2 border-black pb-4">
-                          <h2 className="text-[24px] font-medium mb-2 sm:mb-0">
-                            Recent Purchases
-                          </h2>
-                          <div className="relative">
+                <div className="pb-12">
+                  <div className="bg-white rounded-lg">
+                    <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 border-b-2 border-black pb-4">
+                        <h2 className="text-[24px] font-medium mb-2 sm:mb-0">
+                          Recent Purchases
+                        </h2>
+                        <div className="relative">
+                          <button
+                            onClick={() => setActiveSection("purchases")}
+                            className="appearance-none bg-white px-3 hover:text-[#2D2C70] py-2 pr-8 text-[1rem] font-medium text-[#000000]/50 border-none cursor-pointer flex items-center"
+                          >
+                            View Purchase History
+                            <ChevronDown className="ml-2 w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-center py-4">
+                        <RecentPurchases />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* My Settings Section */}
+                  <div className="bg-white rounded-lg mt-12 pl-4 pb-16 ">
+                    <div>
+                      <h2 className="text-[24px] font-medium relative lg:bottom-3">
+                        My Settings
+                      </h2>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                        {/* Profile */}
+                        <div className="flex flex-col space-y-[25px]">
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Profile</h3>
+                          <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
+                            <div className="space-y-2 text-sm text-[400]">
+                              <p>Devendra Chandora</p>
+                              <p>devendra.chandora@gmail.com</p>
+                              <p>(+91) 1234567890</p>
+                            </div>
                             <button
-                              onClick={() => setActiveSection("purchases")}
-                              className="appearance-none bg-white px-3 py-2 pr-8 text-[1rem] font-medium text-[#000000]/50 border-none cursor-pointer flex items-center"
+                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium"
+                              onClick={() => setActiveSection("address")}
                             >
-                              View Purchase History
-                              <ChevronDown className="ml-2 w-4 h-4" />
+                              edit
                             </button>
                           </div>
                         </div>
-                        <div className="text-center py-4">
-                          <RecentPurchases />
+
+                        {/* Shipping */}
+                        <div className="flex flex-col space-y-[25px]">
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Shipping</h3>
+                          <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
+                            <div className="space-y-2 text-sm text-[14px] text-[500]">
+                              <p className="font-[600]">LW Traders & Exim</p>
+                              <p>Devendra Chandora</p>
+                              <p>
+                                2 Angove Rd Spencer Park, Western Australia 6330
+                                Australia
+                              </p>
+                              <p>7073737773</p>
+                            </div>
+                            <button
+                              onClick={() => setActiveSection("address")}
+                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
+                              edit
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </div>
 
-                    {/* My Settings Section */}
-                    <div className="bg-white rounded-lg mt-12 pl-4 pb-16 ">
-                      <div>
-                        <h2 className="text-[24px] font-medium relative lg:bottom-3">
-                          My Settings
-                        </h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-                          {/* Profile */}
-                          <div className="flex flex-col space-y-[25px]">
-                            <h3 className="font-[500] text-[20px] text-[#2D2C70]">Profile</h3>
-                            <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
-                              <div className="space-y-2 text-sm text-[400]">
-                                <p>Devendra Chandora</p>
-                                <p>devendra.chandora@gmail.com</p>
-                                <p>(+91) 1234567890</p>
-                              </div>
-                              <button
-                                className="absolute bottom-4 right-4 text-[#2D2C70] text-[14px] font-medium"
-                                onClick={() => setShowEditForm(true)}>
-                                edit
-                              </button>
+                        {/* Payment */}
+                        <div className="flex flex-col space-y-[25px]">
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Payment</h3>
+                          <div className="relative flex  justify-between items-start border shadow-bottom shadow-sm p-6 rounded-lg h-full">
+                            <div className="space-y-2 text-sm flex-col flex text-[14px] text-[500]">
+                              <p className="font-[600]">
+                                Ending in <span className="font-[400]">6844</span>
+                              </p>
+                              <p className="font-[600]">
+                                Expires in <span className="font-[400]">12/22</span>
+                              </p>
+                              <p>2 Devendra Chandora</p>
                             </div>
-                          </div>
 
-                          {/* Shipping */}
-                          <div className="flex flex-col space-y-[25px]">
-                            <h3 className="font-[500] text-[20px] text-[#2D2C70]">Shipping</h3>
-                            <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
-                              <div className="space-y-2 text-sm text-[14px] text-[500]">
-                                <p className="font-[600]">LW Traders & Exim</p>
-                                <p>Devendra Chandora</p>
-                                <p>
-                                  2 Angove Rd Spencer Park, Western Australia 6330
-                                  Australia
-                                </p>
-                                <p>7073737773</p>
-                              </div>
-                              <button className="absolute bottom-4 right-4 text-[#2D2C70] text-[14px] font-medium">
-                                edit
-                              </button>
+                            <div className="mt-6">
+                              <Image
+                                src="/account-details/payment-images.png"
+                                alt="Matador Wholesale Logo "
+                                width={50}
+                                height={50}
+                                className="object-contain"
+                              />
                             </div>
-                          </div>
-
-                          {/* Payment */}
-                          <div className="flex flex-col space-y-[25px]">
-                            <h3 className="font-[500] text-[20px] text-[#2D2C70]">Payment</h3>
-                            <div className="relative flex  justify-between items-start border shadow-bottom shadow-sm p-6 rounded-lg h-full">
-                              <div className="space-y-2 text-sm flex-col flex text-[14px] text-[500]">
-                                <p className="font-[600]">
-                                  Ending in <span className="font-[400]">6844</span>
-                                </p>
-                                <p className="font-[600]">
-                                  Expires in <span className="font-[400]">12/22</span>
-                                </p>
-                                <p>2 Devendra Chandora</p>
-                              </div>
-
-                              <div className="mt-6">
-                                <Image
-                                  src="/account-details/payment-images.png"
-                                  alt="Matador Wholesale Logo "
-                                  width={50}
-                                  height={50}
-                                  className="object-contain"
-                                />
-                              </div>
-                              <button className="absolute bottom-4 right-4 text-[#2D2C70] text-[14px] font-medium">
-                                edit
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setActiveSection("address")}
+                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
+                              edit
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                }
+                </div>
               </>
             )}
 
@@ -336,7 +362,7 @@ export default function MyAccount() {
                   <h2 className="text-[24px] font-medium">Address Book</h2>
                 </div>
 
-                <div className="grid    grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid    grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {/* Address Card 1 */}
                   <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
                     <div className="space-y-2 text-sm">
@@ -364,8 +390,8 @@ export default function MyAccount() {
                       </div>
                     </div>
                     <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-                      <button className="text-[#2D2C70] font-medium">Edit</button>
-                      <button className="text-[#46BCF9] font-medium">Remove</button>
+                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D]">Edit</button>
+                      <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70]">Remove</button>
                     </div>
                   </div>
 
@@ -382,8 +408,8 @@ export default function MyAccount() {
                       <p className="text-[14px] text-[500]">7073737773</p>
                     </div>
                     <div className="absolute bottom-4 right-4 flex gap-2  text-[14px]">
-                      <button className="text-[#2D2C70] font-medium">Edit</button>
-                      <button className="text-[#60A5FA] font-medium">Remove</button>
+                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D]">Edit</button>
+                      <button className="text-[#60A5FA] font-medium hover:text-[#2D2C70]">Remove</button>
                     </div>
                   </div>
 
@@ -406,7 +432,7 @@ export default function MyAccount() {
                   <h2 className="text-[24px] font-medium">Payment Methods</h2>
                 </div>
 
-                <div className="grid    grid-cols-1 md:grid-cols-2 lg:grid-cols-4  gap-6">
+                <div className="grid  grid-cols-1 md:grid-cols-2  xl:grid-cols-4  gap-6">
                   {/*  Card 1 */}
                   <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
                     <div className="space-y-2 text-sm">
@@ -423,8 +449,8 @@ export default function MyAccount() {
                       <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
                     </div>
                     <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-                      <button className="text-[#2D2C70] font-medium">Edit</button>
-                      <button className="text-[#46BCF9] font-medium">Remove</button>
+                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D]">Edit</button>
+                      <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70]">Remove</button>
                     </div>
                   </div>
 
@@ -441,6 +467,65 @@ export default function MyAccount() {
                 </div>
               </div>
             )}
+
+            {activeSection === 'profile' && (
+              <>
+                <ProfileInformation setActiveSection={setActiveSection} />
+              </>
+            )}
+
+
+            {activeSection === 'security' && (
+              <div className="px-8 h-screen">
+                <div className="border-b-2 border-black pb-4 mb-8 ">
+                  <h1 className="text-[24px]  font-medium text-black">
+                    Update Your Password
+                  </h1>
+                </div>
+                <div className="mb-4">
+                  <span className="text-[14px] font-[400]">Required </span>
+                  <span className="text-[#E9098D] text-[16px] font-bold">*</span>
+                </div>
+                <div className="mb-6 text-[1rem] font-medium ">
+                  <label className="block text-black mb-2">
+                    Current password <span className="text-[#E9098D]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent transition-colors"
+                    placeholder="Enter Current Password"
+                  />
+                </div>
+
+                {/* Phone Number Field */}
+                <div className="mb-8 text-[1rem] font-medium">
+                  <label className="block  text-black mb-2">
+                    New password <span className="text-[#E9098D]">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent transition-colors"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+
+                {/* Update Button */}
+                <div className="">
+                  <button
+                    onClick={handleUpdate}
+                    className="w-[200px] h-[42px] bg-[#2D2C70] text-white hover:bg-[#46BCF9] py-1 rounded-2xl text-[20px] font-medium  "
+                  >
+                    Update
+                  </button>
+                </div>
+
+              </div>
+            )
+            }
 
           </div>
         </div>

@@ -39,7 +39,7 @@ const ShoppingCart = () => {
 
     const router = useRouter();
 
-   
+
 
     const updateQuantity = (id, change) => {
         setCartItems(items =>
@@ -64,8 +64,8 @@ const ShoppingCart = () => {
 
     return (
         <>
-            <div className="bg-white justify-items-center pt-12 font-spartan">
-                <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 ">
+            <div className="bg-white justify-items-center pt-6 font-spartan">
+                <div className="max-w-8xl mx-auto px-2  lg:px-6 xl:px-8 ">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                         <span>Home</span>
                         <span className="mx-1 sm:mx-2">/</span>
@@ -75,14 +75,14 @@ const ShoppingCart = () => {
             </div>
 
             {/* Header */}
-            <div className="px-6 md:px-0  max-w-7xl mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
+            <div className="px-6 md:px-0  md:max-w-7xl mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
                     <span className="text-[#2D2C70] ml-2">({cartItems.length} Products, {totalItems} Items)</span>
                 </h1>
             </div>
 
-            <div className="min-h-screen  py-4 px-4 sm:px-6 lg:px-8 font-spartan ">
+            <div className="min-h-screen  py-4 px-4 sm:px-6  lg:px-8 font-spartan ">
                 <div className="max-w-7xl justify-between mx-auto border-t-2 border-[#2D2C70]">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Shopping Cart Section */}
@@ -90,7 +90,7 @@ const ShoppingCart = () => {
                             <div className="bg-white rounded-lg ">
 
                                 {/* Cart Items */}
-                                <div className="space-y-10 lg:space-y-0 max-w-xl ">
+                                <div className="space-y-10 lg:space-y-0 max-w-xl mt-5 mx-auto xl:mx-0 xl:mt-0">
                                     {cartItems.map((item) => (
                                         <div key={item.id} className="lg:py-6">
                                             <div className="flex flex-col md:flex-row items-center space-x-4 border  rounded-lg px-8 lg:px-0  md:space-x-25">
@@ -116,7 +116,7 @@ const ShoppingCart = () => {
                                                     {/* SKU */}
                                                     <div className='flex align-center justify-between pr-12 items-center'>
                                                         <p className="text-[13px] text-[400] ">{item.sku}</p>
-                                                        <div className="flex  items-center w-[90px] text-[10px] font-medium text-black p-2  text-[10px] bg-[#E7FAEF]">
+                                                        <div className="flex  items-center w-[100px] text-[10px] font-semibold text-black p-2  text-[14px] bg-[#E7FAEF]">
                                                             <Check className="w-3 h-3 mr-1" />
                                                             IN STOCK
                                                         </div>
@@ -129,24 +129,40 @@ const ShoppingCart = () => {
 
                                                     {/* Quantity and Actions */}
                                                     <div className="space-y-4 ">
-                                                        <div className="flex  sm:items-center align-middle sm:space-x-8 space-y-4 sm:space-y-0">
+                                                        <div className="flex flex-col xl:flex-row   align-middle sm:space-x-8 space-y-4 sm:space-y-0">
 
-                                                            <div className="flex flex-col  justify-between mx-0 relative bottom-4 xl:bottom-0 ">
-                                                                <span className="text-[1rem] font-[400] relative py-1 block mb-2">Units</span>
-                                                                <select
-                                                                    // value={selectedUnit}
-                                                                    onChange={(e) => setSelectedUnit(e.target.value)}
-                                                                    className="border border-gray-300 rounded-lg relative  px-8 py-2 bg-white w-full sm:w-auto"
-                                                                >
-                                                                    <option value="Each">Each</option>
-                                                                    <option value="Box">Box</option>
-                                                                    <option value="Case">Case</option>
-                                                                </select>
+                                                            <div className="mb-3  space-x-12 align-center items-center font-spartan">
+                                                                <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                                                                <div className="relative w-full">
+                                                                    <select
+                                                                        className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
+                                                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                                                    appearance-none"
+                                                                    >
+                                                                        <option value="each">Pack Of 6</option>
+                                                                        <option value="pack">Pack Of 12</option>
+                                                                        <option value="box">Carton of 60</option>
+                                                                    </select>
+
+                                                                    {/* Custom Arrow */}
+                                                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                                        <svg
+                                                                            className="w-4 h-4 text-gray-500"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="2.5"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+
                                                             </div>
 
-                                                            <div className="hidden sm:block bg-gray-300 w-[1px] h-15 ml-8"></div>
+                                                            <div className="hidden xl::block bg-gray-300 w-[1px] h-15 ml-8"></div>
 
-                                                            <div className="flex items-start space-x-2 space-y-2 flex-col">
+                                                            <div className="flex  items-start space-x-2 space-y-2 flex-col">
                                                                 <span className="text-sm font-[400] ">Quantity</span>
                                                                 <div className="flex items-center  rounded-lg">
                                                                     <button
@@ -164,37 +180,43 @@ const ShoppingCart = () => {
                                                                     </button>
                                                                 </div>
                                                             </div>
-
-
                                                         </div>
                                                     </div>
 
 
-                                                    <span className="text-[13px] font-semibold">
+                                                    <span className="text-[13px] font-semibold ">
                                                         Amount: <span className="text-[#E9098D] text-[15px] font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
                                                     </span>
 
                                                     {/* Action Buttons */}
-                                                    <div className="flex text-[13px] font-medium items-center space-x-3 mt-4">
+                                                    <div className="flex flex-col xl:flex-row space-y-2 xl:space-y-0 xl:flex-row text-[13px] font-medium items-center space-x-3 mt-4">
                                                         <button
                                                             onClick={() => removeItem(item.id)}
-                                                            className="bg-[#2D2C70] text-white px-8 py-2 rounded-full  "
+                                                            className="bg-[#2D2C70] w-full xl:w-auto text-white px-8 py-2 rounded-full  "
                                                         >
                                                             Update
                                                         </button>
-                                                        <button className="flex items-center space-x-2 bg-[#46BCF9] text-white px-4 py-2 rounded-full  ">
-                                                            <Heart className="h-4 w-4" />
-                                                            <span>Move to wishlist</span>
-                                                        </button>
+                                                        <div className='flex items-center space-x-3 w-full xl:w-auto'>
+                                                            <button className="flex items-center w-full xl:w-auto justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full">
+                                                                <Heart className="h-4 w-4" />
+                                                                <span className='mt-1'>Move to wishlist</span>
+                                                            </button>
 
-                                                        <Image
-                                                            src='/cart/delete-icon-1.png'
-                                                            alt="Delete"
-                                                            height={21}
-                                                            width={21}
-                                                            onClick={() => removeItem(item.id)}
-                                                            className=""
-                                                        />
+                                                            <div className='xl:hidden block h-8 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
+                                                                 <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                 <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
+                                                                 </svg>
+                                                            </div>
+
+                                                        </div>
+
+
+                                                        <div className='hidden xl:block h-9 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
+                                                            <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
+                                                            </svg>
+
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -204,7 +226,7 @@ const ShoppingCart = () => {
                                     <div className="py-6 border-t border-gray-200">
                                         <button
                                             onClick={handleCheckoutclick}
-                                            className="w-full bg-[#2D2C70] text-white py-1 rounded-lg font-medium  transition-colors">
+                                            className="w-full bg-[#2D2C70] text-white py-1 hover:bg-[#46BCF9] rounded-lg font-medium  ">
                                             Proceed to checkout
                                         </button>
                                     </div>
@@ -255,7 +277,7 @@ const ShoppingCart = () => {
 
                                             <button
                                                 onClick={handleCheckoutclick}
-                                                className="w-full bg-[#2D2C70] border-1 border-[#2D2C70] text-white py-2 rounded-2xl text-[15px] font-medium hover:bg-pink-600 transition-colors mb-3">
+                                                className="w-full bg-[#2D2C70] border-1 border-[#2D2C70] hover:border-[#46BCF9] hover:bg-[#46BCF9] text-white py-2 rounded-2xl text-[15px] font-medium  transition-colors mb-3">
                                                 Proceed to checkout
                                             </button>
 

@@ -7,6 +7,12 @@ const CheckoutFormUI = () => {
     const [deliveryMethod, setDeliveryMethod] = useState('free');
     const [orderComments, setOrderComments] = useState('');
     const [purchaseOrderNumber, setPurchaseOrderNumber] = useState('');
+    const [selectedPayment, setSelectedPayment] = useState('credit-card');
+
+    const handlePaymentChange = (paymentType) => {
+        setSelectedPayment(paymentType);
+    };
+
 
     const addresses = [
         {
@@ -18,7 +24,7 @@ const CheckoutFormUI = () => {
     ];
 
     return (
-        <div className="  p-4 col-span-2 bg-gray-50 min-h-screen font-spartan">
+        <div className="  p-4 col-span-2 bg-gray-50 min-h-screen font-spartan mt-5">
             {/* Selected Addresses Section */}
             <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4">Selected addresses</h2>
 
@@ -83,7 +89,7 @@ const CheckoutFormUI = () => {
             </div>
 
             {/* Order Comments */}
-            <h2 className="text-[24px] font-semibold  mb-4 mt-8">Other Comments</h2>
+            <h2 className="text-[24px] font-semibold  mb-4 mt-8">Order Comments</h2>
             <div className="bg-white rounded-lg mb-4">
                 <textarea
                     value={orderComments}
@@ -103,67 +109,145 @@ const CheckoutFormUI = () => {
                 </span>
             </label>
             <div className="bg-white rounded-lg p-4 mb-6 ">
-
-
-
                 {/* Payment Options Grid */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-18 xl:gap-4 mb-4">
                     {/* credit card */}
-                    <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
-                        <div className="space-y-2 text-sm">
-                            <p className="font-[600]">
-                                Ending in <span className="font-[400]">6844</span>
-                            </p>
-                            <div className="flex justify-between align-center">
-                                <p className="font-[600]">
-                                    Expires in <span className="font-[400]">12/22</span>
-                                </p>
-                                <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
+                    <div className="h-full">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-start">
+                                <input
+                                    type="radio"
+                                    id="credit-card"
+                                    name="payment-method"
+                                    value="credit-card"
+                                    checked={selectedPayment === 'credit-card'}
+                                    onChange={() => handlePaymentChange('credit-card')}
+                                    className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                                />
+                                <label htmlFor="credit-card" className="ml-3 flex-1 cursor-pointer">
+                                    <span className="text-sm font-medium text-gray-900">
+                                        Contact me for payment
+                                    </span>
+                                </label>
                             </div>
-                            <p>2 Devendra Chandora</p>
-                            <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
                         </div>
-                        <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-                            <button className="text-[#2D2C70] font-medium">Edit</button>
-                            <button className="text-[#46BCF9] font-medium">Remove</button>
+                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md relative flex flex-col justify-between">
+                            <div className="flex flex-row justify-between items-start">
+                                <div className="space-y-2 text-sm">
+                                    <p className="font-[600]">
+                                        Ending in <span className="font-[400]">6844</span>
+                                    </p>
+                                    <p className="font-[600]">
+                                        Expires in <span className="font-[400]">12/22</span>
+                                    </p>
+                                    <p className="font-[500]">Devendra Chandora</p>
+                                    <div className="flex-col space-y-2">
+                                        <p className="font-[500]">Security Number</p>
+                                        <div className="border-[#FF0000] h-[29px] w-[66px] border"></div>
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <Image
+                                        src="/account-details/payment-images.png"
+                                        alt="mastercard"
+                                        width={50}
+                                        height={50}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 text-[14px] mt-4">
+                                <button className="text-[#2D2C70] font-medium">Edit</button>
+                                <button className="text-[#46BCF9] font-medium">Remove</button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* pereson card */}
-                    <div className="border border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md relative">
-                        <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="lucide lucide-user"
-                            >
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            <p className='text-[14px] font-medium'>Account Customer</p>
+                    {/* person card */}
+                    <div className="h-full ">
+                        <div className="flex items-start justify-between mb-4">
+                            <input
+                                type="radio"
+                                id="person-card"
+                                name="payment-method"
+                                value="person-card"
+                                checked={selectedPayment === 'person-card'}
+                                onChange={() => handlePaymentChange('person-card')}
+                                className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                            />
+                            <label htmlFor="person-card" className="ml-3 flex-1 cursor-pointer">
+                                <span className="text-sm font-medium text-gray-900">
+                                    Account Customer
+                                </span>
+                            </label>
+                        </div>
+                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md">
+                            <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="lucide lucide-user"
+                                >
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                <p className="text-[14px] font-medium">Account Customer</p>
+                            </div>
                         </div>
                     </div>
 
-
-                    <div className="border border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md relative">
-                        <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone-icon lucide-phone"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" /></svg>
-                            <p className='text-[14px] font-medium'>Contact me for payment</p>
+                    {/* phone card */}
+                    <div className="h-full ">
+                        <div className="flex items-start justify-between mb-4">
+                            <input
+                                type="radio"
+                                id="phone-card"
+                                name="payment-method"
+                                value="phone-card"
+                                checked={selectedPayment === 'phone-card'}
+                                onChange={() => handlePaymentChange('phone-card')}
+                                className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                            />
+                            <label htmlFor="phone-card" className="ml-3 flex-1 cursor-pointer">
+                                <span className="text-sm font-medium text-gray-900">
+                                    Contact me for payment
+                                </span>
+                            </label>
+                        </div>
+                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md">
+                            <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="lucide lucide-phone"
+                                >
+                                    <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" />
+                                </svg>
+                                <p className="text-[14px] font-medium">Contact me for payment</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+
+            </div >
 
 
             {/* Purchase Order Number */}
-            <div className="bg-white rounded-lg w-1/2 ">
+            <div div className="bg-white rounded-lg xl:w-1/2 " >
                 <div className='flex space-x-2 mb-4'>
                     <LockIcon className='w-5 h-5' />
                     <p className='text-[14px] font-medium'>Learn more about safe and secure shopping</p>
@@ -174,7 +258,7 @@ const CheckoutFormUI = () => {
                     type="text"
                     value={purchaseOrderNumber}
                     onChange={(e) => setPurchaseOrderNumber(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <p className="text-[14] font-medium  my-4">
                     You will have an opportunity to review your order on the next step
@@ -183,9 +267,9 @@ const CheckoutFormUI = () => {
                 <button className="w-full bg-indigo-900 text-white py-2 px-4 rounded-full font-medium text-sm hover:bg-indigo-800 transition-colors">
                     Continue
                 </button>
-            </div>
+            </div >
 
-        </div>
+        </div >
     );
 };
 

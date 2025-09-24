@@ -79,11 +79,11 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 ">
         {/* Main Product Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20   ">
           {/* Product Images */}
-          <div className="space-y-4 flex flex-col lg:flex-row lg:space-x-16 lg:space-y-0">
+          <div className="space-y-4  flex flex-col lg:flex-row lg:space-x-16 lg:space-y-0">
             {/* Thumbnail Images */}
             <div className="order-2 lg:order-1 flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
               {productImages.map((image, index) => (
@@ -103,7 +103,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Main Image */}
-            <div className="relative order-1 lg:order-2 w-full">
+            <div className="relative order-1 lg:order-2  w-full">
               <div className="rounded-lg  bg-white relative overflow-hidden">
                 {/* <span className="relative  top-2 lg:right-20 bg-[#E35457] text-white text-[11px] font-[600] font-spartan tracking-widest px-2 py-3 rounded-lg z-10">
                   ON SALE
@@ -144,7 +144,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Product Information */}
-          <div className="space-y-[17px] font-spartan max-w-[360px] mt-5">
+          <div className="space-y-[17px] font-spartan xl:max-w-[360px] mt-5">
             {/* Header */}
             <div>
               <h1 className="text-lg sm:text-xl lg:text-[1.3rem] font-medium text-black ">
@@ -188,7 +188,7 @@ export default function ProductDetail() {
                 <div className="relative w-full">
                   <select
                     className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                    focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 
+                                                    focus:outline-none  
                                                     appearance-none"
                   >
                     <option value="each">Each</option>
@@ -213,16 +213,17 @@ export default function ProductDetail() {
             </div>
 
             {/* Action Buttons - Row 1 */}
-            <div className="flex items-center space-x-7 ">
-              <div className="flex space-x-5">
-                <button className="flex-1 min-w-[360px] text-sm sm:text-base font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-4 flex items-center justify-center">
-                  <Image
-                    src="/icons/cart-image.png"
-                    alt="Shopping Bag"
-                    width={20}
-                    height={20}
-                    className="inline-block mr-2"
-                  />
+            <div className="flex  items-center space-x-7 ">
+              <div className="flex space-x-5 w-full">
+                <button className="flex items-center  xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                  <svg
+                    className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                    viewBox="0 0 21 21"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                  </svg>
                   Add to Cart
                 </button>
                 <button className="h-10   w-10 flex items-center justify-center rounded-full bg-[#D9D9D940]">
@@ -247,7 +248,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Cart Info */}
-            <div className="text-sm sm:text-base font-medium text-black">
+            <div className="text-sm sm:text-base font-medium text-black hover:text-[#E9098D]">
               In Cart Quantity: 2 (Each)
             </div>
           </div>
@@ -284,7 +285,7 @@ export default function ProductDetail() {
         {/* People Also Bought Section */}
         <div className="space-y-8 lg:space-y-12 pb-18">
           <h2 className="text-xl sm:text-2xl lg:text-[2rem] font-medium text-center text-[#2E2F7F]">
-            Customers who bought this item also bought
+            Related Products
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {relatedProducts.map((product) => (
@@ -309,22 +310,23 @@ export default function ProductDetail() {
                 </div>
 
                 <div className="font-spartan text-[14px] font-medium">
-                  <h3 className=" text-gray-900 text-sm mb-1 line-clamp-2">{product.name}</h3>
+                  <h3 className=" text-gray-900 text-sm mb-1 line-clamp-2 hover:text-[#E9098D]">{product.name}</h3>
                   <p className="  mb-2">{product.sku}</p>
                   <p className="text-[#46BCF9] text-[18px] sm:text-[20px] font-semibold text-lg mb-3">
                     {product.price}
                   </p>
                 </div>
 
-                <button className="w-full justify-center flex bg-white border border-[#E9098D] rounded-lg font-spartan text-[14px] font-medium py-2 px-4 rounded  transition-colors">
-                  <Image
-                    src="/product-details/cart-logo-2.png"
-                    alt="Shopping Bag"
-                    width={20}
-                    height={20}
-                    className="inline-block mr-2"
-                  />
-                  Add to cart
+                <button className="flex items-center  justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                  <svg
+                    className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                    viewBox="0 0 21 21"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                  </svg>
+                  Add to Cart
                 </button>
               </div>
             ))}

@@ -108,35 +108,63 @@ export default function RecentPurchases() {
       </div>
 
       {/* Mobile Card View */}
-      <div className="block md:hidden p-4 space-y-4">
+      <div className="block md:hidden px-2 sm:px-4 py-4 space-y-3 sm:space-y-4">
         {products.map((product, index) => (
-          <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start space-x-4">
-              <img src={product.image} alt={product.name} className="w-16 h-16 rounded-lg object-cover" />
-              <div className="flex-1 min-w-0">
+          <div
+            key={product.id}
+            className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              {/* Image */}
+              <img
+                src={product.image}
+                alt={product.name}
+                className=" h-25 w-11 rounded-lg  flex-shrink-0"
+              />
+
+              {/* Details */}
+              <div className="flex-1 min-w-0 w-full">
+                {/* Title + Badge */}
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-sm font-medium text-gray-900 truncate">{product.name}</h3>
-                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">#{index + 1}</span>
+                  <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate pr-2">
+                    {product.name}
+                  </h3>
+                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                    #{index + 1}
+                  </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
-                  <div>
-                    <p className="text-gray-500">Pack Quantity</p>
-                    <p className="font-medium">{product.packQuentity}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Unit Quantity</p>
-                    <p className="font-medium">{product.quantity} {product.unit}</p>
+
+                {/* Pack & Unit */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
+                  <div className='flex space-x-2'>
+                    <p className="text-gray-500 text-xs sm:text-sm">Pack Quantity</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {product.packQuentity}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between">
-                  <span className="text-sm font-medium text-gray-700">Total</span>
-                  <span className="text-base sm:text-lg font-bold text-[#46BCF9]">${product.finalAmount.toFixed(2)}</span>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm w-full">
+                  <div className='flex space-x-2'>
+                    <p className="text-gray-500 text-xs sm:text-sm">Unit Quantity</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      {product.quantity}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Total Row */}
+                <div className="mt-3 pt-3 border-t border-gray-100 flex space-x-1  items-center">
+                  <span className="text-sm font-medium text-gray-700">Total :   </span>
+                  <span className="text-base sm:text-lg font-bold text-[#46BCF9]">
+                    ${product.finalAmount.toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
 
     </div>
   )

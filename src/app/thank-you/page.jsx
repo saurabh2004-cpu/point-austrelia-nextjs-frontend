@@ -25,18 +25,18 @@ const OrderConfirmationUI = () => {
             <div className="max-w-2xl mx-auto">
                 {/* Main Card */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="p-6 sm:p-8">
+                    <div className="p-6 sm:p-8 ">
                         {/* Header with Check Icon and Title */}
-                        <div className="text-center mb-6">
-                            <div className="flex justify-center mb-4 flex items-center space-x-5 align-middle justify-start">
+                        <div className="text-center mb-6 ">
+                            <div className="flex justify-center  mb-4 flex items-center space-x-5 align-middle justify-start">
                                 <Image
                                     src="/account-details/Check-img-1.png"
                                     alt="Matador Wholesale Logo "
                                     width={55}
                                     height={55}
-                                    className="object-contain mt-2"
+                                    className="object-contain  h-8 w-8 xl:w-[55px] xl:h-[55px]"
                                 />
-                                <h1 className="text-[3rem] font-semibold ">Thanks for shopping!</h1>
+                                <h1 className="md:text-[3rem]  text-[22px] sm:text-[2rem] font-semibold ">Thanks for shopping!</h1>
                             </div>
                         </div>
 

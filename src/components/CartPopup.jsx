@@ -12,7 +12,7 @@ const ShoppingCartPopup = () => {
       quantity: 1,
       unit: "Each",
       inStock: true,
-      image: "/cart/cart-popup-1.png"
+      image: "/product-listing-images/product-1.avif"
     },
     {
       id: 2,
@@ -21,7 +21,7 @@ const ShoppingCartPopup = () => {
       quantity: 1,
       unit: "Each",
       inStock: true,
-      image: "/cart/cart-popup-1.png"
+      image: "/product-listing-images/product-1.avif"
     },
     {
       id: 3,
@@ -30,7 +30,7 @@ const ShoppingCartPopup = () => {
       quantity: 1,
       unit: "Each",
       inStock: true,
-      image: "/cart/cart-popup-1.png"
+      image: "/product-listing-images/product-1.avif"
     },
     {
       id: 4,
@@ -39,7 +39,7 @@ const ShoppingCartPopup = () => {
       quantity: 1,
       unit: "Each",
       inStock: true,
-      image: "/cart/cart-popup-1.png"
+      image: "/product-listing-images/product-1.avif"
     }
   ]);
 
@@ -91,7 +91,8 @@ const ShoppingCartPopup = () => {
 
                   {/* Product Details */}
                   <div className="flex-1 min-w-0 space-y-2">
-                    <h3 className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">
+                    <h3 
+                    className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">
                       {item.name}
                     </h3>
 

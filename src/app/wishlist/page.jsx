@@ -16,7 +16,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         },
         {
             id: 2,
@@ -27,7 +27,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         },
         {
             id: 3,
@@ -38,7 +38,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         },
         {
             id: 4,
@@ -49,7 +49,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         },
         {
             id: 5,
@@ -60,7 +60,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         },
         {
             id: 6,
@@ -71,7 +71,7 @@ const page = () => {
             packSize: 12,
             amount: 4.48,
             inStock: true,
-            image: '/product-listing-images/product-1.png'
+            image: '/product-listing-images/product-1.avif'
         }
     ]);
 

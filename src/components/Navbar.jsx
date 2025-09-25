@@ -80,7 +80,9 @@ export function Navbar() {
                       fill="currentColor"
                       className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
                     />
-                    <span className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">
+                    <span
+                      onClick={() => router.push('/login')}
+                      className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">
                       LOGIN
                     </span>
                   </div>
@@ -89,7 +91,9 @@ export function Navbar() {
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
 
                   {/* Sign Up */}
-                  <span className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">
+                  <span
+                    onClick={() => router.push('/sign-up')}
+                    className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">
                     SIGN UP
                   </span>
                 </div>
@@ -117,6 +121,7 @@ export function Navbar() {
                   width={219}
                   height={100}
                   className="h-12 md:h-16 lg:h-20 w-auto" // Progressive sizing: mobile -> tablet -> desktop
+                  onClick={() => router.push('/')}
                 />
               </div>
 
@@ -187,7 +192,7 @@ export function Navbar() {
                   {/* Desktop Wishlist */}
                   <button
                     className="relative bg-white group"
-                    
+
                     onClick={() => router.push('/cart')}
                   >
                     <svg
@@ -268,6 +273,7 @@ export function Navbar() {
                     variant="outline"
                     size="sm"
                     className="flex-1 bg-transparent border-[#2d2c70] text-[#2d2c70] hover:bg-[#2d2c70] hover:text-white"
+                    onClick={() => router.push('/login')}
                   >
                     <User className="w-4 h-4 mr-2" />
                     LOGIN
@@ -275,6 +281,7 @@ export function Navbar() {
                   <Button
                     size="sm"
                     className="flex-1 bg-[#2d2c70] hover:bg-[#E9098D]"
+                    onClick={() => router.push('/sign-up')}
                   >
                     SIGN UP
                   </Button>

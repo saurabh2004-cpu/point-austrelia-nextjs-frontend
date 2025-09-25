@@ -11,9 +11,9 @@ export default function ProductPopup({ isOpen, onClose }) {
     const [selectedUnit, setSelectedUnit] = useState("Each")
 
     const productImages = [
-        "/product-listing-images/product-1.png",
-        "/product-listing-images/product-1.png",
-        "/product-listing-images/product-1.png",
+        "/product-listing-images/product-1.avif",
+        "/product-listing-images/product-1.avif",
+        "/product-listing-images/product-1.avif",
     ]
 
     const incrementQuantity = () => setQuantity((prev) => prev + 1)

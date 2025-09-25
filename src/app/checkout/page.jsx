@@ -22,7 +22,7 @@ const CheckoutComponent = () => {
             price: 4.48,
             quantity: 7,
             unitPrice: 0.64,
-            image: "/product-listing-images/product-1.png"
+            image: "/product-listing-images/product-1.avif"
         },
         {
             id: 2,
@@ -31,7 +31,7 @@ const CheckoutComponent = () => {
             price: 4.48,
             quantity: 7,
             unitPrice: 0.64,
-            image: "/product-listing-images/product-1.png"
+            image: "/product-listing-images/product-1.avif"
         }
     ];
 

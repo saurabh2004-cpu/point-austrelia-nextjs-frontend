@@ -12,9 +12,9 @@ export default function ProductDetail() {
   const [isZooming, setIsZooming] = useState(false)
 
   const productImages = [
-    "/product-listing-images/product-1.png",
-    "/product-listing-images/product-1.png",
-    "/product-listing-images/product-1.png",
+    "/product-listing-images/product-1.avif",
+    "/product-listing-images/product-1.avif",
+    "/product-listing-images/product-1.avif",
   ]
 
   const relatedProducts = [

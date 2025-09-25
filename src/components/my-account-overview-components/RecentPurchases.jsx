@@ -4,7 +4,7 @@ export default function RecentPurchases() {
   const [products] = useState([
     {
       id: 1,
-      image: '/product-listing-images/product-1.png',
+      image: '/product-listing-images/product-1.avif',
       name: 'Premium Green Bottle',
       packQuentity: 4.48,
       quantity: 2,
@@ -13,7 +13,7 @@ export default function RecentPurchases() {
     },
     {
       id: 2,
-      image: '/product-listing-images/product-1.png',
+      image: '/product-listing-images/product-1.avif',
       name: 'Premium Green Bottle',
       packQuentity: 4.48,
       quantity: 2,
@@ -22,7 +22,7 @@ export default function RecentPurchases() {
     },
     {
       id: 3,
-      image: '/product-listing-images/product-1.png',
+      image: '/product-listing-images/product-1.avif',
       name: 'Organic Blue Container',
       packQuentity: 12.99,
       quantity: 1,

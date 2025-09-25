@@ -14,7 +14,7 @@ const ShoppingCart = () => {
             sku: "SKU-88275",
             price: 4.48,
             quantity: 1,
-            image: "/product-listing-images/product-1.png",
+            image: "/product-listing-images/product-1.avif",
             inStock: true
         },
         {
@@ -23,7 +23,7 @@ const ShoppingCart = () => {
             sku: "SKU-88275",
             price: 4.48,
             quantity: 1,
-            image: "/product-listing-images/product-1.png",
+            image: "/product-listing-images/product-1.avif",
             inStock: true
         },
         {
@@ -32,7 +32,7 @@ const ShoppingCart = () => {
             sku: "SKU-88275",
             price: 4.48,
             quantity: 1,
-            image: "/product-listing-images/product-1.png",
+            image: "/product-listing-images/product-1.avif",
             inStock: true
         }
     ]);

@@ -113,7 +113,7 @@ const ProductListing = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 ">
+        <div className="min-h-screen  ">
             {/* Breadcrumb */}
             <div className="bg-white justify-items-center pt-4">
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
@@ -341,7 +341,7 @@ const ProductListing = () => {
                                                 // Handle wishlist logic here
                                             }}
                                         >
-                                            <div className="h-8 w-8 bg-[#D9D9D940] hover:bg-gray-200 flex mt-3 items-center justify-center rounded-full  transition-colors cursor-pointer">
+                                            <div className="h-8 w-8 bg-[#D9D9D940]  flex mt-3 items-center justify-center rounded-full  transition-colors cursor-pointer">
                                                 <Image
                                                     src="/product-details/heart-1.png"
                                                     alt="Heart"

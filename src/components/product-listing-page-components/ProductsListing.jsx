@@ -354,7 +354,7 @@ const ProductListing = () => {
                                     </div>
 
                                     {/* Product Image */}
-                                    <div className="flex justify-center mb-3 sm:mb-4 bg-[#FAFAFA] ">
+                                    <div className="flex justify-center mb-3 sm:mb-4 rounded-lg ">
                                         <img
                                             src={product.image || "/placeholder.svg"}
                                             alt={product.name}

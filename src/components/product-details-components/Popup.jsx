@@ -57,7 +57,7 @@ export default function ProductPopup({ isOpen, onClose }) {
                                 {/* Main Image */}
                                 <div className="relative">
                                     <div className="rounded-lg p-4 bg-[#FAFAFA] ">
-                                        <span className="absolute top-2 left-2 bg-[#E35457] text-white text-[11px] font-[400] font-spartan tracking-widest px-1 py-[2px] rounded-sm z-10">
+                                        <span className="absolute top-2 left-2  text-white text-[11px] font-[400] font-spartan tracking-widest px-1 py-[2px] rounded-sm z-10">
                                             IN SALE
                                         </span>
                                         <img

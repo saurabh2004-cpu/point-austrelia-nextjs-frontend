@@ -90,7 +90,7 @@ export default function ProductDetail() {
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className="flex-shrink-0 rounded-lg p-2 bg-white  transition-all duration-300 ease-out hover:scale-[1.02] shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
+                  className="flex-shrink-0 rounded-lg p-2   transition-all duration-300 ease-out hover:scale-[1.02] shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
                 >
                   <img
                     src={image || "/placeholder.svg"}

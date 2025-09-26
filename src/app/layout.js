@@ -4,10 +4,12 @@ import { Navbar } from "@/components/Navbar";
 import { League_Spartan } from "next/font/google";
 import { Footer } from "@/components/Footer";
 
+
+
 // Configure Spartan (League Spartan)
 const spartan = League_Spartan({
   subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "600", "700", "800", "900"], 
+  weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-spartan",
 });
 
@@ -33,8 +35,8 @@ export default function RootLayout({ children }) {
         className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
-        {children}
-        <Footer />
+          {children}
+          <Footer />
       </body>
     </html>
   );

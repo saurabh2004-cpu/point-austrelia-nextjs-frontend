@@ -38,45 +38,81 @@ export default function SignUpComponent() {
 
   const validateForm = () => {
     const newErrors = {}
-    
-    // Required fields validation
     const requiredFields = [
-      'firstName', 'lastName', 'accountEmail', 'orderEmail', 
-      'phone', 'storeName', 'abn', 'address1', 'suburb', 
-      'country', 'state', 'postcode'
+      'customerName',
+      'contactName',
+      'contactEmail',
+      'customerEmail',
+      'CustomerPhoneNo',
+      'storeName',
+      'abn',
+      'address1',
+      'suburb',
+      'country',
+      'state',
+      'postcode',
     ]
-    
     requiredFields.forEach(field => {
-      if (!formData[field].trim()) {
+      if (!formData[field]?.trim()) {
         newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
       }
     })
-    
-    // Email validation
+
     const emailRegex = /\S+@\S+\.\S+/
-    if (formData.accountEmail && !emailRegex.test(formData.accountEmail)) {
-      newErrors.accountEmail = 'Please enter a valid email address'
+    if (formData.contactEmail && !emailRegex.test(formData.contactEmail)) {
+      newErrors.contactEmail = 'Please enter a valid email address'
     }
-    if (formData.orderEmail && !emailRegex.test(formData.orderEmail)) {
-      newErrors.orderEmail = 'Please enter a valid email address'
+    if (formData.customerEmail && !emailRegex.test(formData.customerEmail)) {
+      newErrors.customerEmail = 'Please enter a valid email address'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
     if (!validateForm()) return
-    
+
     setIsLoading(true)
-    
-    // Simulate API call
-    setTimeout(() => {
+
+    // Create address object from form data
+    const addressData = {
+      address1: formData.address1,
+      address2: formData.address2,
+      suburb: formData.suburb,
+      state: formData.state,
+      country: formData.country,
+      postcode: formData.postcode
+    }
+
+    // Prepare submission data with populated address arrays
+    const submissionData = {
+      ...formData,
+      shippingAddresses: [addressData],
+      billingAddresses: [addressData]
+    }
+
+    console.log("Form submitted:", submissionData)
+    try {
+      const res = await axiosInstance.post('/user/user-signup', submissionData,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      if (res.data.statusCode === 200) {
+        setErrors({})
+       
+        setUser(res.data.data)
+      } else {
+        setErrors(res.data.message)
+      }
+    } catch (error) {
+      setErrors(error)
+    } finally {
       setIsLoading(false)
-      console.log('Sign up submitted:', formData)
-    }, 2000)
+    }
   }
 
   // Animation variants
@@ -126,13 +162,13 @@ export default function SignUpComponent() {
         </motion.div>
 
         {/* Sign Up Form */}
-        <motion.form 
+        <motion.form
           className=" space-y-4 sm:space-y-6 bg-white px-4 sm:px-6 lg:px-8 rounded-lg"
           onSubmit={handleSubmit}
           variants={itemVariants}
         >
           <div className="space-y-4 sm:space-y-5 text-sm sm:text-base lg:text-[1rem] font-medium">
-            
+
             {/* Required Label */}
             <motion.div variants={itemVariants}>
               <label className="block text-sm sm:text-base lg:text-[1rem] font-medium mb-2 sm:mb-4">

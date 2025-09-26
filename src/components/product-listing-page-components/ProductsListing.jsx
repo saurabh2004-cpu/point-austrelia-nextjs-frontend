@@ -310,7 +310,7 @@ const ProductListing = () => {
                             {products.map((product, index) => (
                                 <div
                                     key={product.id}
-                                    className="bg-white rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
+                                    className=" rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
                                 >
                                     {/* New Badge with Background */}
                                     {product.badgeBackGround && product.badge && (

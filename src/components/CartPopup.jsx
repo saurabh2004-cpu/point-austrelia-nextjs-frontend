@@ -62,7 +62,7 @@ const ShoppingCartPopup = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute  inset-0 top-20 bg-transparent bg-opacity-50 flex xl:items-center lg:justify-end p-4 z-50">
+    <div className="absolute  inset-0 top-20 bg-transparent bg-opacity-50 flex xl:items-start lg:justify-end p-4 z-50">
       <div className="
         bg-white rounded-lg shadow-xl w-full 
         max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem]

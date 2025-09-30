@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import axiosInstance from '@/axios/axiosInstance'
+import useUserStore from '@/zustand/user'
 
 export default function LoginComponent() {
   const [formData, setFormData] = useState({
@@ -9,6 +11,7 @@ export default function LoginComponent() {
   })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const setUser = useUserStore((state) => state.setUser);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -51,11 +54,30 @@ export default function LoginComponent() {
 
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await axiosInstance.post('user/login', formData,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      console.log("Login response:", res)
+
+      if (res.data.statusCode === 200) {
+        setIsLoading(false)
+        setUser(res.data.data);
+        window.location.href = '/'
+      } else {
+        setErrors({ loginError: res.data.message })
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setErrors({ loginError: 'An error occurred during login' })
+    } finally {
       setIsLoading(false)
-      console.log('Login submitted:', formData)
-    }, 2000)
+    }
   }
 
   const handleWholesaleRegister = () => {

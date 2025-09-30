@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Search, ShoppingCart, Menu, X, User, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,12 +10,15 @@ import { label } from "framer-motion/client"
 import useNavStateStore from "@/zustand/navigations"
 import ShoppingCartPopup from "./CartPopup"
 import { useRouter } from "next/navigation"
+import useUserStore from "@/zustand/user"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [showCartPopup, setShowCartPopUp] = useState(false)
   const router = useRouter()
+  const currentUser = useUserStore((state) => state.user);
+  console.log("Current user:", currentUser);
 
   const navigationItems = [
     { label: "HOME", index: 0, link: '/' },
@@ -26,6 +29,7 @@ export function Navbar() {
   ]
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex) // get function
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleNavigation = (index) => {
     switch (index) {
@@ -51,6 +55,16 @@ export function Navbar() {
     setIsMenuOpen(false)
   }
 
+  useEffect(() => {
+    if (currentUser !== undefined) { 
+      setLoading(false)
+    }
+  }, [currentUser])
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
   return (
     <>
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
@@ -72,7 +86,7 @@ export function Navbar() {
               </div>
 
               {/* Desktop: Left - Login/Signup */}
-              {!isLoggedIn ? (
+              {!currentUser ? (
                 <div className="hidden lg:flex text-[1rem] font-[600] text-[#2d2c70] items-center ml-20 space-x-1 text-sm">
                   {/* Login */}
                   <div className="group flex gap-1 items-center cursor-pointer">
@@ -105,7 +119,7 @@ export function Navbar() {
                   {/* User icon + name */}
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-gray-600" />
-                    <span className="font-semibold text-black">Devendra Chandora</span>
+                    <span className="font-semibold text-black">{currentUser.contactName}</span>
                   </div>
 
                   {/* Down arrow */}

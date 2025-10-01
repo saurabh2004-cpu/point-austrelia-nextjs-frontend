@@ -159,7 +159,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Price */}
-            <div className="text-[24px] font-semibold text-[#E9098D]">$4.48</div>
+            <div className="text-[24px] font-semibold text-[#2D2C70]">$4.48</div>
 
             {/* Quantity & Units */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-[48px] space-y-4 sm:space-y-0">
@@ -215,9 +215,9 @@ export default function ProductDetail() {
             {/* Action Buttons - Row 1 */}
             <div className="flex  items-center space-x-7 ">
               <div className="flex space-x-5 w-full">
-                <button className="flex items-center  xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                <button className="flex items-center text-white bg-[#46BCF9]  xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group">
                   <svg
-                    className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                    className="w-5 h-5 transition-colors duration-300 "
                     viewBox="0 0 21 21"
                     fill="currentColor"
                     xmlns="http://www.w3.org/2000/svg"
@@ -239,10 +239,10 @@ export default function ProductDetail() {
 
             {/* Action Buttons - Row 2 */}
             <div className="flex items-center space-x-3">
-              <button className="flex-1 text-xs sm:text-sm font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2 flex justify-center items-center">
+              <button className="flex-1 text-xs sm:text-sm font-semibold text-white border bg-[#2D2C70] border-[#2D2C70] rounded-lg text-[#68B73B] py-2 flex justify-center items-center">
                 Added <Check className="ml-2 h-4 w-4" />
               </button>
-              <button className="flex-1 text-xs sm:text-sm font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2 flex justify-center">
+              <button className="flex-1 text-xs sm:text-sm bg-[#E799A9] font-semibold border border-[#E799A9] rounded-lg text-white py-2 flex justify-center">
                 Update
               </button>
             </div>
@@ -312,14 +312,14 @@ export default function ProductDetail() {
                 <div className="font-spartan text-[14px] font-medium">
                   <h3 className=" text-gray-900 text-sm mb-1 line-clamp-2 hover:text-[#E9098D]">{product.name}</h3>
                   <p className="  mb-2">{product.sku}</p>
-                  <p className="text-[#46BCF9] text-[18px] sm:text-[20px] font-semibold text-lg mb-3">
+                  <p className="text-[#2D2C70] text-[18px] sm:text-[20px] font-semibold text-lg mb-3">
                     {product.price}
                   </p>
                 </div>
 
-                <button className="flex items-center  justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                <button className="flex w-full items-center bg-[#46BCF9]  justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 group ">
                   <svg
-                    className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                    className="w-5 h-5 transition-colors duration-300 "
                     viewBox="0 0 21 21"
                     fill="currentColor"
                     xmlns="http://www.w3.org/2000/svg"

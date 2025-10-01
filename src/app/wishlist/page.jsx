@@ -115,7 +115,7 @@ const page = () => {
                     </div>
 
                     <div>
-                        <span className="text-[#46BCF9] font-semibold text-[24px]">
+                        <span className="text-[#2D2C70] font-semibold text-[24px]">
                             ${product.price.toFixed(2)}
                         </span>
                     </div>
@@ -179,7 +179,7 @@ const page = () => {
                         <span>
                             Amount:
                         </span>
-                        <span className="text-[#46BCF9] text-[18px]">
+                        <span className="text-[#2D2C70] text-[18px]">
                             ${product.price.toFixed(2)}
                         </span>
                     </div>

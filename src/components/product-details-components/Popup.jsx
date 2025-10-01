@@ -146,7 +146,7 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                                 )}
 
                                 {/* Price */}
-                                <div className="text-[24px] font-semibold text-[#e9098d]">
+                                <div className="text-[24px] font-semibold text-[#2D2C70]">
                                     ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
                                 </div>
 
@@ -213,9 +213,9 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center space-x-3">
-                                    <button className="flex items-center justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                                    <button className="flex items-center bg-[#46BCF9] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 ">
                                         <svg
-                                            className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                                            className="w-5 h-5 transition-colors duration-300 "
                                             viewBox="0 0 21 21"
                                             fill="currentColor"
                                             xmlns="http://www.w3.org/2000/svg"
@@ -224,7 +224,7 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                                         </svg>
                                         Add to Cart
                                     </button>
-                                    <div className="h-10 w-10 bg-[#D9D9D940] flex items-center justify-center rounded-full transition-colors cursor-pointer">
+                                    <div className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full transition-colors cursor-pointer">
                                         <Image
                                             src="/product-details/heart-1.png"
                                             alt="Heart"
@@ -237,13 +237,13 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
 
                                 {/* Status Buttons */}
                                 <div className="flex justify-center font-semibold flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                                    <button className="flex-1 text-[12px] font-semibold border border-[#46BCF9] rounded-lg text-[#68B73B] py-2 rounded transition-colors">
+                                    <button className="flex-1 bg-[#2D2C70] text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-white py-2 rounded transition-colors">
                                         Added <span><Check className="inline-block ml-2 h-4 w-4" /></span>
                                     </button>
 
                                     <div className="hidden sm:block bg-black w-[1px] h-9"></div>
 
-                                    <button className="flex-1 text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-[#E9098D] py-2 rounded transition-colors">
+                                    <button className="flex-1 bg-[#E799A9] text-[12px] font-semibold border border-[#E799A9] rounded-lg text-white py-2 rounded transition-colors">
                                         Update
                                     </button>
                                 </div>

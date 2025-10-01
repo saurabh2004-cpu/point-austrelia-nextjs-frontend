@@ -126,7 +126,7 @@ const CheckoutFormUI = () => {
                                 />
                                 <label htmlFor="credit-card" className="ml-3 flex-1 cursor-pointer">
                                     <span className="text-sm font-medium text-gray-900">
-                                        Contact me for payment
+                                        Credit card
                                     </span>
                                 </label>
                             </div>

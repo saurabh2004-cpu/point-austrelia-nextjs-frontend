@@ -278,7 +278,7 @@ const ProductListing = () => {
                 </div>
             </div>
 
-            <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-6">
+            <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 py-3 sm:py-6">
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
                     {/* Mobile Filter Toggle Button */}
                     <div className="lg:hidden ">
@@ -512,7 +512,7 @@ const ProductListing = () => {
 
                                                 {/* Price */}
                                                 <div className="">
-                                                    <span className="text-2xl md:text-[24px] font-semibold text-[#e9098d]">
+                                                    <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
                                                         ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
                                                     </span>
                                                 </div>
@@ -594,9 +594,9 @@ const ProductListing = () => {
 
                                                 {/* Add to Cart Button */}
                                                 <div className="flex items-center space-x-3">
-                                                    <button className="flex items-center justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#2D2C70] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group hover:text-[#E9098D] hover:border-[#E9098D]">
+                                                    <button className="flex items-center bg-[#46BCF9] text-white justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group ">
                                                         <svg
-                                                            className="w-5 h-5 transition-colors duration-300 group-hover:fill-[#E9098D]"
+                                                            className="w-5 h-5 transition-colors duration-300 "
                                                             viewBox="0 0 21 21"
                                                             fill="currentColor"
                                                             xmlns="http://www.w3.org/2000/svg"
@@ -611,7 +611,7 @@ const ProductListing = () => {
                                                 {/* Action Buttons Row */}
                                                 <div className="flex space-x-2 mt-1">
                                                     <button
-                                                        className="flex-1 space-x-[6px] border-1 border-[#46bcf9] text-[#68b73b] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
+                                                        className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
                                                         <span>Added</span>
@@ -621,7 +621,7 @@ const ProductListing = () => {
                                                     </button>
                                                     <div className="w-px bg-black h-[20px] mt-2"></div>
                                                     <button
-                                                        className="flex-1  border-1 border-[#2D2C70]  text-pink-700 rounded-lg py-1 px-3 text-sm font-medium transition-colors"
+                                                        className="flex-1  border-1 border-[#E799A9] bg-[#E799A9]  text-white rounded-lg py-1 px-3 text-sm font-medium transition-colors"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
                                                         Update

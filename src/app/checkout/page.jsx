@@ -227,7 +227,7 @@ const CheckoutComponent = () => {
                                         <span className="text-base sm:text-lg lg:text-[20px] font-medium">
                                             Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>43 Items</span>
                                         </span>
-                                        <span className="text-[#46BCF9] font-semibold text-[20px]">${subtotal.toFixed(2)}</span>
+                                        <span className="text-[#2D2C70] font-semibold text-[20px]">${subtotal.toFixed(2)}</span>
                                     </div>
 
                                     <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
@@ -295,7 +295,7 @@ const CheckoutComponent = () => {
                                                     <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
                                                         {item.name}
                                                     </h3>
-                                                    <p className=" text-[18px] text-[#E9098D] font-semibold mb-1">
+                                                    <p className=" text-[18px] text-[#2D2C70] font-semibold mb-1">
                                                         ${item.price.toFixed(2)}
                                                     </p>
                                                     <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>

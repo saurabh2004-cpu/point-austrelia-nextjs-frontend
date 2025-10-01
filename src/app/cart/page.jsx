@@ -93,7 +93,7 @@ const ShoppingCart = () => {
                                 <div className="space-y-10 lg:space-y-0 max-w-xl mt-5 mx-auto xl:mx-0 xl:mt-0">
                                     {cartItems.map((item) => (
                                         <div key={item.id} className="lg:py-6">
-                                            <div className="flex flex-col md:flex-row items-center space-x-4 border  rounded-lg px-8 lg:px-0  md:space-x-25">
+                                            <div className="flex flex-col md:flex-row items-center space-x-4 border border-[#00000040] p-3  rounded-lg px-8 lg:px-0  md:space-x-25">
                                                 {/* Product Image */}
                                                 <div className="">
                                                     <div className="     rounded-lg flex items-center w-full  justify-items-center ">
@@ -123,7 +123,7 @@ const ShoppingCart = () => {
                                                     </div>
 
                                                     {/* Price */}
-                                                    <div className="text-[24px] font-semibold text-[#46BCF9] mb-1">
+                                                    <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
                                                         ${item.price.toFixed(2)}
                                                     </div>
 
@@ -185,14 +185,14 @@ const ShoppingCart = () => {
 
 
                                                     <span className="text-[13px] font-semibold ">
-                                                        Amount: <span className="text-[#E9098D] text-[15px] font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                                                        Amount: <span className="text-[#2D2C70] text-[15px] font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
                                                     </span>
 
                                                     {/* Action Buttons */}
                                                     <div className="flex flex-col xl:flex-row space-y-2 xl:space-y-0 xl:flex-row text-[13px] font-medium items-center space-x-3 mt-4">
                                                         <button
                                                             onClick={() => removeItem(item.id)}
-                                                            className="bg-[#2D2C70] w-full xl:w-auto text-white px-8 py-2 rounded-full  "
+                                                            className="bg-[#E799A9] w-full xl:w-auto text-white px-8 py-2 rounded-full  "
                                                         >
                                                             Update
                                                         </button>
@@ -203,20 +203,29 @@ const ShoppingCart = () => {
                                                             </button>
 
                                                             <div className='xl:hidden block h-8 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
-                                                                 <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                 <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
-                                                                 </svg>
+                                                                <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                    <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
+                                                                </svg>
                                                             </div>
 
                                                         </div>
 
 
-                                                        <div className='hidden xl:block h-9 w-9 border border-[#E9098D] rounded-full flex items-center justify-center '>
-                                                            <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
+                                                        <div className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center">
+                                                            <svg
+                                                                width="15"
+                                                                height="16"
+                                                                viewBox="0 0 15 16"
+                                                                fill="none"
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                            >
+                                                                <path
+                                                                    d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z"
+                                                                    fill="black"
+                                                                />
                                                             </svg>
-
                                                         </div>
+
                                                     </div>
                                                 </div>
                                             </div>
@@ -244,7 +253,7 @@ const ShoppingCart = () => {
                                     <div className="space-y-4">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-[1rem] font-[400]"><span className='text-[20px] font-medium'>Subtotal</span> ({totalItems} Items)</span>
-                                            <span className="text-[20px] font-medium text-[#46BCF9]">${subtotal.toFixed(2)}</span>
+                                            <span className="text-[20px] font-medium text-[#2D2C70]">${subtotal.toFixed(2)}</span>
                                         </div>
 
                                         <div className="text-[14px] text-[400]">

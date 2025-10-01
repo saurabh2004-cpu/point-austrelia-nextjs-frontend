@@ -56,7 +56,7 @@ export function Navbar() {
   }
 
   useEffect(() => {
-    if (currentUser !== undefined) { 
+    if (currentUser !== undefined) {
       setLoading(false)
     }
   }, [currentUser])
@@ -156,7 +156,7 @@ export function Navbar() {
                   {/* Mobile & Tablet Wishlist */}
                   <button
                     className="relative bg-white group p-1"
-                    onClick={() => setShowCartPopUp(!showCartPopup)}
+                    onClick={() => router.push('/wishlist')}
                   >
                     <svg
                       width="18"
@@ -207,7 +207,7 @@ export function Navbar() {
                   <button
                     className="relative bg-white group"
 
-                    onClick={() => router.push('/cart')}
+                    onClick={() => router.push('/wishlist')}
                   >
                     <svg
                       width="21"

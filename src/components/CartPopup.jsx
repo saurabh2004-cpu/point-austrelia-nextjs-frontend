@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Minus, Plus, Check } from 'lucide-react';
+import { X, Minus, Plus, Check, XIcon } from 'lucide-react';
 import Image from 'next/image';
 
 const ShoppingCartPopup = () => {
@@ -91,14 +91,23 @@ const ShoppingCartPopup = () => {
 
                   {/* Product Details */}
                   <div className="flex-1 min-w-0 space-y-2">
-                    <h3 
-                    className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">
-                      {item.name}
-                    </h3>
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">
+                        {item.name}
+                      </h3>
+
+                      <button
+                        type="button"
+                        className="flex items-center justify-center h-6 w-6  border border-[#E799A9] rounded-full "
+                      >
+                        <XIcon className="p-1 text-[#E799A9]" />
+                      </button>
+                    </div>
+
 
                     {/* Price + Stock */}
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <span className="text-[#E9098D] font-semibold text-[20px] sm:text-[24px]">
+                      <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">
                         ${item.price.toFixed(2)}
                       </span>
                       {item.inStock && (

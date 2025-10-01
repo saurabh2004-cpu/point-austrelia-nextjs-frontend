@@ -278,7 +278,7 @@ const ProductListing = () => {
                 </div>
             </div>
 
-            <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 py-3 sm:py-6">
+            <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
                     {/* Mobile Filter Toggle Button */}
                     <div className="lg:hidden ">

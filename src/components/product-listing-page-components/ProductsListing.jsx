@@ -1,11 +1,12 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
 import { Minus, Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
+import useUserStore from "@/zustand/user"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Best Seller")
@@ -15,33 +16,154 @@ const ProductListing = () => {
     const [showProductPopup, setShowProductPopup] = useState(false)
     const [perpageItems, setPerpageItems] = useState('12')
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [products, setProducts] = useState([])
     const [error, setError] = useState(null)
     const [productQuantities, setProductQuantities] = useState({})
     const [selectedUnits, setSelectedUnits] = useState({})
+    const currentUser = useUserStore((state) => state.user);
+
+    // Get filter parameters from URL
+    const categoryId = searchParams.get('categoryId')
+    const subCategoryId = searchParams.get('subCategoryId')
+    const subCategoryTwoId = searchParams.get('subCategoryTwoId')
+    const brandId = searchParams.get('brandId')
+    const categorySlug = searchParams.get('categorySlug')
+    const subCategorySlug = searchParams.get('subCategorySlug')
+    const subCategoryTwoSlug = searchParams.get('subCategoryTwoSlug')
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [totalProducts, setTotalProducts] = useState(0)
     const [loading, setLoading] = useState(false)
+    const [cartItems, setCartItems] = useState([])
+    const [stockErrors, setStockErrors] = useState({})
+    const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
+    const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
+    const [toggleWishlistIcon, setToggleWishlistIcon] = useState('')
+    const [wishListItems, setWishlistItems] = useState([])
+    const [loadingProducts, setLoadingProducts] = useState({})
 
-    const categories = [
-        { name: "New Arrivals", count: 200 },
-        { name: "On Sale", count: 90 },
-        { name: "Adblue", count: 50 },
-        { name: "Armor All", count: 50 },
-        { name: "Bars Bugs", count: 20, active: true },
-        { name: "Bars Looks", count: 20 },
-        { name: "Chemtech", count: 20 },
-        { name: "New Arrivals", count: 200 },
-        { name: "On Sale", count: 90 },
-        { name: "Adblue", count: 50 },
-        { name: "Armor All", count: 50 },
-        { name: "Bars Bugs", count: 20 },
-        { name: "Bars Looks", count: 20 },
-        { name: "Chemtech", count: 20 },
-    ]
+    // Categories state for sidebar
+    const [categories, setCategories] = useState([])
+    const [loadingCategories, setLoadingCategories] = useState(false)
+
+    // Calculate discounted price for a product
+    const calculateDiscountedPrice = (product) => {
+        if (!currentUser || !currentUser.customerId) {
+            return product.eachPrice;
+        }
+
+        const originalPrice = product.eachPrice || 0;
+
+        // Check for item-based discount first (higher priority)
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+            return originalPrice - discountAmount;
+        }
+
+        // Check for pricing group discount
+        if (product.pricingGroup && product.pricingGroup._id) {
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === product.pricingGroup._id &&
+                    discount.customerId === currentUser.customerId
+            );
+
+            if (groupDiscount) {
+                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
+                return originalPrice - discountAmount;
+            }
+        }
+
+        return originalPrice;
+    };
+
+    // Get discount percentage for display
+    const getDiscountPercentage = (product) => {
+        if (!currentUser || !currentUser.customerId) {
+            return null;
+        }
+
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            return itemDiscount.percentage;
+        }
+
+        if (product.pricingGroup && product.pricingGroup._id) {
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === product.pricingGroup._id &&
+                    discount.customerId === currentUser.customerId
+            );
+
+            if (groupDiscount) {
+                return groupDiscount.percentage;
+            }
+        }
+
+        return null;
+    };
+
+    // Check if product has any discount
+    const hasDiscount = (product) => {
+        return getDiscountPercentage(product) !== null;
+    };
+
+    // Check if product is in cart
+    const isProductInCart = (productId) => {
+        return cartItems.some(item => item.product._id === productId)
+    }
+
+    // Get cart item for product
+    const getCartItem = (productId) => {
+        return cartItems.find(item => item.product._id === productId)
+    }
+
+    // Calculate total quantity based on pack quantity and units
+    const calculateTotalQuantity = (productId) => {
+        const product = products.find(p => p._id === productId)
+        if (!product) return 0
+
+        const selectedPack = product.typesOfPacks?.find(pack =>
+            pack._id === selectedUnits[productId]
+        )
+        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+        const unitsQuantity = productQuantities[productId] || 1
+        return packQuantity * unitsQuantity
+    }
+
+    // Check if requested quantity exceeds stock
+    const checkStockLevel = (productId) => {
+        const product = products.find(p => p._id === productId)
+        if (!product) return { isValid: true }
+
+        const totalRequestedQuantity = calculateTotalQuantity(productId)
+        const cartItem = getCartItem(productId)
+        const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0
+
+        const newTotalQuantity = isProductInCart(productId)
+            ? totalRequestedQuantity
+            : totalRequestedQuantity + currentCartQuantity
+
+        const isValid = newTotalQuantity <= product.stockLevel
+        return {
+            isValid,
+            message: isValid ? null : `Exceeds available stock (${product.stockLevel})`,
+            requestedQuantity: totalRequestedQuantity,
+            currentStock: product.stockLevel
+        }
+    }
 
     const handleProductClick = (product) => {
         router.push(`/product-details`);
@@ -53,9 +175,25 @@ const ProductListing = () => {
     }
 
     const handleQuantityChange = (productId, change) => {
+        const newQuantity = Math.max(1, (productQuantities[productId] || 1) + change)
+
+        const stockCheck = checkStockLevel(productId)
+        if (!stockCheck.isValid) {
+            setStockErrors(prev => ({
+                ...prev,
+                [productId]: stockCheck.message
+            }))
+            return
+        } else {
+            setStockErrors(prev => ({
+                ...prev,
+                [productId]: null
+            }))
+        }
+
         setProductQuantities(prev => ({
             ...prev,
-            [productId]: Math.max(1, (prev[productId] || 1) + change)
+            [productId]: newQuantity
         }))
     }
 
@@ -64,6 +202,64 @@ const ProductListing = () => {
             ...prev,
             [productId]: unitId
         }))
+
+        const stockCheck = checkStockLevel(productId)
+        if (!stockCheck.isValid) {
+            setStockErrors(prev => ({
+                ...prev,
+                [productId]: stockCheck.message
+            }))
+        } else {
+            setStockErrors(prev => ({
+                ...prev,
+                [productId]: null
+            }))
+        }
+    }
+
+    // Add to cart function
+    const handleAddToCart = async (productId) => {
+        if (!currentUser || !currentUser._id) {
+            setError("Please login to add items to cart")
+            return
+        }
+
+        setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+
+        try {
+            const product = products.find(p => p._id === productId)
+            if (!product) return
+
+            const selectedPack = product.typesOfPacks?.find(pack => pack._id === selectedUnits[productId])
+            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+            const unitsQuantity = productQuantities[productId] || 1
+            const totalQuantity = packQuantity * unitsQuantity
+
+            const stockCheck = checkStockLevel(productId)
+            if (!stockCheck.isValid) {
+                setError(stockCheck.message)
+                return
+            }
+
+            const cartData = {
+                customerId: currentUser._id,
+                productId: productId,
+                packQuentity: packQuantity,
+                unitsQuantity: unitsQuantity,
+                totalQuantity: totalQuantity
+            }
+
+            const response = await axiosInstance.post('cart/add-to-cart', cartData)
+
+            if (response.data.statusCode === 200) {
+                await fetchCustomersCart()
+                setError(null)
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error)
+        } finally {
+            setLoadingProducts(prev => ({ ...prev, [productId]: false }))
+        }
     }
 
     // Map sort options to backend parameters
@@ -81,24 +277,39 @@ const ProductListing = () => {
         }
     }
 
-    // Fetch products with pagination and sorting
+    // Fetch products with filters
     const fetchProducts = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
         try {
             setLoading(true)
             const sortParams = getSortParams(sortOption)
 
-            const response = await axiosInstance.get('products/get-all-products', {
-                params: {
-                    page: page,
-                    limit: itemsPerPage,
-                    sortBy: sortParams.sortBy,
-                    sortOrder: sortParams.sortOrder
-                }
+            // Build query parameters based on URL params
+            const queryParams = {
+                page: page,
+                limit: itemsPerPage,
+                sortBy: sortParams.sortBy,
+                sortOrder: sortParams.sortOrder
+            }
+
+            // Add filter parameters if they exist
+            if (categoryId) queryParams.categoryId = categoryId
+            if (subCategoryId) queryParams.subCategoryId = subCategoryId
+            if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId
+            if (brandId) queryParams.brandId = brandId
+
+            const response = await axiosInstance.get('products/get-products-by-filters', {
+                params: queryParams
             })
 
+            console.log("Filtered products:", response)
+
             if (response.data.statusCode === 200) {
-                const productsData = response.data.data.products
-                const paginationInfo = response.data.data.pagination
+                const productsData = response.data.data.products || []
+                const paginationInfo = response.data.data.pagination || {
+                    currentPage: 1,
+                    totalPages: 1,
+                    totalProducts: 0
+                }
 
                 setProducts(productsData)
                 setCurrentPage(paginationInfo.currentPage)
@@ -118,13 +329,121 @@ const ProductListing = () => {
                 setSelectedUnits(initialUnits)
             } else {
                 setError(response.data.message)
+                setProducts([])
+                setTotalProducts(0)
             }
 
         } catch (error) {
             console.error('Error fetching products:', error)
             setError('An error occurred while fetching products')
+            setProducts([])
+            setTotalProducts(0)
         } finally {
             setLoading(false)
+        }
+    }
+
+    // Fetch categories for sidebar
+    const fetchCategoriesForBrand = async () => {
+        if (!brandId) return
+
+        try {
+            setLoadingCategories(true)
+            const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
+
+            if (res.data.statusCode === 200) {
+                setCategories(res.data.data || [])
+            }
+        } catch (error) {
+            console.error('Error fetching categories:', error)
+            setCategories([])
+        } finally {
+            setLoadingCategories(false)
+        }
+    }
+
+    const fetchCustomersCart = async () => {
+        try {
+            if (!currentUser || !currentUser._id) return
+
+            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
+
+            console.log("Cart items:", response.data.data)
+            if (response.data.statusCode === 200) {
+                setCartItems(response.data.data || [])
+            }
+        } catch (error) {
+            console.error('Error fetching customer cart:', error)
+        }
+    }
+
+    //fetch groups discount
+    const fetchCustomersGroupsDiscounts = async () => {
+        try {
+            if (!currentUser || !currentUser.customerId) return
+
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`)
+
+            if (response.data.statusCode === 200) {
+                setCustomerGroupsDiscounts(response.data.data || [])
+            }
+        }
+        catch (error) {
+            console.error('Error fetching customer groups discounts:', error)
+        }
+    }
+
+    // fetch item based discounts 
+    const fetchItemBasedDiscounts = async () => {
+        try {
+            if (!currentUser || !currentUser.customerId) return
+
+            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`)
+            if (response.data.statusCode === 200) {
+                setItemBasedDiscounts(response.data.data || [])
+            }
+        }
+        catch (error) {
+            console.error('Error fetching item based discounts:', error)
+        }
+    }
+
+    // Add product to wishlist
+    const handleAddToWishList = async (productId) => {
+        try {
+            if (!currentUser || !currentUser._id) return
+            setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+
+            const response = await axiosInstance.post('wishlist/add-to-wishlist', {
+                customerId: currentUser._id,
+                productId: productId
+            })
+
+            if (response.data.statusCode === 200) {
+                setWishlistItems(response.data.data.wishlistItems || [])
+            }
+        } catch (error) {
+            console.error('Error adding product to wishlist:', error)
+        } finally {
+            setLoadingProducts(prev => {
+                const updatedLoadingProducts = { ...prev }
+                updatedLoadingProducts[productId] = false
+                return updatedLoadingProducts
+            })
+        }
+    }
+
+    const fetchCustomersWishList = async () => {
+        try {
+            if (!currentUser || !currentUser._id) return
+            const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
+
+            if (response.data.statusCode === 200) {
+                setWishlistItems(response.data.data.wishlistItems || [])
+            }
+        }
+        catch (error) {
+            console.error('Error fetching customer wishlist:', error)
         }
     }
 
@@ -148,9 +467,48 @@ const ProductListing = () => {
         fetchProducts(page, perpageItems, sortBy)
     }
 
+    // Handle category click in sidebar
+    const handleCategoryClick = (category) => {
+        router.push(`/products-list?categoryId=${category._id}&brandId=${brandId}&categorySlug=${category.slug}`)
+    }
+
+    // Get page title based on current filter
+    const getPageTitle = () => {
+        if (subCategoryTwoSlug) return subCategoryTwoSlug.replace(/-/g, '/').toUpperCase()
+        if (subCategorySlug) return subCategorySlug.replace(/-/g, '/').toUpperCase()
+        if (categorySlug) return categorySlug.replace(/-/g, '/').toUpperCase()
+        return "All Products"
+    }
+
+    // Get page description based on current filter
+    const getPageDescription = () => {
+        if (subCategoryTwoSlug) return `Browse our collection of ${subCategoryTwoSlug.replace(/-/g, ' ')} products`
+        if (subCategorySlug) return `Explore our range of ${subCategorySlug.replace(/-/g, ' ')} products`
+        if (categorySlug) return `Discover our ${categorySlug.replace(/-/g, ' ')} collection`
+        return "Browse our complete product catalog"
+    }
+
+    useEffect(() => {
+        fetchCustomersWishList()
+    }, [currentUser?._id])
+
+    useEffect(() => {
+        if (currentUser && currentUser.customerId) {
+            fetchItemBasedDiscounts()
+            fetchCustomersGroupsDiscounts()
+        }
+    }, [currentUser?.customerId])
+
+    useEffect(() => {
+        if (currentUser && currentUser._id) {
+            fetchCustomersCart()
+        }
+    }, [currentUser])
+
     useEffect(() => {
         fetchProducts()
-    }, [])
+        fetchCategoriesForBrand()
+    }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
 
     // Generate pagination buttons
     const renderPaginationButtons = () => {
@@ -254,29 +612,29 @@ const ProductListing = () => {
     }
 
     return (
-        <div className="min-h-screen  ">
+        <div className="min-h-screen">
             {/* Breadcrumb */}
             <div className="bg-white justify-items-center pt-4">
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
-                        <span>Home</span>
                         <span className="mx-1 sm:mx-2">/</span>
-                        <span className="hidden sm:inline">Matador Wholesale</span>
-                        <span className="mx-1 sm:mx-2 hidden sm:inline">/</span>
-                        <span className="text-xs sm:text-sm lg:text-[1.2rem] text-black font-[400] font-spartan">Bars Bugs</span>
+                        <span className="hidden sm:inline"> {getPageTitle()}</span>
+
                     </nav>
                 </div>
             </div>
 
             {/* Header */}
-            <div className="bg-white justify-items-center">
+            {/* <div className="bg-white justify-items-center">
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 justify-items-center">
-                    <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5">Bars Bugs</h1>
+                    <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5">
+                        {getPageTitle()}
+                    </h1>
                     <p className="text-sm sm:text-base lg:text-[1rem] text-black font-[400] font-spartan max-w-8xl px-2 sm:px-0">
-                        Bars Bugs is a range of insect repellent products including sprays, coils, and diffusers that are designed to keep bugs away both indoors and outdoors.
+                        {getPageDescription()}
                     </p>
                 </div>
-            </div>
+            </div> */}
 
             <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
@@ -299,24 +657,34 @@ const ProductListing = () => {
                     </div>
 
                     {/* Sidebar Filter */}
-                    <div className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                        <div className="bg-white  xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
-                            <div>
-                                <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">Product Categories</h4>
-                                <div className="space-y-2 max-h-64 lg:max-h-none  overflow-y-auto hide-scrollbar">
-                                    {categories.map((category, index) => (
-                                        <div
-                                            key={index}
-                                            className={`flex space-x-2 items-center py-1 px-2 hover:text-[#e9098d]/70 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
-                                        >
-                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${category.active ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>{category.name}</span>
-                                            <span className="">({category.count})</span>
-                                        </div>
-                                    ))}
+                    {brandId && (
+                        <div className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+                            <div className="bg-white xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
+                                <div>
+                                    <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">Product Categories</h4>
+                                    <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar">
+                                        {loadingCategories ? (
+                                            <div className="py-2 text-sm text-gray-500">Loading categories...</div>
+                                        ) : categories.length > 0 ? (
+                                            categories.map((category, index) => (
+                                                <div
+                                                    key={category._id}
+                                                    onClick={() => handleCategoryClick(category)}
+                                                    className={`flex space-x-2 items-center py-1 px-2 hover:text-[#e9098d]/70 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                                >
+                                                    <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>
+                                                        {category.name}
+                                                    </span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="py-2 text-sm text-gray-500">No categories available</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Main Content */}
                     <div className="flex-1">
@@ -438,6 +806,13 @@ const ProductListing = () => {
                             </div>
                         </div>
 
+                        {/* Error Display */}
+                        {error && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                                {error}
+                            </div>
+                        )}
+
                         {/* Loading State */}
                         {loading && (
                             <div className="flex justify-center items-center py-8">
@@ -448,199 +823,269 @@ const ProductListing = () => {
                         {/* Products Grid */}
                         {!loading && (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-12 max-h-full  border-t-2 border-[#2D2C70] pt-16">
-                                    {products.map((product, index) => (
-                                        <div
-                                            key={product._id}
-                                            className=" rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none "
-                                        >
-                                            {/* Wishlist Icon */}
-                                            <div className="absolute top-2 right-4 sm:right-6 z-10">
-                                                <button
-                                                    className=" rounded-full   transition-colors"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                    }}
-                                                >
-                                                    <div className="h-8 w-8 bg-[#D9D9D940]  flex mt-3 items-center justify-center rounded-full  transition-colors cursor-pointer">
-                                                        <Image
-                                                            src="/product-details/heart-1.png"
-                                                            alt="Heart"
-                                                            width={12}
-                                                            height={12}
-                                                            className=""
-                                                        />
-                                                    </div>
-                                                </button>
-                                            </div>
+                                {products.length > 0 ? (
+                                    <>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-16">
+                                            {products.map((product, index) => {
+                                                const isInCart = isProductInCart(product._id)
+                                                const cartItem = getCartItem(product._id)
+                                                const isOutOfStock = product.stockLevel <= 0
+                                                const stockError = stockErrors[product._id]
+                                                const isLoading = loadingProducts[product._id]
 
-                                            {/* Product Image */}
-                                            <div className="flex justify-center mb-3 sm:mb-4 rounded-lg ">
-                                                <img
-                                                    src={product.images || "/placeholder.svg"}
-                                                    alt={product.ProductName}
-                                                    className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
-                                                    onClick={() => handleProductImageClick(product._id)}
-                                                />
-                                            </div>
+                                                const discountedPrice = calculateDiscountedPrice(product)
+                                                const discountPercentage = getDiscountPercentage(product)
+                                                const hasProductDiscount = hasDiscount(product)
 
-                                            {/* Product Info */}
-                                            <div className="text-start space-y-2 lg:max-w-[229px]">
-                                                {/* Product Name */}
-                                                <h3
-                                                    onClick={() => handleProductClick(product)}
-                                                    className="text-sm sm:text-base hover:text-[#E9098D]  lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
-                                                    {product.ProductName}
-                                                </h3>
-
-                                                {/* SKU */}
-                                                <div className="space-y-1 flex justify-between items-center">
-                                                    <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                                        SKU {product.sku}
-                                                    </p>
-
-                                                    {/* Stock Status */}
-                                                    <div className="flex items-center space-x-2 bg-[#E7FAEF]  px-2">
-                                                        <svg className="w-5 h-5 " fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                        </svg>
-                                                        <span className="text-[14px] font-semibold font-spartan text-black   py-1 rounded">
-                                                            {product.stockLevel > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Price */}
-                                                <div className="">
-                                                    <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
-                                                        ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
-                                                    </span>
-                                                </div>
-
-                                                {/* Units Dropdown */}
-                                                <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                                                    <div className="relative w-full">
-                                                        <select
-                                                            value={selectedUnits[product._id] || ''}
-                                                            onChange={(e) => handleUnitChange(product._id, e.target.value)}
-                                                            className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                            focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                                            appearance-none"
-                                                        >
-                                                            {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
-                                                                product.typesOfPacks.map((pack) => (
-                                                                    <option key={pack._id} value={pack._id}>
-                                                                        {pack.name}
-                                                                    </option>
-                                                                ))
-                                                            ) : (
-                                                                <option value="">No packs available</option>
-                                                            )}
-                                                        </select>
-
-                                                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                            <svg
-                                                                className="w-4 h-4 text-gray-500"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2.5"
-                                                                viewBox="0 0 24 24"
+                                                return (
+                                                    <div
+                                                        key={product._id}
+                                                        className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
+                                                    >
+                                                        {/* Wishlist Icon */}
+                                                        <div className="absolute top-2 right-4 sm:right-6 z-10">
+                                                            <button
+                                                                className="rounded-full transition-colors"
+                                                                onClick={() => handleAddToWishList(product._id)}
                                                             >
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                            </svg>
+                                                                <div className="h-8 w-8 bg-[#D9D9D940] flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
+                                                                    <Image
+                                                                        src="/product-details/heart-1.png"
+                                                                        alt="Heart"
+                                                                        width={12}
+                                                                        height={12}
+                                                                        className=""
+                                                                    />
+                                                                </div>
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Discount Badge */}
+                                                        {hasProductDiscount && (
+                                                            <div className="absolute top-2 left-4 sm:left-6 z-10">
+                                                                <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                                                                    {discountPercentage}% OFF
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Product Image */}
+                                                        <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
+                                                            <img
+                                                                src={product.images || "/placeholder.svg"}
+                                                                alt={product.ProductName}
+                                                                className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
+                                                                onClick={() => handleProductImageClick(product)}
+                                                            />
+                                                        </div>
+
+                                                        {/* Product Info */}
+                                                        <div className="text-start space-y-2 lg:max-w-[229px]">
+                                                            {/* Product Name */}
+                                                            <h3
+                                                                onClick={() => handleProductClick(product)}
+                                                                className="text-sm sm:text-base hover:text-[#E9098D] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
+                                                                {product.ProductName}
+                                                            </h3>
+
+                                                            {/* SKU */}
+                                                            <div className="space-y-1 flex justify-between items-center">
+                                                                <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                                                                    SKU {product.sku}
+                                                                </p>
+
+                                                                {/* Stock Status */}
+                                                                <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
+                                                                    <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                    <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                                                                        {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Price */}
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                                                                    ${discountedPrice.toFixed(2)}
+                                                                </span>
+                                                                {hasProductDiscount && (
+                                                                    <span className="text-sm text-gray-500 line-through">
+                                                                        ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Stock Error Message */}
+                                                            {stockError && (
+                                                                <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                                                                    {stockError}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Units Dropdown */}
+                                                            <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
+                                                                <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                                                                <div className="relative w-full">
+                                                                    <select
+                                                                        value={selectedUnits[product._id] || ''}
+                                                                        onChange={(e) => handleUnitChange(product._id, e.target.value)}
+                                                                        disabled={isOutOfStock}
+                                                                        className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                                                        focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                                        appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                    >
+                                                                        {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
+                                                                            product.typesOfPacks.map((pack) => (
+                                                                                <option key={pack._id} value={pack._id}>
+                                                                                    {pack.name}
+                                                                                </option>
+                                                                            ))
+                                                                        ) : (
+                                                                            <option value="">No packs available</option>
+                                                                        )}
+                                                                    </select>
+
+                                                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                                        <svg
+                                                                            className="w-4 h-4 text-gray-500"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="2.5"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Quantity Controls */}
+                                                            <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
+                                                                <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
+                                                                <div className="flex items-center space-x-4">
+                                                                    <button
+                                                                        className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleQuantityChange(product._id, -1);
+                                                                        }}
+                                                                        disabled={isOutOfStock || (productQuantities[product._id] || 1) <= 1}
+                                                                    >
+                                                                        <span className="text-xl font-bold flex items-center ">
+                                                                            <Image src="/icons/minus-icon.png"
+                                                                                alt="Minus"
+                                                                                width={12}
+                                                                                height={12}
+                                                                            />
+                                                                        </span>
+                                                                    </button>
+                                                                    <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
+                                                                        {productQuantities[product._id] || 1}
+                                                                    </span>
+                                                                    <button
+                                                                        className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleQuantityChange(product._id, 1);
+                                                                        }}
+                                                                        disabled={isOutOfStock}
+                                                                    >
+                                                                        <Image src="/icons/plus-icon.png"
+                                                                            alt="Plus"
+                                                                            width={12}
+                                                                            height={12}
+                                                                        />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Add to Cart Button */}
+                                                            <div className="flex items-center space-x-3">
+                                                                <button
+                                                                    className={`flex items-center justify-center flex-1 gap-2 text-[15px] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isLoading
+                                                                        ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                                                        : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                                                        }`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (!isOutOfStock && !isLoading) {
+                                                                            handleAddToCart(product._id);
+                                                                        }
+                                                                    }}
+                                                                    disabled={isOutOfStock || isLoading}
+                                                                >
+                                                                    {isLoading ? (
+                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                                    ) : (
+                                                                        <svg
+                                                                            className="w-5 h-5 transition-colors duration-300 "
+                                                                            viewBox="0 0 21 21"
+                                                                            fill="currentColor"
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                        >
+                                                                            <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                                                        </svg>
+                                                                    )}
+                                                                    {isLoading ? 'Adding...' : 'Add to Cart'}
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Action Buttons Row - Only show when product is in cart */}
+                                                            {isInCart && (
+                                                                <div className="flex space-x-2 mt-1">
+                                                                    <button
+                                                                        className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                                        onClick={(e) => e.stopPropagation()}
+                                                                        disabled
+                                                                    >
+                                                                        <span>Added</span>
+                                                                        <svg className="w-5 h-5 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </button>
+                                                                    <div className="w-px bg-black h-[20px] mt-2"></div>
+                                                                    <button
+                                                                        className={`flex-1 border-1 rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isLoading || stockError
+                                                                            ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                                                            : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                                                            }`}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (!isOutOfStock && !isLoading && !stockError) {
+                                                                                handleAddToCart(product._id);
+                                                                            }
+                                                                        }}
+                                                                        disabled={isOutOfStock || isLoading || !!stockError}
+                                                                    >
+                                                                        {isLoading ? 'Updating...' : 'Update'}
+                                                                    </button>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Cart Quantity Info */}
+                                                            {isInCart && cartItem && (
+                                                                <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
+                                                                    In Cart Quantity: <span className="font-medium">{cartItem.totalQuantity} (Pack Of {cartItem.packQuentity})</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-
-                                                </div>
-
-                                                {/* Quantity Controls */}
-                                                <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
-                                                    <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
-                                                    <div className="flex items-center space-x-4">
-                                                        <button
-                                                            className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleQuantityChange(product._id, -1);
-                                                            }}
-                                                        >
-                                                            <span className="text-xl font-bold flex items-center ">
-                                                                <Image src="/icons/minus-icon.png"
-                                                                    alt="Minus"
-                                                                    width={12}
-                                                                    height={12}
-                                                                />
-                                                            </span>
-                                                        </button>
-                                                        <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
-                                                            {productQuantities[product._id] || 1}
-                                                        </span>
-                                                        <button
-                                                            className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleQuantityChange(product._id, 1);
-                                                            }}
-                                                        >
-                                                            <Image src="/icons/plus-icon.png"
-                                                                alt="Plus"
-                                                                width={12}
-                                                                height={12}
-                                                            />
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {/* Add to Cart Button */}
-                                                <div className="flex items-center space-x-3">
-                                                    <button className="flex items-center bg-[#46BCF9] text-white justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-[#2D2C70] py-2 px-6 transition-colors duration-300 group ">
-                                                        <svg
-                                                            className="w-5 h-5 transition-colors duration-300 "
-                                                            viewBox="0 0 21 21"
-                                                            fill="currentColor"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                        >
-                                                            <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                                                        </svg>
-                                                        Add to Cart
-                                                    </button>
-                                                </div>
-
-
-                                                {/* Action Buttons Row */}
-                                                <div className="flex space-x-2 mt-1">
-                                                    <button
-                                                        className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium  transition-colors flex items-center justify-center space-x-1"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <span>Added</span>
-                                                        <svg className="w-5 h-5 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </button>
-                                                    <div className="w-px bg-black h-[20px] mt-2"></div>
-                                                    <button
-                                                        className="flex-1  border-1 border-[#E799A9] bg-[#E799A9]  text-white rounded-lg py-1 px-3 text-sm font-medium transition-colors"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        Update
-                                                    </button>
-                                                </div>
-
-                                                {/* Cart Quantity Info */}
-                                                <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
-                                                    In Cart Quantity: <span className="font-medium">0 (Each)</span>
-                                                </div>
-                                            </div>
+                                                )
+                                            })}
                                         </div>
-                                    ))}
-                                </div>
 
-                                {/* Pagination */}
-                                {totalPages > 1 && (
-                                    <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
-                                        {renderPaginationButtons()}
+                                        {/* Pagination */}
+                                        {totalPages > 1 && (
+                                            <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
+                                                {renderPaginationButtons()}
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-lg text-gray-500">No products found for the selected category.</p>
                                     </div>
                                 )}
                             </>

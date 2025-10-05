@@ -8,11 +8,15 @@ import TrustedByCarousel from "@/components/metador-page-components/Carousel";
 import CategoriesGrid from "@/components/metador-page-components/CategoriesGrid";
 import HeroSection from "@/components/metador-page-components/Hero";
 import useNavStateStore from "@/zustand/navigations";
-import useUserStore from "@/zustand/user"
+import useUserStore from "@/zustand/user";
+
 
 export default function Home() {
   const currentIndex = useNavStateStore((state) => state.currentIndex);
   console.log("current index:", currentIndex)
+  const currentUser = useUserStore((state) => state.user);
+
+  console.log("current user:", currentUser);
 
   return (
     <>
@@ -23,7 +27,7 @@ export default function Home() {
         </>
       }
 
-      {currentIndex === 1 &&
+      {(currentIndex === 1 || currentIndex === 2 || currentIndex === 3) && currentUser === null &&
         <>
           <HeroSection />
           <CategoriesGrid />

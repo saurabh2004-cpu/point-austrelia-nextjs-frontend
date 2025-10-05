@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, ShoppingCart, Menu, X, User, ChevronDown } from "lucide-react"
+import { Search, ShoppingCart, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -11,48 +11,196 @@ import useNavStateStore from "@/zustand/navigations"
 import ShoppingCartPopup from "./CartPopup"
 import { useRouter } from "next/navigation"
 import useUserStore from "@/zustand/user"
+import axiosInstance from "@/axios/axiosInstance"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [showCartPopup, setShowCartPopUp] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState(null)
+  const [hoveredCategory, setHoveredCategory] = useState(null)
+  const [hoveredSubcategory, setHoveredSubcategory] = useState(null)
   const router = useRouter()
   const currentUser = useUserStore((state) => state.user);
-  console.log("Current user:", currentUser);
 
-  const navigationItems = [
-    { label: "HOME", index: 0, link: '/' },
-    { label: "MATADOR WHOLESALE", index: 1 },
-    { label: "ASRA AROMAS", index: 2 },
-    { label: "POINT ACCESSORIES", index: 3 },
-    { label: "COMPANY", index: 4 },
-  ]
-  const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex) // get function
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [brands, setBrands] = useState([])
+  const [categoriesByBrand, setCategoriesByBrand] = useState({})
+  const [subCategoriesByCategory, setSubCategoriesByCategory] = useState({})
+  const [subCategoriesTwoBySubCategory, setSubCategoriesTwoBySubCategory] = useState({})
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [loadingCategories, setLoadingCategories] = useState({})
 
-  const handleNavigation = (index) => {
-    switch (index) {
-      case 0:
-        router.push('/')
-        break;
-      case 1:
-        router.push('/products-list')
-        break;
-      case 2:
-        router.push('/products-list')
-        break;
-      case 3:
-        router.push('/products-list')
-        break;
-      case 4:
-        router.push('/')
-        break;
-      default:
-        break;
+  const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
+
+  // Fetch all brands on component mount
+  useEffect(() => {
+    fetchBrands()
+  }, [])
+
+  // Fetch categories when a brand is hovered
+  const fetchCategoriesForBrand = async (brandId) => {
+    if (categoriesByBrand[brandId]) return // Already fetched
+
+    try {
+      setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
+      console.log("brandId", brandId)
+      const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
+
+      console.log("categories by brand = ", res.data.data)
+
+      if (res.data.statusCode === 200) {
+        setCategoriesByBrand(prev => ({
+          ...prev,
+          [brandId]: res.data.data
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    } finally {
+      setLoadingCategories(prev => ({ ...prev, [brandId]: false }))
     }
-    // Close mobile menu after navigation
+  }
+
+  // Fetch subcategories when a category is hovered
+  const fetchSubCategoriesForCategory = async (categoryId) => {
+    if (subCategoriesByCategory[categoryId]) return // Already fetched
+
+    try {
+      const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
+
+      if (res.data.statusCode === 200) {
+        setSubCategoriesByCategory(prev => ({
+          ...prev,
+          [categoryId]: res.data.data
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching subcategories:', error)
+    }
+  }
+
+  // Fetch subcategories two when a subcategory is hovered
+  const fetchSubCategoriesTwoForSubCategory = async (subCategoryId) => {
+    if (subCategoriesTwoBySubCategory[subCategoryId]) return // Already fetched
+
+    try {
+      const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
+
+      if (res.data.statusCode === 200) {
+        setSubCategoriesTwoBySubCategory(prev => ({
+          ...prev,
+          [subCategoryId]: res.data.data
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching subcategories two:', error)
+    }
+  }
+
+  const fetchBrands = async () => {
+    try {
+      const res = await axiosInstance.get('brand/get-brands-list')
+
+      if (res.data.statusCode === 200) {
+        setBrands(res.data.data)
+        setLoading(false)
+      } else {
+        setError(res.data.message)
+        setLoading(false)
+      }
+    } catch (error) {
+      setError(error.message)
+      console.error("Error fetching brands:", error)
+      setLoading(false)
+    }
+  }
+
+  // Build navigation items dynamically
+  const buildNavigationItems = () => {
+    const items = [
+      { label: "HOME", index: 0, link: '/' }
+    ]
+
+    // Add brands as navigation items with dropdowns
+    brands.forEach((brand, idx) => {
+      const categories = categoriesByBrand[brand._id] || []
+
+      // Organize categories by column (distribute evenly)
+      const categoriesWithColumns = categories.map((cat, catIdx) => {
+        const column = Math.floor(catIdx / 5) + 1 // 5 items per column
+
+        return {
+          id: cat._id,
+          label: cat.name,
+          slug: cat.slug,
+          brandId: brand._id,
+          link: `/products-list?categoryId=${cat._id}&brandId=${brand._id}&categorySlug=${cat.slug}`,
+          column: column,
+          subcategories: subCategoriesByCategory[cat._id]?.map(subCat => ({
+            id: subCat._id,
+            label: subCat.name,
+            slug: subCat.slug,
+            brandId: brand._id,
+            link: `/products-list?subCategoryId=${subCat._id}&brandId=${brand._id}&subCategorySlug=${subCat.slug}`,
+            subcategoriesTwo: subCategoriesTwoBySubCategory[subCat._id]?.map(subCatTwo => ({
+              id: subCatTwo._id,
+              label: subCatTwo.name,
+              slug: subCatTwo.slug,
+              brandId: brand._id,
+              link: `/products-list?subCategoryTwoId=${subCatTwo._id}&brandId=${brand._id}&subCategoryTwoSlug=${subCatTwo.slug}`
+            }))
+          }))
+        }
+      })
+
+      items.push({
+        label: brand.name.toUpperCase(),
+        index: idx + 1,
+        brandId: brand._id,
+        hasDropdown: true,
+        categories: categoriesWithColumns
+      })
+    })
+
+    // Add COMPANY at the end
+    items.push({ label: "COMPANY", index: brands.length + 1 })
+
+    return items
+  }
+
+  const navigationItems = buildNavigationItems()
+
+  const handleNavigation = (item) => {
+    if (!item.hasDropdown) {
+      setCurrentIndex(item.index)
+      setActiveDropdown(null)
+      setIsMenuOpen(false)
+      if (item.link) {
+        router.push(item.link)
+      }
+    }
+  }
+
+  const handleCategoryClick = (link) => {
+    router.push(link)
+    setActiveDropdown(null)
+    setHoveredCategory(null)
+    setHoveredSubcategory(null)
     setIsMenuOpen(false)
+  }
+
+  const handleBrandHover = (brandId, index) => {
+    setActiveDropdown(index)
+    fetchCategoriesForBrand(brandId)
+  }
+
+  const handleCategoryHover = (categoryId) => {
+    fetchSubCategoriesForCategory(categoryId)
+  }
+
+  const handleSubCategoryHover = (subCategoryId) => {
+    fetchSubCategoriesTwoForSubCategory(subCategoryId)
   }
 
   useEffect(() => {
@@ -62,7 +210,18 @@ export function Navbar() {
   }, [currentUser])
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center h-screen">Loading...</div>
+  }
+
+  // Group categories by column
+  const groupCategoriesByColumn = (categories) => {
+    const columns = {}
+    categories.forEach(cat => {
+      const col = cat.column || 1
+      if (!columns[col]) columns[col] = []
+      columns[col].push(cat)
+    })
+    return Object.values(columns)
   }
 
   return (
@@ -134,7 +293,7 @@ export function Navbar() {
                   alt="Logo"
                   width={219}
                   height={100}
-                  className="h-12 md:h-16 lg:h-20 w-auto" // Progressive sizing: mobile -> tablet -> desktop
+                  className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer"
                   onClick={() => router.push('/')}
                 />
               </div>
@@ -206,7 +365,6 @@ export function Navbar() {
                   {/* Desktop Wishlist */}
                   <button
                     className="relative bg-white group"
-
                     onClick={() => router.push('/wishlist')}
                   >
                     <svg
@@ -226,7 +384,7 @@ export function Navbar() {
 
                   {/* Desktop Cart */}
                   <button
-                    className="`lg:hidden block relative bg-white group"
+                    className="relative bg-white group"
                     onClick={() => setShowCartPopUp(!showCartPopup)}
                   >
                     <svg
@@ -263,17 +421,35 @@ export function Navbar() {
         )}
 
         {/* Main Navigation */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative">
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center justify-center space-x-[36px] h-14">
             {navigationItems.map((item) => (
-              <button
+              <div
                 key={item.index}
-                onClick={() => handleNavigation(item.index)}
-                className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                className="relative h-full flex items-center"
+                onMouseEnter={() => {
+                  if (item.hasDropdown) {
+                    if (item.brandId) {
+                      handleBrandHover(item.brandId, item.index)
+                    } else {
+                      setActiveDropdown(item.index)
+                    }
+                  }
+                }}
+                onMouseLeave={() => {
+                  setActiveDropdown(null)
+                  setHoveredCategory(null)
+                  setHoveredSubcategory(null)
+                }}
               >
-                {item.label}
-              </button>
+                <button
+                  onClick={() => handleNavigation(item)}
+                  className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                >
+                  {item.label}
+                </button>
+              </div>
             ))}
           </div>
 
@@ -281,7 +457,7 @@ export function Navbar() {
           {isMenuOpen && (
             <div className="lg:hidden py-4 space-y-2">
               {/* Mobile & Tablet Login/Signup - Only show if not logged in */}
-              {!isLoggedIn && (
+              {!currentUser && (
                 <div className="flex items-center space-x-4 pb-4 border-b border-[#2d2c70] mb-4">
                   <Button
                     variant="outline"
@@ -303,27 +479,80 @@ export function Navbar() {
               )}
 
               {/* Mobile & Tablet User Info - Show if logged in */}
-              {isLoggedIn && (
+              {currentUser && (
                 <div className="flex items-center gap-2 text-[1rem] font-medium pb-4 border-b border-[#2d2c70] mb-4">
                   <span className="text-[#2d2c70] font-medium">Welcome</span>
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-gray-600" />
-                    <span className="font-semibold text-black">Devendra Chandora</span>
+                    <span className="font-semibold text-black">{currentUser.contactName}</span>
                   </div>
                   <ChevronDown strokeWidth={3} className="w-4 h-4 text-[#2d2c70] mt-1" />
                 </div>
               )}
 
               {/* Mobile & Tablet Navigation Items */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="space-y-2">
                 {navigationItems.map((item) => (
-                  <button
-                    key={item.index}
-                    onClick={() => handleNavigation(item.index)}
-                    className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 md:border-b-0"
-                  >
-                    {item.label}
-                  </button>
+                  <div key={item.index}>
+                    <button
+                      onClick={() => {
+                        if (item.hasDropdown) {
+                          setActiveDropdown(activeDropdown === item.index ? null : item.index)
+                          if (item.brandId) {
+                            fetchCategoriesForBrand(item.brandId)
+                          }
+                        } else {
+                          handleNavigation(item)
+                        }
+                      }}
+                      className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
+                    >
+                      {item.label}
+                      {item.hasDropdown && (
+                        <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
+                      )}
+                    </button>
+
+                    {/* Mobile Dropdown */}
+                    {item.hasDropdown && activeDropdown === item.index && item.categories && (
+                      <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
+                        {item.categories.length > 0 ? (
+                          item.categories.map((category, idx) => (
+                            <div key={category.id || idx}>
+                              <button
+                                onClick={() => router.push(category.link)}
+                                className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
+                              >
+                                {category.label}
+                                {category.subcategories && (
+                                  <ChevronRight className={`w-4 h-4 transition-transform ${hoveredCategory === category.id ? 'rotate-90' : ''}`} />
+                                )}
+                              </button>
+
+                              {/* Mobile Subcategories */}
+                              {category.subcategories && hoveredCategory === category.id && (
+                                <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
+                                  {category.subcategories.map((subcat) => (
+                                    <button
+                                      key={subcat.id}
+                                      onClick={() => router.push(subcat.link)}
+                                      className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
+                                    >
+                                      {subcat.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="py-2 text-sm text-gray-500">
+                            {loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -336,6 +565,120 @@ export function Navbar() {
             </div>
           )}
         </div>
+
+        {/* Desktop Full-Width Dropdown */}
+        {activeDropdown !== null && (
+          <div
+            className="hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50"
+            onMouseEnter={() => setActiveDropdown(activeDropdown)}
+            onMouseLeave={() => {
+              setActiveDropdown(null)
+              setHoveredCategory(null)
+              setHoveredSubcategory(null)
+            }}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {navigationItems.find(item => item.index === activeDropdown)?.categories && (
+                <div className="grid grid-cols-5 gap-8">
+                  {groupCategoriesByColumn(navigationItems.find(item => item.index === activeDropdown).categories).map((columnCategories, colIdx) => (
+                    <div key={colIdx} className="space-y-6">
+                      {columnCategories.length > 0 ? (
+                        columnCategories.map((category, catIdx) => (
+                          <div
+                            key={category.id || catIdx}
+                            className="relative"
+                            onMouseEnter={() => {
+                              if (category.subcategories) {
+                                setHoveredCategory(`${colIdx}-${catIdx}`)
+                              } else if (category.id) {
+                                handleCategoryHover(category.id)
+                                setHoveredCategory(`${colIdx}-${catIdx}`)
+                              }
+                            }}
+                            onMouseLeave={() => setHoveredCategory(null)}
+                          >
+                            <button
+                              onClick={() => router.push(category.link)}
+                              className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
+                                ? "text-[#E9098D] font-bold"
+                                : "text-[#2d2c70] hover:text-[#E9098D]"
+                                }`}
+                            >
+                              <span>{category.label}</span>
+                              {(category.subcategories || subCategoriesByCategory[category.id]) && (
+                                <ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />
+                              )}
+                            </button>
+
+                            {/* Subcategory Popup */}
+                            {(category.subcategories || subCategoriesByCategory[category.id]) && hoveredCategory === `${colIdx}-${catIdx}` && (
+                              <div
+                                className="absolute left-2/3 top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
+                                onMouseEnter={() => setHoveredCategory(`${colIdx}-${catIdx}`)}
+                              >
+                                <div className="p-4 space-y-2 ">
+                                  {(category.subcategories || subCategoriesByCategory[category.id] || []).map((subcat) => (
+                                    <div
+                                      key={subcat.id}
+                                      className="relative"
+                                      onMouseEnter={() => {
+                                        if (subcat.id) {
+                                          handleSubCategoryHover(subcat.id)
+                                          setHoveredSubcategory(subcat.id)
+                                        }
+                                      }}
+                                      onMouseLeave={() => setHoveredSubcategory(null)}
+                                    >
+                                      <button
+                                        onClick={() => router.push(subcat.link)}
+                                        className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
+                                      >
+                                        <span>{subcat.label}</span>
+                                        {subCategoriesTwoBySubCategory[subcat.id] && (
+                                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        )}
+                                      </button>
+
+                                      {/* SubcategoryTwo Popup */}
+                                      {subCategoriesTwoBySubCategory[subcat.id] && hoveredSubcategory === subcat.id && (
+                                        <div
+                                          className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
+                                        >
+                                          <div className="p-4 space-y-2">
+                                            {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
+                                              <button
+                                                key={subcatTwo.id}
+                                                onClick={() => router.push(subcatTwo.link)}
+                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200"
+                                              >
+                                                {subcatTwo.label}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-gray-500">
+                          {loadingCategories[navigationItems.find(item => item.index === activeDropdown)?.brandId]
+                            ? 'Loading categories...'
+                            : 'No categories available'
+                          }
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {showCartPopup && <ShoppingCartPopup onClose={() => setShowCartPopUp(false)} />}

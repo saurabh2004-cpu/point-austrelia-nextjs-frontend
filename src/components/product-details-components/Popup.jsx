@@ -3,38 +3,60 @@
 import axiosInstance from "@/axios/axiosInstance"
 import { ArrowRight, Check, Heart, Minus, Plus, X } from "lucide-react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-
+import useUserStore from "@/zustand/user"
 
 export default function ProductPopup({ isOpen, onClose, productId }) {
     const [selectedImage, setSelectedImage] = useState(0)
     const [quantity, setQuantity] = useState(1)
     const [selectedUnit, setSelectedUnit] = useState("Each")
-    const [errors, setErrors] = useState({})
     const [productImages, setProductImages] = useState([])
     const [product, setProduct] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [cartItems, setCartItems] = useState([])
+    const [error, setError] = useState(null)
+    const [inCartItem, setInCartItem] = useState(null)
+    const [wishListItems, setWishlistItems] = useState([])
+
+    const currentUser = useUserStore((state) => state.user)
+    const router = useRouter()
 
     const incrementQuantity = () => setQuantity((prev) => prev + 1)
     const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1))
 
+    // Fetch product details
     const fetchProductDetail = async (productId) => {
         try {
             setLoading(true)
             const response = await axiosInstance(`products/get-product/${productId}`)
 
+            console.log("product details", response)
             if (response.data.statusCode === 200) {
-                console.log("product details", response.data.data)
                 const productData = response.data.data
                 setProduct(productData)
-                
-                // Set all product images from the API response
-                if (productData.images && productData.images.length > 0) {
+                if (productData.images?.length > 0) {
                     setProductImages(productData.images)
                 }
             }
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Fetch cart items
+    const fetchCustomersCart = async () => {
+        try {
+            if (!currentUser?._id) return
+            setLoading(true)
+            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
+            if (response.data.statusCode === 200) {
+                setCartItems(response.data.data || [])
+            }
+        } catch (error) {
+            console.error("Error fetching customer cart:", error)
         } finally {
             setLoading(false)
         }
@@ -46,16 +68,102 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
         }
     }, [productId])
 
-    // Reset state when popup closes
     useEffect(() => {
-        if (!isOpen) {
-            setProduct(null)
-            setProductImages([])
-            setSelectedImage(0)
-            setQuantity(1)
-            setSelectedUnit("Each")
+        if (isOpen && currentUser?._id) {
+            fetchCustomersCart()
         }
     }, [isOpen])
+
+    // Check if product is already in cart
+    useEffect(() => {
+        if (product && cartItems.length > 0) {
+            const existing = cartItems.find(ci => ci.product._id === product._id)
+            setInCartItem(existing || null)
+            if (existing) {
+                setQuantity(existing.unitsQuantity)
+                const pack = product.typesOfPacks?.find(p => p.quantity === existing.packQuentity)
+                setSelectedUnit(pack ? pack.name : "Each")
+            }
+        } else {
+            setInCartItem(null)
+        }
+    }, [product, cartItems])
+
+    // --- Handlers ---
+
+    const handleAddToCart = async () => {
+        if (!currentUser?._id) {
+            setError("Please login to add to cart")
+            return
+        }
+        try {
+            const selectedPack = product.typesOfPacks?.find(p => p.name === selectedUnit)
+            console.log("selected pack", selectedPack)
+            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+            const totalQuantity = packQuantity * quantity
+
+            const res = await axiosInstance.post("cart/add-to-cart", {
+                customerId: currentUser._id,
+                productId: product._id,
+                packQuentity: packQuantity,
+                unitsQuantity: quantity,
+                totalQuantity
+            })
+
+            if (res.data.statusCode === 200) {
+                await fetchCustomersCart()
+            }
+        } catch (err) {
+            console.error(err)
+            setError("Error adding to cart")
+        }
+    }
+
+    const handleUpdateCart = async () => {
+        if (!inCartItem) return
+        await handleAddToCart() // same API call, overwrites
+    }
+
+    const handleAddToWishlist = async () => {
+        if (!currentUser?._id) {
+            setError("Please login to add to wishlist")
+            return
+        }
+        try {
+            const res = await axiosInstance.post("wishlist/add-to-wishlist", {
+                customerId: currentUser._id,
+                productId: product._id
+            })
+            console.log("wishlist res", res.data)
+        } catch (err) {
+            console.error(err)
+            setError("Error adding to wishlist")
+        }
+    }
+
+    const fetchCustomersWishList = async () => {
+        try {
+            if (!currentUser || !currentUser._id) return
+            console.log("fetchj wishl;iast", currentUser._id)
+            const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
+
+            console.log("Customer wishlist hqsbqhsbjqs:", response)
+            if (response.data.statusCode === 200) {
+                setWishlistItems(response.data.data.wishlistItems || [])
+            } else {
+                setError(response.data.message)
+            }
+        }
+        catch (error) {
+            console.error('Error fetching customer wishlist:', error)
+        }
+    }
+
+    useEffect(() => {
+        if (currentUser._id) {
+            fetchCustomersWishList()
+        }
+    }, [currentUser])
 
     if (!isOpen) return null
 
@@ -63,7 +171,7 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4">
-                    <h2 className="text-lg font-medium font-spartan"></h2>
+                    <h2 className="text-lg font-medium font-spartan">{product?.ProductName}</h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
@@ -76,186 +184,142 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                         </div>
                     ) : product ? (
                         <div className="flex flex-col lg:flex-row gap-6">
+                            {/* Left side images */}
                             <div className="flex-1">
                                 <div className="flex flex-col-reverse xl:flex-row space-x-8">
-
-                                    {/* Thumbnail Images */}
                                     <div className="flex xl:flex-col space-x-2 xl:space-x-0 space-y-2 justify-center">
                                         {productImages.map((image, index) => (
                                             <button
                                                 key={index}
                                                 onClick={() => setSelectedImage(index)}
-                                                className={`flex-shrink-0 p-2 bg-white transition-all duration-300 shadow-xl shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
+                                                className={`flex-shrink-0 p-2 bg-white shadow-xl ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
                                                     }`}
                                             >
                                                 <img
                                                     src={image || "/placeholder.svg"}
                                                     alt={`Thumbnail ${index + 1}`}
-                                                    className="h-[50px] w-[50px] md:w-[60px] md:h-[45px] object-contain rounded-md"
+                                                    className="h-[50px] w-[50px] object-contain rounded-md"
                                                 />
                                             </button>
                                         ))}
                                     </div>
 
-                                    {/* Main Image */}
                                     <div className="relative">
                                         <div className="rounded-lg p-4 bg-[#FAFAFA]">
-                                            <span className="absolute top-2 left-2 bg-green-500 text-white text-[11px] font-[400] font-spartan tracking-widest px-1 py-[2px] rounded-sm z-10">
-                                                {product.stockLevel > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
+                                            <span className="absolute top-2 left-2 bg-green-500 text-white text-[11px] px-1 py-[2px] rounded-sm">
+                                                {product?.badge?.name ? product?.badge?.name : ""}
                                             </span>
                                             <img
                                                 src={productImages[selectedImage] || "/placeholder.svg"}
                                                 alt={product.ProductName}
-                                                className="w-full h-[140px] md:h-[260px] object-contain"
+                                                className="w-full h-[260px] object-contain"
                                             />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex-1 space-y-2 font-spartan">
 
-                                {/* Product Name */}
-                                <h1 className="text-[20px] font-semibold text-black uppercase">
-                                    {product.ProductName}
-                                </h1>
 
-                                {/* SKU and Barcode */}
-                                <div className="space-y-1 text-[13px] font-medium text-gray-600">
-                                    <div className="flex items-center justify-between space-x-2">
-                                        <p>SKU {product.sku}</p>
-                                        <div className={`flex items-center space-x-2 px-2 ${product.stockLevel > 0 ? 'bg-[#E7FAEF]' : 'bg-red-100'}`}>
-                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                            </svg>
-                                            <span className={`text-[14px] font-semibold font-spartan py-1 rounded ${product.stockLevel > 0 ? 'text-black' : 'text-red-600'}`}>
-                                                {product.stockLevel > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
-                                            </span>
-                                        </div>
+                            {/* Right side details */}
+                            <div className="flex-1 space-y-3 font-spartan">
+                                <h1 className="text-[26px] font-semibold text-black uppercase">{product.ProductName}</h1>
+                                <div className="space-y-1 flex justify-between items-center">
+                                    <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                                        SKU {product.sku}
+                                    </p>
+
+                                    {/* Stock Status */}
+                                    <div className={`flex items-center space-x-2 px-2 ${product.stockLevel > 0 ? 'bg-[#E7FAEF]' : 'bg-red-100'}`}>
+                                        <svg className={`w-5 h-5 ${product.stockLevel < 0 ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className={` ${product.stockLevel > 0 ? 'text-[14px]' : 'text-[12px]'} font-semibold font-spartan py-1 rounded ${product.stockLevel > 0 ? 'text-black' : 'text-red-600'}`}>
+                                            {product.stockLevel > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
+                                        </span>
                                     </div>
-
-                                    <p>Barcode:</p>
-                                    <p>{product.eachBarcodes || 'N/A'}</p>
                                 </div>
-
-                                {/* Category */}
-                                {product.commerceCategoriesTwo && (
-                                    <div className="inline-block border rounded-full px-3 py-1 text-[14px] font-[400]">
-                                        {product.commerceCategoriesTwo.name}
-                                    </div>
-                                )}
-
-                                {/* Price */}
                                 <div className="text-[24px] font-semibold text-[#2D2C70]">
-                                    ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
+                                    ${product.eachPrice ? product.eachPrice.toFixed(2) : "0.00"}
                                 </div>
 
-                                {/* Quantity and Units */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center space-x-6">
-                                        <div>
-                                            <span className="text-[14px] font-[400] block mb-2">Quantity</span>
-                                            <div className="flex items-center">
-                                                <button
-                                                    onClick={decrementQuantity}
-                                                    className="px-2 rounded-md py-1 text-xl text-white bg-black hover:bg-gray-800 transition-colors"
-                                                >
-                                                    <Minus className="w-4 h-4 text-white" />
-                                                </button>
-                                                <span className="px-4 py-2 text-[14px] font-medium text-black min-w-[3rem] text-center">
-                                                    {quantity}
-                                                </span>
-                                                <button
-                                                    onClick={incrementQuantity}
-                                                    className="px-2 py-1 rounded-md text-xl text-white bg-black hover:bg-gray-800 transition-colors"
-                                                >
-                                                    <Plus className="w-4 h-4 text-white" />
-                                                </button>
-                                            </div>
+                                {/* Quantity & Units */}
+                                <div className="flex items-center space-x-6">
+                                    <div>
+                                        <span className="block mb-2 text-sm">Quantity</span>
+                                        <div className="flex items-center">
+                                            <button
+                                                onClick={decrementQuantity}
+                                                className="px-2 py-1 bg-black text-white rounded-md"
+                                            >
+                                                <Minus className="w-4 h-4" />
+                                            </button>
+                                            <span className="px-4">{quantity}</span>
+                                            <button
+                                                onClick={incrementQuantity}
+                                                className="px-2 py-1 bg-black text-white rounded-md"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </button>
                                         </div>
+                                    </div>
 
-                                        <div className="bg-gray-300 w-[1px] h-12"></div>
-
-                                        <div className="flex flex-col space-y-2 w-full">
-                                            <span className="text-sm font-[400]">Units</span>
-                                            <div className="relative w-full">
-                                                <select
-                                                    value={selectedUnit}
-                                                    onChange={(e) => setSelectedUnit(e.target.value)}
-                                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                        focus:outline-none focus:ring focus:ring-pink-500 focus:border-pink-500 
-                                                        appearance-none"
-                                                >
-                                                    <option value="Each">Each</option>
-                                                    {product.typesOfPacks && product.typesOfPacks.map((pack) => (
-                                                        <option key={pack._id} value={pack.name}>
-                                                            {pack.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-
-                                                {/* Custom Arrow */}
-                                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                    <svg
-                                                        className="w-4 h-4 text-gray-500"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div className="flex flex-col space-y-2 w-full">
+                                        <span className="text-sm">Units</span>
+                                        <select
+                                            value={selectedUnit}
+                                            onChange={(e) => setSelectedUnit(e.target.value)}
+                                            className="w-full border rounded-md p-2"
+                                        >
+                                            <option value="Each">Each</option>
+                                            {product.typesOfPacks?.map((pack) => (
+                                                <option key={pack._id} value={pack._id}>
+                                                    {pack.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center space-x-3">
-                                    <button className="flex items-center bg-[#46BCF9] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 ">
-                                        <svg
-                                            className="w-5 h-5 transition-colors duration-300 "
-                                            viewBox="0 0 21 21"
-                                            fill="currentColor"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                                        </svg>
-                                        Add to Cart
-                                    </button>
-                                    <div className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full transition-colors cursor-pointer">
-                                        <Image
-                                            src="/product-details/heart-1.png"
-                                            alt="Heart"
-                                            width={15}
-                                            height={15}
-                                            className="w-[20px] h-[18.49px]"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Status Buttons */}
-                                <div className="flex justify-center font-semibold flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                                    <button className="flex-1 bg-[#2D2C70] text-[12px] font-semibold border border-[#2D2C70] rounded-lg text-white py-2 rounded transition-colors">
-                                        Added <span><Check className="inline-block ml-2 h-4 w-4" /></span>
-                                    </button>
-
-                                    <div className="hidden sm:block bg-black w-[1px] h-9"></div>
-
-                                    <button className="flex-1 bg-[#E799A9] text-[12px] font-semibold border border-[#E799A9] rounded-lg text-white py-2 rounded transition-colors">
-                                        Update
-                                    </button>
+                                    {!inCartItem ? (
+                                        <>
+                                            <button
+                                                onClick={handleAddToCart}
+                                                className="flex-1 bg-[#46BCF9] text-white py-2 rounded-lg"
+                                            >
+                                                Add to Cart
+                                            </button>
+                                            <div
+                                                onClick={handleAddToWishlist}
+                                                className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full cursor-pointer"
+                                            >
+                                                <Heart className="w-5 h-5 text-red-500" />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                            <button className="flex-1 bg-[#2D2C70] text-white py-2 rounded-lg">
+                                                Added <Check className="inline-block ml-2 h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={handleUpdateCart}
+                                                className="flex-1 bg-[#E799A9] text-white py-2 rounded-lg"
+                                            >
+                                                Update
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Cart Quantity */}
-                                <div className="text-[14px] font-medium text-black hover:text-[#E9098D]">
-                                    In Cart Quantity: 0 ({selectedUnit})
+                                <div className="text-sm text-black">
+                                    In Cart Quantity: {inCartItem ? inCartItem.totalQuantity : 0}
                                 </div>
 
-                                {/* View Product Details Link */}
-                                <button className="flex justify-center items-center text-[14px] text-black underline hover:no-underline transition-all">
-                                    View product details <span className="text--[5px] -rotate-45 h-1 w-1"><ArrowRight /></span>
+                                <button className="text-sm underline flex items-center">
+                                    View product details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>
                             </div>
                         </div>

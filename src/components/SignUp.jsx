@@ -1,25 +1,41 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import axiosInstance from '@/axios/axiosInstance' // Make sure to import axiosInstance
+import useUserStore from '@/zustand/user'
 
 export default function SignUpComponent() {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    accountEmail: '',
-    orderEmail: '',
-    phone: '',
+    customerName: '',
+    contactName: '',
+    contactEmail: '',
+    customerEmail: '',
+    CustomerPhoneNo: '',
+    contactPhone: '',
     storeName: '',
     abn: '',
+    category: '', // This will store the business type
+    customCategory: '', // For "Other" option
     address1: '',
     address2: '',
     suburb: '',
     country: '',
     state: '',
-    postcode: ''
+    postcode: '',
+    password: '' // Default password
   })
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const setUser = useUserStore((state) => state.setUser);
+
+  // Business type options
+  const businessTypes = [
+    'Retail Store',
+    'Online Store',
+    'Wholesaler',
+    'Distributor',
+    'Other'
+  ]
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -36,6 +52,23 @@ export default function SignUpComponent() {
     }
   }
 
+  const handleBusinessTypeChange = (e) => {
+    const value = e.target.value
+    setFormData(prev => ({
+      ...prev,
+      category: value,
+      // Clear custom category if not "Other"
+      customCategory: value !== 'Other' ? '' : prev.customCategory
+    }))
+
+    if (errors.category) {
+      setErrors(prev => ({
+        ...prev,
+        category: ''
+      }))
+    }
+  }
+
   const validateForm = () => {
     const newErrors = {}
     const requiredFields = [
@@ -46,17 +79,25 @@ export default function SignUpComponent() {
       'CustomerPhoneNo',
       'storeName',
       'abn',
+      'category',
       'address1',
       'suburb',
       'country',
       'state',
       'postcode',
     ]
+
     requiredFields.forEach(field => {
       if (!formData[field]?.trim()) {
-        newErrors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
+        const fieldName = field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+        newErrors[field] = `${fieldName} is required`
       }
     })
+
+    // If category is "Other", custom category is required
+    if (formData.category === 'Other' && !formData.customCategory?.trim()) {
+      newErrors.customCategory = 'Please specify your business type'
+    }
 
     const emailRegex = /\S+@\S+\.\S+/
     if (formData.contactEmail && !emailRegex.test(formData.contactEmail)) {
@@ -76,21 +117,47 @@ export default function SignUpComponent() {
 
     setIsLoading(true)
 
-    // Create address object from form data
-    const addressData = {
-      address1: formData.address1,
-      address2: formData.address2,
-      suburb: formData.suburb,
-      state: formData.state,
-      country: formData.country,
-      postcode: formData.postcode
+    // Create address objects from form data
+    const shippingAddress = {
+      shippingAddressOne: formData.address1,
+      shippingAddressTwo: formData.address2 || '',
+      shippingAddressThree: '',
+      shippingCity: formData.suburb,
+      shippingState: formData.state,
+      shippingZip: formData.postcode
     }
 
-    // Prepare submission data with populated address arrays
+    const billingAddress = {
+      billingAddressOne: formData.address1,
+      billingAddressTwo: formData.address2 || '',
+      billingAddressThree: '',
+      billingCity: formData.suburb,
+      billingState: formData.state,
+      billingZip: formData.postcode
+    }
+
+    // Prepare submission data
     const submissionData = {
-      ...formData,
-      shippingAddresses: [addressData],
-      billingAddresses: [addressData]
+      customerName: formData.customerName,
+      contactName: formData.contactName,
+      contactEmail: formData.contactEmail,
+      customerEmail: formData.customerEmail,
+      CustomerPhoneNo: formData.CustomerPhoneNo,
+      contactPhone: formData.CustomerPhoneNo, // Using same as customer phone
+      storeName: formData.storeName,
+      abn: formData.abn,
+      category: formData.category === 'Other' ? formData.customCategory : formData.category,
+      suburb: formData.suburb,
+      country: formData.country,
+      state: formData.state,
+      postcode: formData.postcode,
+      password: formData.password,
+      shippingAddresses: [shippingAddress],
+      billingAddresses: [billingAddress],
+      // Add default values for required backend fields
+      defaultShippingRate: "40",
+      orderApproval: "ADMIN",
+      comments: "New customer signup"
     }
 
     console.log("Form submitted:", submissionData)
@@ -101,15 +168,19 @@ export default function SignUpComponent() {
             'Content-Type': 'application/json'
           }
         })
+
+        console.log("signup response:", res)
       if (res.data.statusCode === 200) {
+        setUser(res.data.data);
+        window.location.href = '/my-account-review'
         setErrors({})
-       
-        setUser(res.data.data)
+        console.log('Signup successful:', res.data)
       } else {
-        setErrors(res.data.message)
+        setErrors({ submit: res.data.message })
       }
     } catch (error) {
-      setErrors(error)
+      console.error('Signup error:', error)
+      setErrors({ submit: error.response?.data?.message || 'An error occurred during signup' })
     } finally {
       setIsLoading(false)
     }
@@ -138,7 +209,7 @@ export default function SignUpComponent() {
   }
 
   return (
-    <div className="   bg-white flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 font-spartan ">
+    <div className="bg-white flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 font-spartan">
       <motion.div
         className="max-w-4xl w-full space-y-6 sm:space-y-8 py-12"
         variants={containerVariants}
@@ -163,7 +234,7 @@ export default function SignUpComponent() {
 
         {/* Sign Up Form */}
         <motion.form
-          className=" space-y-4 sm:space-y-6 bg-white px-4 sm:px-6 lg:px-8 rounded-lg"
+          className="space-y-4 sm:space-y-6 bg-white px-4 sm:px-6 lg:px-8 rounded-lg"
           onSubmit={handleSubmit}
           variants={itemVariants}
         >
@@ -176,17 +247,17 @@ export default function SignUpComponent() {
               </label>
             </motion.div>
 
-            {/* First Name & Last Name Row */}
+            {/* Customer Name & Contact Name Row */}
             <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
-                <label htmlFor="firstName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  First Name<span className="text-red-500 ml-1">*</span>
+                <label htmlFor="customerName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Customer Name<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
-                  id="firstName"
-                  name="firstName"
+                  id="customerName"
+                  name="customerName"
                   type="text"
-                  value={formData.firstName}
+                  value={formData.customerName}
                   onChange={handleInputChange}
                   className={`
                     appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
@@ -194,22 +265,22 @@ export default function SignUpComponent() {
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
                     focus:border-blue-500 focus:z-10 text-sm sm:text-base
                     transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.firstName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    ${errors.customerName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 />
-                {errors.firstName && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.firstName}</p>
+                {errors.customerName && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.customerName}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Last Name<span className="text-red-500 ml-1">*</span>
+                <label htmlFor="contactName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Contact Name<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
-                  id="lastName"
-                  name="lastName"
+                  id="contactName"
+                  name="contactName"
                   type="text"
-                  value={formData.lastName}
+                  value={formData.contactName}
                   onChange={handleInputChange}
                   className={`
                     appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
@@ -217,26 +288,26 @@ export default function SignUpComponent() {
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
                     focus:border-blue-500 focus:z-10 text-sm sm:text-base
                     transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.lastName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    ${errors.contactName ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 />
-                {errors.lastName && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.lastName}</p>
+                {errors.contactName && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactName}</p>
                 )}
               </div>
             </motion.div>
 
-            {/* Account Email & Order Email Row */}
+            {/* Contact Email & Customer Email Row */}
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
-                <label htmlFor="accountEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Account Email<span className="text-red-500 ml-1">*</span>
+                <label htmlFor="contactEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Contact Email<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
-                  id="accountEmail"
-                  name="accountEmail"
+                  id="contactEmail"
+                  name="contactEmail"
                   type="email"
-                  value={formData.accountEmail}
+                  value={formData.contactEmail}
                   onChange={handleInputChange}
                   className={`
                     appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
@@ -244,22 +315,22 @@ export default function SignUpComponent() {
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
                     focus:border-blue-500 focus:z-10 text-sm sm:text-base
                     transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.accountEmail ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    ${errors.contactEmail ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 />
-                {errors.accountEmail && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.accountEmail}</p>
+                {errors.contactEmail && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactEmail}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="orderEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Email for Order Tracking<span className="text-red-500 ml-1">*</span>
+                <label htmlFor="customerEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Customer Email<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
-                  id="orderEmail"
-                  name="orderEmail"
+                  id="customerEmail"
+                  name="customerEmail"
                   type="email"
-                  value={formData.orderEmail}
+                  value={formData.customerEmail}
                   onChange={handleInputChange}
                   className={`
                     appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
@@ -267,26 +338,26 @@ export default function SignUpComponent() {
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
                     focus:border-blue-500 focus:z-10 text-sm sm:text-base
                     transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.orderEmail ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    ${errors.customerEmail ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 />
-                {errors.orderEmail && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.orderEmail}</p>
+                {errors.customerEmail && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.customerEmail}</p>
                 )}
               </div>
             </motion.div>
 
-            {/* Phone & Store Name Row */}
+            {/* Customer Phone & Store Name Row */}
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
-                <label htmlFor="phone" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Phone<span className="text-red-500 ml-1">*</span>
+                <label htmlFor="CustomerPhoneNo" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Customer Phone<span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
-                  id="phone"
-                  name="phone"
+                  id="CustomerPhoneNo"
+                  name="CustomerPhoneNo"
                   type="tel"
-                  value={formData.phone}
+                  value={formData.CustomerPhoneNo}
                   onChange={handleInputChange}
                   className={`
                     appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
@@ -294,11 +365,11 @@ export default function SignUpComponent() {
                     rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
                     focus:border-blue-500 focus:z-10 text-sm sm:text-base
                     transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.phone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    ${errors.CustomerPhoneNo ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 />
-                {errors.phone && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.phone}</p>
+                {errors.CustomerPhoneNo && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.CustomerPhoneNo}</p>
                 )}
               </div>
               <div>
@@ -326,7 +397,7 @@ export default function SignUpComponent() {
               </div>
             </motion.div>
 
-            {/* ABN & Address 1 Row */}
+            {/* ABN & Type of Business Row */}
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="abn" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
@@ -352,6 +423,76 @@ export default function SignUpComponent() {
                 )}
               </div>
               <div>
+                <label htmlFor="category" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Type of Business<span className="text-red-500 ml-1">*</span>
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleBusinessTypeChange}
+                  className={`
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                >
+                  <option value="">Select Business Type</option>
+                  {businessTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.category}</p>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Custom Business Type (shown only when "Other" is selected) */}
+            {formData.category === 'Other' && (
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22"
+                variants={itemVariants}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                transition={{ duration: 0.3 }}
+              >
+                <div></div> {/* Empty div for spacing */}
+                <div>
+                  <label htmlFor="customCategory" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Specify Business Type<span className="text-red-500 ml-1">*</span>
+                  </label>
+                  <input
+                    id="customCategory"
+                    name="customCategory"
+                    type="text"
+                    value={formData.customCategory}
+                    onChange={handleInputChange}
+                    placeholder="Enter your business type"
+                    className={`
+                      appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                      border border-gray-300 placeholder-gray-400 text-gray-900 
+                      rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                      focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                      transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                      ${errors.customCategory ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    `}
+                  />
+                  {errors.customCategory && (
+                    <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.customCategory}</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Address 1 & Address 2 Row */}
+            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+              <div>
                 <label htmlFor="address1" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Address 1<span className="text-red-500 ml-1">*</span>
                 </label>
@@ -374,10 +515,6 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.address1}</p>
                 )}
               </div>
-            </motion.div>
-
-            {/* Address 2 & Suburb Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="address2" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Address 2
@@ -397,6 +534,10 @@ export default function SignUpComponent() {
                   "
                 />
               </div>
+            </motion.div>
+
+            {/* Suburb & Country Row */}
+            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="suburb" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Suburb<span className="text-red-500 ml-1">*</span>
@@ -420,10 +561,6 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.suburb}</p>
                 )}
               </div>
-            </motion.div>
-
-            {/* Country & State Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="country" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Country<span className="text-red-500 ml-1">*</span>
@@ -452,6 +589,10 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.country}</p>
                 )}
               </div>
+            </motion.div>
+
+            {/* State & Post Code Row */}
+            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="state" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   State<span className="text-red-500 ml-1">*</span>
@@ -470,7 +611,7 @@ export default function SignUpComponent() {
                     ${errors.state ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
                   `}
                 >
-                  <option value="">Australian capital territory</option>
+                  <option value="">Select State</option>
                   <option value="nsw">New South Wales</option>
                   <option value="vic">Victoria</option>
                   <option value="qld">Queensland</option>
@@ -484,10 +625,6 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.state}</p>
                 )}
               </div>
-            </motion.div>
-
-            {/* Post Code */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="postcode" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Post code<span className="text-red-500 ml-1">*</span>
@@ -511,9 +648,44 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.postcode}</p>
                 )}
               </div>
-              <div></div>
+
+            </motion.div>
+
+            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+              <div>
+                <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Password<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="text"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-300 placeholder-gray-400 text-gray-900 
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                />
+                {errors.password && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.password}</p>
+                )}
+              </div>
             </motion.div>
           </div>
+
+          {/* Submit Error */}
+          {
+            errors.submit && (
+              <motion.div variants={itemVariants} className="text-center">
+                <p className="text-red-600 text-sm">{errors.submit}</p>
+              </motion.div>
+            )
+          }
 
           {/* Submit Button */}
           <motion.div variants={itemVariants} className="pt-2 sm:pt-4 justify-center flex">
@@ -544,8 +716,8 @@ export default function SignUpComponent() {
               )}
             </motion.button>
           </motion.div>
-        </motion.form>
-      </motion.div>
-    </div>
+        </motion.form >
+      </motion.div >
+    </div >
   )
 }

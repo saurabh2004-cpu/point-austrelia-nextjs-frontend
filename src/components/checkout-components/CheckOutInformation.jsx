@@ -87,10 +87,14 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
             <h2 className="text-[24px] font-semibold mb-4 mt-8">Delivery method</h2>
             <div className="bg-white rounded-lg px-4 py-2 mb-6 border-2 border-gray-300">
                 <div className="flex items-center">
-                    <span><Circle size={15} className="text-[#E9098D]" /></span>
+                    <div className="flex items-center justify-center w-4 h-4 rounded-full border-2 border-[#E9098D]">
+                        <div className="w-2 h-2 rounded-full bg-[#E9098D]" />
+                    </div>
                     <label className="ml-2 text-base font-medium">{deliveryMethodText}</label>
                 </div>
+
             </div>
+
 
             <h2 className="text-[24px] font-semibold mb-4 mt-8">Order Comments</h2>
             <div className="bg-white rounded-lg mb-4">

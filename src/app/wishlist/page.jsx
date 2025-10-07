@@ -5,6 +5,7 @@ import { Heart, ShoppingCart, Share2, Minus, Plus, Check, Trash2 } from 'lucide-
 import Image from 'next/image';
 import axiosInstance from '@/axios/axiosInstance';
 import useUserStore from '@/zustand/user';
+import useWishlistStore from '@/zustand/wishList';
 
 // Move ProductCard outside the main component to prevent re-creation on every render
 const ProductCard = ({
@@ -218,6 +219,7 @@ const Page = () => {
     // State to track quantities and selected units for each product
     const [productQuantities, setProductQuantities] = useState({});
     const [selectedUnits, setSelectedUnits] = useState({});
+    const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
 
     console.log("Wishlist Items:", wishListItems);
     console.log("Current User:", currentUser);
@@ -234,6 +236,7 @@ const Page = () => {
             if (response.data.statusCode === 200) {
                 const items = response.data.data || [];
                 setWishlistItems(items);
+                setWishlistItemsCount(items.length);
 
                 // Initialize quantities and selected units from existing wishlist data
                 const initialQuantities = {};
@@ -398,6 +401,7 @@ const Page = () => {
 
             if (res.data.statusCode === 200) {
                 setWishlistItems(prev => prev.filter(item => item.product._id !== productId));
+                setWishlistItemsCount(res.data.data.length);
                 setError(null);
             } else {
                 setError(res.data.message);

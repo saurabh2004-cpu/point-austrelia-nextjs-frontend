@@ -1,11 +1,13 @@
 import React from 'react';
 import useUserStore from '@/zustand/user';
 import { s } from 'framer-motion/client';
+import axiosInstance from '@/axios/axiosInstance';
 
 const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm }) => {
     const currentUser = useUserStore((state) => state.user);
-
     
+
+
 
     // Get the selected shipping address details
     const shippingAddress = currentUser?.shippingAddresses?.[selectedShippingAddress];
@@ -30,8 +32,7 @@ const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm })
                 'Credit Card'
         ;
 
-
-    
+  
 
 
     return (

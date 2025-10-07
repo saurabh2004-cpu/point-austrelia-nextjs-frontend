@@ -7,6 +7,10 @@ import { Minus, Plus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
+import useWishlistStore from "@/zustand/wishList"
+import useCartStore from "@/zustand/cartPopup"
+import { useProductFiltersStore } from "@/zustand/productsFiltrs"
+import { p } from "framer-motion/client"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Best Seller")
@@ -23,15 +27,6 @@ const ProductListing = () => {
     const [selectedUnits, setSelectedUnits] = useState({})
     const currentUser = useUserStore((state) => state.user);
 
-    // Get filter parameters from URL
-    const categoryId = searchParams.get('categoryId')
-    const subCategoryId = searchParams.get('subCategoryId')
-    const subCategoryTwoId = searchParams.get('subCategoryTwoId')
-    const brandId = searchParams.get('brandId')
-    const categorySlug = searchParams.get('categorySlug')
-    const subCategorySlug = searchParams.get('subCategorySlug')
-    const subCategoryTwoSlug = searchParams.get('subCategoryTwoSlug')
-
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
@@ -44,6 +39,23 @@ const ProductListing = () => {
     const [toggleWishlistIcon, setToggleWishlistIcon] = useState('')
     const [wishListItems, setWishlistItems] = useState([])
     const [loadingProducts, setLoadingProducts] = useState({})
+    const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
+    const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const currentCartItems = useCartStore((state) => state.currentItems);
+    const [selectedPackType, setSelectedPackType] = useState('')
+
+    const {
+        categoryId,
+        subCategoryId,
+        subCategoryTwoId,
+        brandId,
+        categorySlug,
+        subCategorySlug,
+        subCategoryTwoSlug,
+        setFilters,
+        clearFilters
+    } = useProductFiltersStore();
+
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
@@ -175,29 +187,63 @@ const ProductListing = () => {
     }
 
     const handleQuantityChange = (productId, change) => {
-        const newQuantity = Math.max(1, (productQuantities[productId] || 1) + change)
+        const currentQuantity = productQuantities[productId] || 1;
+        const newQuantity = Math.max(1, currentQuantity + change);
 
-        const stockCheck = checkStockLevel(productId)
+
+        // Always allow decreasing quantity
+        if (change < 0) {
+            setProductQuantities(prev => ({
+                ...prev,
+                [productId]: newQuantity
+            }));
+
+            // Check if the new quantity is within stock limits
+            const stockCheck = checkStockLevel(productId);
+            if (stockCheck.isValid) {
+                // Clear the warning if quantity is now within stock
+                setStockErrors(prev => ({
+                    ...prev,
+                    [productId]: null
+                }));
+            } else {
+                // Keep the warning but allow the decrease
+                setStockErrors(prev => ({
+                    ...prev,
+                    [productId]: stockCheck.message
+                }));
+            }
+            return;
+        }
+
+        // For increasing quantity, check stock
+        const stockCheck = checkStockLevel(productId);
         if (!stockCheck.isValid) {
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: stockCheck.message
-            }))
-            return
+            }));
+            return;
         } else {
+            // Clear the warning if increasing and it's within stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: null
-            }))
+            }));
         }
 
         setProductQuantities(prev => ({
             ...prev,
             [productId]: newQuantity
-        }))
+        }));
     }
 
-    const handleUnitChange = (productId, unitId) => {
+    // Also update the handleUnitChange function to clear warnings when units change:
+    const handleUnitChange = (productId, unitId, product) => {
+        const selectedPack = product.typesOfPacks.find(pack => pack._id === unitId)
+        setSelectedPackType(selectedPack.name)
+
+        console.log("selected pack on unit change", selectedPack)
         setSelectedUnits(prev => ({
             ...prev,
             [productId]: unitId
@@ -210,6 +256,7 @@ const ProductListing = () => {
                 [productId]: stockCheck.message
             }))
         } else {
+            // Clear warning if changing units brings quantity within stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: null
@@ -246,13 +293,15 @@ const ProductListing = () => {
                 productId: productId,
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
-                totalQuantity: totalQuantity
+                totalQuantity: totalQuantity,
+                packType: selectedPack ? selectedPack.name : 'Each'
             }
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData)
 
             if (response.data.statusCode === 200) {
                 await fetchCustomersCart()
+                setCartItemsCount(response.data.data.cartItems.length);
                 setError(null)
             }
         } catch (error) {
@@ -421,6 +470,7 @@ const ProductListing = () => {
 
             if (response.data.statusCode === 200) {
                 setWishlistItems(response.data.data.wishlistItems || [])
+                setWishlistItemsCount(response.data.data.wishlistItems.length || 0);
             }
         } catch (error) {
             console.error('Error adding product to wishlist:', error)
@@ -468,15 +518,28 @@ const ProductListing = () => {
     }
 
     // Handle category click in sidebar
-    const handleCategoryClick = (category) => {
-        router.push(`/products-list?categoryId=${category._id}&brandId=${brandId}&categorySlug=${category.slug}`)
+    const handleCategoryClick = (categorySlug, categoryId, brandId) => {
+
+        const parts = categorySlug.split("/").filter(Boolean);
+        console.log('slug parts', parts);
+
+        router.replace(`${parts[1]}`)
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: null,
+            subCategoryTwoSlug: null,
+            categoryId: categoryId,
+            subCategoryId: null,
+            subCategoryTwoId: null,
+            brandId: brandId
+        })
     }
 
     // Get page title based on current filter
     const getPageTitle = () => {
-        if (subCategoryTwoSlug) return subCategoryTwoSlug.replace(/-/g, '/').toUpperCase()
-        if (subCategorySlug) return subCategorySlug.replace(/-/g, '/').toUpperCase()
-        if (categorySlug) return categorySlug.replace(/-/g, '/').toUpperCase()
+        if (subCategoryTwoSlug) return subCategoryTwoSlug
+        if (subCategorySlug) return subCategorySlug
+        if (categorySlug) return categorySlug
         return "All Products"
     }
 
@@ -503,7 +566,7 @@ const ProductListing = () => {
         if (currentUser && currentUser._id) {
             fetchCustomersCart()
         }
-    }, [currentUser])
+    }, [currentUser, currentCartItems])
 
     useEffect(() => {
         fetchProducts()
@@ -617,7 +680,6 @@ const ProductListing = () => {
             <div className="bg-white justify-items-center pt-4">
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
-                        <span className="mx-1 sm:mx-2">/</span>
                         <span className="hidden sm:inline"> {getPageTitle()}</span>
 
                     </nav>
@@ -669,7 +731,7 @@ const ProductListing = () => {
                                             categories.map((category, index) => (
                                                 <div
                                                     key={category._id}
-                                                    onClick={() => handleCategoryClick(category)}
+                                                    onClick={() => handleCategoryClick(category.slug, category._id, brandId)}
                                                     className={`flex space-x-2 items-center py-1 px-2 hover:text-[#e9098d]/70 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                                 >
                                                     <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>
@@ -825,7 +887,7 @@ const ProductListing = () => {
                             <>
                                 {products.length > 0 ? (
                                     <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-16">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-4">
                                             {products.map((product, index) => {
                                                 const isInCart = isProductInCart(product._id)
                                                 const cartItem = getCartItem(product._id)
@@ -930,7 +992,7 @@ const ProductListing = () => {
                                                                 <div className="relative w-full">
                                                                     <select
                                                                         value={selectedUnits[product._id] || ''}
-                                                                        onChange={(e) => handleUnitChange(product._id, e.target.value)}
+                                                                        onChange={(e) => handleUnitChange(product._id, e.target.value, product)}
                                                                         disabled={isOutOfStock}
                                                                         className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
                                                                         focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
@@ -971,7 +1033,7 @@ const ProductListing = () => {
                                                                             e.stopPropagation();
                                                                             handleQuantityChange(product._id, -1);
                                                                         }}
-                                                                        disabled={isOutOfStock || (productQuantities[product._id] || 1) <= 1}
+                                                                        disabled={(productQuantities[product._id] || 1) <= 1}
                                                                     >
                                                                         <span className="text-xl font-bold flex items-center ">
                                                                             <Image src="/icons/minus-icon.png"
@@ -1067,7 +1129,7 @@ const ProductListing = () => {
                                                             {/* Cart Quantity Info */}
                                                             {isInCart && cartItem && (
                                                                 <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
-                                                                    In Cart Quantity: <span className="font-medium">{cartItem.totalQuantity} (Pack Of {cartItem.packQuentity})</span>
+                                                                    In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} (Pack Of {cartItem.packQuentity})</span>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1097,7 +1159,7 @@ const ProductListing = () => {
             <ProductPopup
                 isOpen={showProductPopup}
                 onClose={() => setShowProductPopup(false)}
-                productId={selectedProduct}
+                productId={selectedProduct?._id}
             />
         </div>
     )

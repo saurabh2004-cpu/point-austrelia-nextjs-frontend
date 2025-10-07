@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
+import useCartStore from '@/zustand/cartPopup';
 
 const ShoppingCartPopup = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -15,6 +16,7 @@ const ShoppingCartPopup = () => {
   const [localQuantities, setLocalQuantities] = useState({});
   const [selectedPacks, setSelectedPacks] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
+  const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
 
   const fetchCustomersCart = async () => {
     try {
@@ -58,6 +60,7 @@ const ShoppingCartPopup = () => {
       console.log("popup remove from cart ", response)
       if (response.data.statusCode === 200) {
         setCartItems(prevItems => prevItems.filter(item => item.product._id !== productId));
+        setCartItemsCount(response.data.data.length);
         setError(null);
       } else {
         setError(response.data.message || "Failed to remove cart item");

@@ -1,12 +1,24 @@
-import { useState } from "react"
+import axiosInstance from "@/axios/axiosInstance";
+import useUserStore from "@/zustand/user";
+import { useEffect, useState } from "react"
 
-export default function ProfileInformation({setActiveSection}) {
+export default function ProfileInformation({ setActiveSection }) {
+    const currentUser = useUserStore((state) => state.user);
     const [formData, setFormData] = useState({
-        companyName: "Devendra Chandora",
-        phoneNumber: "+617073737773",
-        email: "devendra.chandora@gmail.com"
+        companyName: "",
+        phoneNumber: "",
     })
-    
+    const setUser = useUserStore((state) => state.setUser);
+
+    useEffect(() => {
+        if (currentUser) {
+            setFormData({
+                companyName: currentUser.storeName || "",
+                phoneNumber: currentUser.contactPhone || "",
+            })
+        }
+    }, [currentUser])
+
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
             ...prev,
@@ -14,10 +26,24 @@ export default function ProfileInformation({setActiveSection}) {
         }))
     }
 
-    const handleUpdate = () => {
-        // Handle form submission logic here
-        setShowForm(false)
-        console.log("Profile updated:", formData)
+    const handleUpdate = async () => {
+        try {
+            const response = await axiosInstance.put(`user/update-contact-phone-and-store-name`, {
+                storeName: formData.companyName,
+                contactPhone: formData.phoneNumber,
+            });
+
+
+            if (response.data.statusCode === 200) {
+                setUser(response.data.data);
+            }
+            else {
+                console.error("Failed to update profile information:", response.data.message);
+            }
+        } catch (error) {
+            console.error("Error updating profile information:", error);
+
+        }
     }
 
     const handleChangeAddress = () => {
@@ -81,7 +107,7 @@ export default function ProfileInformation({setActiveSection}) {
                                         <div className="flex-1">
                                             <div className="text-sm font-medium text-black mb-1">Email:</div>
                                             <div className="text-sm break-all sm:break-normal">
-                                                {formData.email}
+                                                {currentUser.customerEmail}
                                             </div>
                                         </div>
 

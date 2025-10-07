@@ -33,7 +33,7 @@ export function Footer() {
           </div>
 
           {/* Quick Links Column */}
-          <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[300px] relative md:right-0 lg:right-20">
+          <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[200px] relative md:right-0 lg:right-20">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
             <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
               <li>
@@ -75,7 +75,7 @@ export function Footer() {
           </div>
 
           {/* Keep in Touch Column */}
-          <div className="xl:min-w-[300px] max-w-[175px] md:max-w-none lg:max-w-[175px] md:min-w-[350px] lg:min-w-[400px] relative md:right-0 lg:right-32">
+          <div className="xl:min-w-[400px] max-w-[175px] md:max-w-none lg:max-w-[175px] md:min-w-[350px] lg:min-w-[400px] relative md:right-0 lg:right-32">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               KEEP IN TOUCH
             </h3>

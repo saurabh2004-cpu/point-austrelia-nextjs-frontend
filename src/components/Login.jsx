@@ -39,9 +39,7 @@ export default function LoginComponent() {
 
     if (!formData.password.trim()) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
-    }
+    } 
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -68,7 +66,7 @@ export default function LoginComponent() {
       if (res.data.statusCode === 200) {
         setIsLoading(false)
         setUser(res.data.data);
-        window.location.href = '/'
+        window.location.href = '/my-account-review'
       } else {
         setErrors({ loginError: res.data.message })
       }

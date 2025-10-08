@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from 'react'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname,  } from 'next/navigation'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
@@ -14,7 +14,7 @@ NProgress.configure({
 
 export function LoadingBar() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  // const searchParams = useSearchParams()
 
   useEffect(() => {
     NProgress.start()

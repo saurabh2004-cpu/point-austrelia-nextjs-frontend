@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
 import { Heart, HeartIcon, Minus, Plus } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter,  } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
@@ -19,7 +19,6 @@ const ProductListing = () => {
     const [showProductPopup, setShowProductPopup] = useState(false)
     const [perpageItems, setPerpageItems] = useState('12')
     const router = useRouter()
-    const searchParams = useSearchParams()
     const [products, setProducts] = useState([])
     const [error, setError] = useState(null)
     const [productQuantities, setProductQuantities] = useState({})

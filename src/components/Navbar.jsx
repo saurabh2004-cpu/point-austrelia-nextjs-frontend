@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import useNavStateStore from "@/zustand/navigations"
 import ShoppingCartPopup from "./CartPopup"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import useUserStore from "@/zustand/user"
 import axiosInstance from "@/axios/axiosInstance"
 import useCartStore from "@/zustand/cartPopup"
@@ -50,7 +50,7 @@ export function Navbar() {
   const currentUser = useUserStore((state) => state.user);
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
-  const searchParams = useSearchParams()
+  // const searchParams = useSearchParams()
 
   const currentCartItems = useCartStore((state) => state.currentItems);
   const setCartItems = useCartStore((state) => state.setCurrentItems);
@@ -88,7 +88,7 @@ export function Navbar() {
       clearTimeout(timeout)
       handleComplete()
     }
-  }, [pathname, searchParams])
+  }, [pathname])
 
   // Use click outside hooks
   const userDropdownRef = useClickOutside(() => {

@@ -552,11 +552,11 @@ const ShoppingCart = () => {
                                                                                 <Plus className="w-4 h-4 text-white " />
                                                                             </button>
                                                                         </div>
-                                                                        {!isOutOfStock && (
+                                                                        {/* {!isOutOfStock && (
                                                                             <p className="text-[11px] text-gray-600">
                                                                                 Total: {totalQuantity} units
                                                                             </p>
-                                                                        )}
+                                                                        )} */}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -566,11 +566,11 @@ const ShoppingCart = () => {
                                                                 <span className="text-[13px] font-semibold ">
                                                                     Amount: <span className="text-[#2D2C70] text-[15px] font-semibold">${itemTotal.toFixed(2)}</span>
                                                                 </span>
-                                                                {item.product.taxable && item.product.taxPercentages > 0 && (
+                                                                {/* {item.product.taxable && item.product.taxPercentages > 0 && (
                                                                     <p className="text-[11px] text-gray-600">
                                                                         (Includes ${itemTax.toFixed(2)} tax at {item.product.taxPercentages}%)
                                                                     </p>
-                                                                )}
+                                                                )} */}
                                                             </div>
 
                                                             {/* Action Buttons */}
@@ -686,7 +686,7 @@ const ShoppingCart = () => {
                                         {totalTax > 0 && (
                                             <div className="border-t border-gray-200 pt-4">
                                                 <div className="flex justify-between text-sm mb-2">
-                                                    <span className="text-[14px] text-[500] text-[#000000]/80">Estimated Tax</span>
+                                                    <span className="text-[14px] text-[500] text-[#000000]/80">GST</span>
                                                     <span className="text-[14px] font-medium">${totalTax.toFixed(2)}</span>
                                                 </div>
                                             </div>

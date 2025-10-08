@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
-import { Minus, Plus } from "lucide-react"
+import { Heart, HeartIcon, Minus, Plus } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
-import { p } from "framer-motion/client"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Best Seller")
@@ -43,6 +42,12 @@ const ProductListing = () => {
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const currentCartItems = useCartStore((state) => state.currentItems);
     const [selectedPackType, setSelectedPackType] = useState('')
+    const [subCategoriesByCategory, setSubCategoriesByCategory] = useState({})
+    const [subCategoriesTwoBySubCategory, setSubCategoriesTwoBySubCategory] = useState({})
+
+    const [hoveredCategory, setHoveredCategory] = useState(null)
+    const [hoveredSubCategory, setHoveredSubCategory] = useState(null)
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
 
     const {
         categoryId,
@@ -52,14 +57,21 @@ const ProductListing = () => {
         categorySlug,
         subCategorySlug,
         subCategoryTwoSlug,
+        brandSlug,
         setFilters,
-        clearFilters
+        clearFilters,
     } = useProductFiltersStore();
-
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
     const [loadingCategories, setLoadingCategories] = useState(false)
+
+    // Check if product is in wishlist
+    const isProductInWishlist = (productId) => {
+
+
+        return wishListItems.some(item => item.product?._id === productId)
+    }
 
     // Calculate discounted price for a product
     const calculateDiscountedPrice = (product) => {
@@ -189,7 +201,6 @@ const ProductListing = () => {
     const handleQuantityChange = (productId, change) => {
         const currentQuantity = productQuantities[productId] || 1;
         const newQuantity = Math.max(1, currentQuantity + change);
-
 
         // Always allow decreasing quantity
         if (change < 0) {
@@ -400,6 +411,8 @@ const ProductListing = () => {
             setLoadingCategories(true)
             const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
 
+            console.log("categories by brand = ", res.data.data)
+
             if (res.data.statusCode === 200) {
                 setCategories(res.data.data || [])
             }
@@ -457,10 +470,14 @@ const ProductListing = () => {
         }
     }
 
-    // Add product to wishlist
+    // Add/Remove product from wishlist
     const handleAddToWishList = async (productId) => {
         try {
-            if (!currentUser || !currentUser._id) return
+            if (!currentUser || !currentUser._id) {
+                setError("Please login to manage wishlist")
+                return
+            }
+
             setLoadingProducts(prev => ({ ...prev, [productId]: true }))
 
             const response = await axiosInstance.post('wishlist/add-to-wishlist', {
@@ -468,12 +485,16 @@ const ProductListing = () => {
                 productId: productId
             })
 
+            console.log("Wishlist response:", response.data)
+
             if (response.data.statusCode === 200) {
-                setWishlistItems(response.data.data.wishlistItems || [])
-                setWishlistItemsCount(response.data.data.wishlistItems.length || 0);
+                // Refresh the wishlist to get updated data
+                await fetchCustomersWishList()
+                setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
             }
         } catch (error) {
-            console.error('Error adding product to wishlist:', error)
+            console.error('Error managing product in wishlist:', error)
+            setError('Error managing wishlist')
         } finally {
             setLoadingProducts(prev => {
                 const updatedLoadingProducts = { ...prev }
@@ -486,10 +507,15 @@ const ProductListing = () => {
     const fetchCustomersWishList = async () => {
         try {
             if (!currentUser || !currentUser._id) return
+
             const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
 
+            console.log("customers wishlist response:", response.data)
+
             if (response.data.statusCode === 200) {
-                setWishlistItems(response.data.data.wishlistItems || [])
+                // Set the wishlist items from response.data.data
+                setWishlistItems(response.data.data || [])
+                setWishlistItemsCount(response.data.data?.length || 0)
             }
         }
         catch (error) {
@@ -520,7 +546,7 @@ const ProductListing = () => {
     // Handle category click in sidebar
     const handleCategoryClick = (categorySlug, categoryId, brandId) => {
 
-        const parts = categorySlug.split("/").filter(Boolean);
+        const parts = categorySlug?.split("/").filter(Boolean);
         console.log('slug parts', parts);
 
         router.replace(`${parts[1]}`)
@@ -537,11 +563,12 @@ const ProductListing = () => {
 
     // Get page title based on current filter
     const getPageTitle = () => {
-        if (subCategoryTwoSlug) return subCategoryTwoSlug
-        if (subCategorySlug) return subCategorySlug
-        if (categorySlug) return categorySlug
-        return "All Products"
-    }
+        if (subCategoryTwoSlug) return subCategoryTwoSlug?.split('-').join(' ').toUpperCase();
+        if (subCategorySlug) return subCategorySlug?.split('-').join(' ').toUpperCase();
+        if (categorySlug) return categorySlug?.split('-').join(' ').toUpperCase();
+        if (brandSlug) return brandSlug?.split('-').join(' ').toUpperCase();
+        return "ALL PRODUCTS";
+    };
 
     // Get page description based on current filter
     const getPageDescription = () => {
@@ -674,6 +701,99 @@ const ProductListing = () => {
         return buttons
     }
 
+    // Update the fetchSubCategoriesForCategory function
+    const fetchSubCategoriesForCategory = async (categoryId) => {
+        if (subCategoriesByCategory[categoryId]) return // Already fetched
+
+        try {
+            const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
+            if (res.data.statusCode === 200) {
+                setSubCategoriesByCategory(prev => ({
+                    ...prev,
+                    [categoryId]: res.data.data
+                }))
+            }
+        } catch (error) {
+            console.error('Error fetching subcategories:', error)
+        }
+    }
+
+    // Update the fetchSubCategoriesTwoForSubCategory function
+    const fetchSubCategoriesTwoForSubCategory = async (subCategoryId) => {
+        if (subCategoriesTwoBySubCategory[subCategoryId]) return // Already fetched
+
+        try {
+            const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-subcategory-id/${subCategoryId}`)
+            if (res.data.statusCode === 200) {
+                setSubCategoriesTwoBySubCategory(prev => ({
+                    ...prev,
+                    [subCategoryId]: res.data.data
+                }))
+            }
+        } catch (error) {
+            console.error('Error fetching subcategories two:', error)
+        }
+    }
+
+    // Handle category hover with position calculation
+    const handleCategoryHover = (categoryId, event) => {
+        setHoveredCategory(categoryId)
+        setHoveredSubCategory(null)
+
+        // Calculate position for dropdown
+        const rect = event.currentTarget.getBoundingClientRect()
+        setDropdownPosition({
+            top: rect.top + window.scrollY,
+            left: rect.right + window.scrollX + 10 // 10px gap from the category
+        })
+
+        fetchSubCategoriesForCategory(categoryId)
+    }
+
+    // Handle subcategory hover
+    const handleSubCategoryHover = (subCategoryId, event) => {
+        setHoveredSubCategory(subCategoryId)
+        fetchSubCategoriesTwoForSubCategory(subCategoryId)
+    }
+
+    // Handle mouse leave from category container
+    const handleCategoryLeave = () => {
+        setHoveredCategory(null)
+        setHoveredSubCategory(null)
+    }
+
+    // Handle subcategory click
+    const handleSubCategoryClick = (subCategorySlug, subCategoryId) => {
+        router.replace(`${subCategorySlug}`)
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: subCategorySlug,
+            subCategoryTwoSlug: null,
+            categoryId: categoryId,
+            subCategoryId: subCategoryId,
+            subCategoryTwoId: null,
+            brandId: brandId
+        })
+        setHoveredCategory(null)
+        setHoveredSubCategory(null)
+    }
+
+    // Handle subcategory two click
+    const handleSubCategoryTwoClick = (subCategoryTwoSlug, subCategoryTwoId) => {
+        router.replace(`${subCategoryTwoSlug}`)
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: subCategorySlug,
+            subCategoryTwoSlug: subCategoryTwoSlug,
+            categoryId: categoryId,
+            subCategoryId: subCategoryId,
+            subCategoryTwoId: subCategoryTwoId,
+            brandId: brandId
+        })
+        setHoveredCategory(null)
+        setHoveredSubCategory(null)
+    }
+
     return (
         <div className="min-h-screen">
             {/* Breadcrumb */}
@@ -681,22 +801,11 @@ const ProductListing = () => {
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                         <span className="hidden sm:inline"> {getPageTitle()}</span>
-
                     </nav>
-                </div>
-            </div>
 
-            {/* Header */}
-            {/* <div className="bg-white justify-items-center">
-                <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 justify-items-center">
-                    <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5">
-                        {getPageTitle()}
-                    </h1>
-                    <p className="text-sm sm:text-base lg:text-[1rem] text-black font-[400] font-spartan max-w-8xl px-2 sm:px-0">
-                        {getPageDescription()}
-                    </p>
                 </div>
-            </div> */}
+                <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-3 sm:pb-5 tracking-widest">{brandSlug?.split('-').join(' ').toUpperCase()}</h1>
+            </div>
 
             <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
@@ -720,18 +829,24 @@ const ProductListing = () => {
 
                     {/* Sidebar Filter */}
                     {brandId && (
-                        <div className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-                            <div className="bg-white xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
+                        <div
+                            className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}
+                            onMouseLeave={handleCategoryLeave}
+                        >
+                            <div className="bg-white xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none relative">
                                 <div>
-                                    <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">Product Categories</h4>
+                                    <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">
+                                        {brandSlug?.split('-').join(' ').toUpperCase()}
+                                    </h4>
                                     <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar">
                                         {loadingCategories ? (
                                             <div className="py-2 text-sm text-gray-500">Loading categories...</div>
                                         ) : categories.length > 0 ? (
-                                            categories.map((category, index) => (
+                                            categories.map((category) => (
                                                 <div
                                                     key={category._id}
                                                     onClick={() => handleCategoryClick(category.slug, category._id, brandId)}
+                                                    onMouseEnter={(e) => handleCategoryHover(category._id, e)}
                                                     className={`flex space-x-2 items-center py-1 px-2 hover:text-[#e9098d]/70 rounded cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                                 >
                                                     <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}>
@@ -744,6 +859,69 @@ const ProductListing = () => {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Dropdown for Subcategories */}
+                                {hoveredCategory && subCategoriesByCategory[hoveredCategory] && (
+                                    <div
+                                        className="fixed lg:absolute bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 max-h-96 overflow-y-auto"
+                                        style={{
+                                            top: `${dropdownPosition.top}px`,
+                                            left: `${dropdownPosition.left}px`
+                                        }}
+                                        onMouseLeave={() => setHoveredSubCategory(null)}
+                                    >
+                                        <div className="p-2">
+                                            <h5 className="text-sm font-semibold text-gray-700 mb-2 px-2">
+                                                {categories.find(c => c._id === hoveredCategory)?.name}
+                                            </h5>
+                                            <div className="space-y-1">
+                                                {subCategoriesByCategory[hoveredCategory].map((subCategory) => (
+                                                    <div
+                                                        key={subCategory._id}
+                                                        className="relative"
+                                                    >
+                                                        <div
+                                                            onClick={() => handleSubCategoryClick(subCategory.slug, subCategory._id)}
+                                                            onMouseEnter={(e) => handleSubCategoryHover(subCategory._id, e)}
+                                                            className={`flex items-center justify-between px-3 py-2 text-sm rounded cursor-pointer transition-colors ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                        >
+                                                            <span>{subCategory.name}</span>
+                                                            {subCategoriesTwoBySubCategory[subCategory._id] && (
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Nested Dropdown for SubcategoriesTwo */}
+                                                        {hoveredSubCategory === subCategory._id && subCategoriesTwoBySubCategory[subCategory._id] && (
+                                                            <div
+                                                                className="absolute left-full top-0 ml-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-48 max-h-96 overflow-y-auto"
+                                                            >
+                                                                <div className="p-2">
+                                                                    <h6 className="text-sm font-semibold text-gray-700 mb-2 px-2">
+                                                                        {subCategory.name}
+                                                                    </h6>
+                                                                    <div className="space-y-1">
+                                                                        {subCategoriesTwoBySubCategory[subCategory._id].map((subCategoryTwo) => (
+                                                                            <div
+                                                                                key={subCategoryTwo._id}
+                                                                                onClick={() => handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id)}
+                                                                                className={`px-3 py-2 text-sm rounded cursor-pointer transition-colors ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                                            >
+                                                                                {subCategoryTwo.name}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
@@ -891,6 +1069,7 @@ const ProductListing = () => {
                                             {products.map((product, index) => {
                                                 const isInCart = isProductInCart(product._id)
                                                 const cartItem = getCartItem(product._id)
+                                                const isInWishlist = isProductInWishlist(product._id)
                                                 const isOutOfStock = product.stockLevel <= 0
                                                 const stockError = stockErrors[product._id]
                                                 const isLoading = loadingProducts[product._id]
@@ -904,29 +1083,36 @@ const ProductListing = () => {
                                                         key={product._id}
                                                         className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
                                                     >
+
                                                         {/* Wishlist Icon */}
                                                         <div className="absolute top-2 right-4 sm:right-6 z-10">
                                                             <button
                                                                 className="rounded-full transition-colors"
                                                                 onClick={() => handleAddToWishList(product._id)}
+                                                                disabled={isLoading}
                                                             >
-                                                                <div className="h-8 w-8 bg-[#D9D9D940] flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
-                                                                    <Image
-                                                                        src="/product-details/heart-1.png"
-                                                                        alt="Heart"
-                                                                        width={12}
-                                                                        height={12}
-                                                                        className=""
-                                                                    />
+                                                                <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
+                                                                    {isLoading ? (
+                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
+
+                                                                    ) : (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"}  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
+                                                                    )}
                                                                 </div>
                                                             </button>
                                                         </div>
 
-                                                        {/* Discount Badge */}
-                                                        {hasProductDiscount && (
+                                                        {/* product Badge */}
+                                                        {product.badge && (
                                                             <div className="absolute top-2 left-4 sm:left-6 z-10">
-                                                                <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                                                                    {discountPercentage}% OFF
+                                                                <div
+                                                                    className="px-2 py-1 rounded text-xs font-bold"
+                                                                    style={{
+                                                                        backgroundColor: product.badge.backgroundColor,
+                                                                        color: product.badge.textColor || '#fff',
+                                                                    }}
+                                                                >
+                                                                    {product.badge.text}
                                                                 </div>
                                                             </div>
                                                         )}
@@ -946,12 +1132,12 @@ const ProductListing = () => {
                                                             {/* Product Name */}
                                                             <h3
                                                                 onClick={() => handleProductClick(product)}
-                                                                className="text-sm sm:text-base hover:text-[#E9098D] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
+                                                                className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
                                                                 {product.ProductName}
                                                             </h3>
 
                                                             {/* SKU */}
-                                                            <div className="space-y-1 flex justify-between items-center">
+                                                            <div className="space-y-1 flex justify-between items-center ">
                                                                 <p className="text-xs sm:text-sm text-gray-600 font-spartan">
                                                                     SKU {product.sku}
                                                                 </p>
@@ -1129,7 +1315,7 @@ const ProductListing = () => {
                                                             {/* Cart Quantity Info */}
                                                             {isInCart && cartItem && (
                                                                 <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
-                                                                    In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} (Pack Of {cartItem.packQuentity})</span>
+                                                                    In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
                                                                 </div>
                                                             )}
                                                         </div>

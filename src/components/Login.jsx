@@ -9,8 +9,13 @@ export default function LoginComponent() {
     email: '',
     password: ''
   })
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
+  const [showForgotPasswordPopup, setShowForgotPasswordPopup] = useState(false)
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
+  const [forgotPasswordError, setForgotPasswordError] = useState('')
   const setUser = useUserStore((state) => state.setUser);
 
   const handleInputChange = (e) => {
@@ -25,6 +30,22 @@ export default function LoginComponent() {
         ...prev,
         [name]: ''
       }))
+    }
+    // Clear general login error when user starts typing
+    if (errors.loginError) {
+      setErrors(prev => ({
+        ...prev,
+        loginError: ''
+      }))
+    }
+  }
+
+  const handleForgotPasswordEmailChange = (e) => {
+    setForgotPasswordEmail(e.target.value)
+    // Clear any existing messages when user starts typing
+    if (forgotPasswordMessage || forgotPasswordError) {
+      setForgotPasswordMessage('')
+      setForgotPasswordError('')
     }
   }
 
@@ -45,12 +66,29 @@ export default function LoginComponent() {
     return Object.keys(newErrors).length === 0
   }
 
+  const validateForgotPasswordEmail = () => {
+    const newErrors = {}
+    
+    if (!forgotPasswordEmail.trim()) {
+      newErrors.email = 'Email Address is required'
+    } else if (!/\S+@\S+\.\S+/.test(forgotPasswordEmail)) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setForgotPasswordError(newErrors.email)
+      return false
+    }
+    return true
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
 
     if (!validateForm()) return
 
     setIsLoading(true)
+    setErrors(prev => ({ ...prev, loginError: '' }))
 
     try {
       const res = await axiosInstance.post('user/login', formData,
@@ -68,13 +106,73 @@ export default function LoginComponent() {
         setUser(res.data.data);
         window.location.href = '/my-account-review'
       } else {
-        setErrors({ loginError: res.data.message })
+        setErrors(prev => ({ 
+          ...prev, 
+          loginError: res.data.message || 'Login failed. Please try again.' 
+        }))
       }
     } catch (error) {
       console.error('Login error:', error)
-      setErrors({ loginError: 'An error occurred during login' })
+      let errorMessage = 'An error occurred during login'
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setErrors(prev => ({ 
+        ...prev, 
+        loginError: errorMessage 
+      }))
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    if (!validateForgotPasswordEmail()) return
+
+    setForgotPasswordLoading(true)
+    setForgotPasswordMessage('')
+    setForgotPasswordError('')
+
+    try {
+      const res = await axiosInstance.post('user/send-password-reset-email', 
+        { email: forgotPasswordEmail },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      console.log("Forgot password response:", res)
+
+      if (res.data.statusCode === 200) {
+        setForgotPasswordMessage('Password reset email sent successfully! Please check your inbox.')
+        setForgotPasswordEmail('')
+        // Auto close popup after 3 seconds
+        setTimeout(() => {
+          setShowForgotPasswordPopup(false)
+          setForgotPasswordMessage('')
+        }, 3000)
+      } else {
+        setForgotPasswordError(res.data.message || 'Failed to send reset email. Please try again.')
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      let errorMessage = 'An error occurred while sending reset email. Please try again.'
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setForgotPasswordError(errorMessage)
+    } finally {
+      setForgotPasswordLoading(false)
     }
   }
 
@@ -82,8 +180,18 @@ export default function LoginComponent() {
     console.log('Navigate to wholesale registration')
   }
 
-  const handleForgotPassword = () => {
-    console.log('Navigate to forgot password')
+  const openForgotPasswordPopup = () => {
+    setShowForgotPasswordPopup(true)
+    setForgotPasswordEmail('')
+    setForgotPasswordMessage('')
+    setForgotPasswordError('')
+  }
+
+  const closeForgotPasswordPopup = () => {
+    setShowForgotPasswordPopup(false)
+    setForgotPasswordEmail('')
+    setForgotPasswordMessage('')
+    setForgotPasswordError('')
   }
 
   // Animation variants
@@ -108,167 +216,330 @@ export default function LoginComponent() {
     }
   }
 
+  const popupVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { duration: 0.3 }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.8,
+      transition: { duration: 0.2 }
+    }
+  }
+
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  }
+
   return (
-    <div className=" py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
-      <motion.div
-        className="max-w-md w-full "
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Header */}
-        <motion.div className="text-center" variants={itemVariants}>
-          <h2 className="text-[2rem] font-bold sm:text-4xl font-bold text-gray-900 mb-2">
-            LOG <span className="text-[#E9098D]">IN</span>
-          </h2>
-          <h3 className="text-[24px] font-semibold  mb-2">
-            RETURNING CUSTOMER
-          </h3>
-          <p className="text-[18px]  text-[#000000]/50 font-[400]">
-            Log in below to checkout with an existing account
-          </p>
-        </motion.div>
-
-        {/* Login Form */}
-        <motion.form
-          className=" space-y-6 bg-white p-6 sm:p-8 rounded-lg "
-          onSubmit={handleLogin}
-          variants={itemVariants}
+    <>
+      <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
+        <motion.div
+          className="max-w-md w-full"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
         >
-          <div className="space-y-5 text-[1rem] font-medium">
-            {/* Email Field */}
-            <motion.div variants={itemVariants}>
-              <label htmlFor="email" className="block text-[1rem] font-medium  mb-2">
-                Required<span className="text-red-500 ml-1">*</span>
-              </label>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address<span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`
-                  appearance-none relative block w-full px-3 py-3 
-                  border border-gray-300 placeholder-gray-400 text-gray-900 
-                  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                  focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                  transition-colors duration-200
-                  ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                `}
-                placeholder=""
-              />
-              {errors.email && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-1 text-sm text-red-600"
-                >
-                  {errors.email}
-                </motion.p>
-              )}
-            </motion.div>
+          {/* Header */}
+          <motion.div className="text-center" variants={itemVariants}>
+            <h2 className="text-[2rem] font-bold sm:text-4xl font-bold text-gray-900 mb-2">
+              LOG <span className="text-[#E9098D]">IN</span>
+            </h2>
+            <h3 className="text-[24px] font-semibold  mb-2">
+              RETURNING CUSTOMER
+            </h3>
+            <p className="text-[18px]  text-[#000000]/50 font-[400]">
+              Log in below to checkout with an existing account
+            </p>
+          </motion.div>
 
-            {/* Password Field */}
-            <motion.div variants={itemVariants}>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password<span className="text-red-500 ml-1">*</span>
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`
-                  appearance-none relative block w-full px-3 py-3 
-                  border border-gray-300 placeholder-gray-400 text-gray-900 
-                  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                  focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                  transition-colors duration-200
-                  ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                `}
-                placeholder=""
-              />
-              {errors.password && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="mt-1 text-sm text-red-600"
-                >
-                  {errors.password}
-                </motion.p>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Login Button */}
-          <div className=''>
-            <motion.div variants={itemVariants} className='mb-1'>
-              <motion.button
-                type="submit"
-                disabled={isLoading}
-                className="
-                group relative w-full flex justify-center py-1 px-4 
-                border border-transparent text-sm sm:text-base font-medium rounded-md 
-                text-white bg-[#74C7F0] rounded-lg hover:bg-sky-500 
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-all duration-200 text-[1rem] font-[600]
-              "
-                whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+          {/* Login Form */}
+          <motion.form
+            className=" space-y-6 bg-white p-6 sm:p-8 rounded-lg "
+            onSubmit={handleLogin}
+            variants={itemVariants}
+          >
+            {/* General Login Error */}
+            {errors.loginError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="rounded-md bg-red-50 p-4 border border-red-200"
               >
-                {isLoading ? (
-                  <div className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                     </svg>
-                    Logging in...
                   </div>
-                ) : (
-                  'Log In'
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-red-800">
+                      {errors.loginError}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <div className="space-y-5 text-[1rem] font-medium">
+              {/* Email Field */}
+              <motion.div variants={itemVariants}>
+                <label htmlFor="email" className="block text-[1rem] font-medium  mb-2">
+                  Required<span className="text-red-500 ml-1">*</span>
+                </label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`
+                    appearance-none relative block w-full px-3 py-3 
+                    border border-gray-300 placeholder-gray-400 text-gray-900 
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200
+                    ${errors.email ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                  placeholder="Enter your email address"
+                />
+                {errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {errors.email}
+                  </motion.p>
                 )}
-              </motion.button>
-            </motion.div>
+              </motion.div>
 
-            {/* Forgot Password Link */}
-            <motion.div className="text-end mb-1" variants={itemVariants}>
+              {/* Password Field */}
+              <motion.div variants={itemVariants}>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`
+                    appearance-none relative block w-full px-3 py-3 
+                    border border-gray-300 placeholder-gray-400 text-gray-900 
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200
+                    ${errors.password ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                  placeholder="Enter your password"
+                />
+                {errors.password && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {errors.password}
+                  </motion.p>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Login Button */}
+            <div className=''>
+              <motion.div variants={itemVariants} className='mb-1'>
+                <motion.button
+                  type="submit"
+                  disabled={isLoading}
+                  className="
+                  group relative w-full flex justify-center py-3 px-4 
+                  border border-transparent text-sm sm:text-base font-medium rounded-md 
+                  text-white bg-[#74C7F0] hover:bg-sky-500 
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  transition-all duration-200 text-[1rem] font-[600]
+                "
+                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Logging in...
+                    </div>
+                  ) : (
+                    'Log In'
+                  )}
+                </motion.button>
+              </motion.div>
+
+              {/* Forgot Password Link */}
+              <motion.div className="text-end mb-1" variants={itemVariants}>
+                <button
+                  type="button"
+                  onClick={openForgotPasswordPopup}
+                  className="text-[13px] font-medium text-[#74C7F0] hover:text-sky-600 transition-colors duration-200"
+                >
+                  Forgot password?
+                </button>
+              </motion.div>
+
+              {/* Wholesale Register Button */}
+              <motion.div variants={itemVariants}>
+                <motion.button
+                  type="button"
+                  onClick={handleWholesaleRegister}
+                  className="
+                  w-full flex justify-center py-3 px-4 
+                  border border-transparent text-sm sm:text-base font-medium rounded-md 
+                  text-white bg-[#2D2B70] hover:bg-indigo-700
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                  transition-all duration-200 text-[1rem] font-[500]
+                "
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Register for Wholesale Access
+                </motion.button>
+              </motion.div>
+            </div>
+          </motion.form>
+        </motion.div>
+      </div>
+
+      {/* Forgot Password Popup */}
+      {showForgotPasswordPopup && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          variants={overlayVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          onClick={closeForgotPasswordPopup}
+        >
+          <motion.div
+            className="bg-white rounded-lg p-6 w-full max-w-md"
+            variants={popupVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Reset Your Password</h3>
               <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-[13px] font-medium"
+                onClick={closeForgotPasswordPopup}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
               >
-                Forgot password?
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </motion.div>
+            </div>
 
-            {/* Wholesale Register Button */}
-            <motion.div variants={itemVariants}>
-              <motion.button
-                type="button"
-                onClick={handleWholesaleRegister}
-                className="
-                w-full flex justify-center py-1 px-4 
-                border border-transparent text-sm sm:text-base font-medium rounded-md 
-                text-white bg-[#2D2B70] 
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                transition-all duration-200 text-[1rem] font-[500]
-              "
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Register for Wholesale Access
-              </motion.button>
-            </motion.div>
-          </div>
-        </motion.form>
-      </motion.div>
-    </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="forgot-password-email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address<span className="text-red-500 ml-1">*</span>
+                </label>
+                <input
+                  id="forgot-password-email"
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={handleForgotPasswordEmailChange}
+                  className={`
+                    appearance-none relative block w-full px-3 py-3 
+                    border border-gray-300 placeholder-gray-400 text-gray-900 
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 text-sm sm:text-base
+                    transition-colors duration-200
+                    ${forgotPasswordError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                  placeholder="Enter your email address"
+                />
+                {forgotPasswordError && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {forgotPasswordError}
+                  </motion.p>
+                )}
+              </div>
+
+              {/* Success Message */}
+              {forgotPasswordMessage && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="rounded-md bg-green-50 p-4 border border-green-200"
+                >
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-800">
+                        {forgotPasswordMessage}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={closeForgotPasswordPopup}
+                  className="flex-1 py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={forgotPasswordLoading}
+                  className="flex-1 py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-[#74C7F0] hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                >
+                  {forgotPasswordLoading ? (
+                    <div className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </div>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </>
   )
 }

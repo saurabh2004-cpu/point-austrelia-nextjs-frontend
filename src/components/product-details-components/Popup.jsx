@@ -149,7 +149,7 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
 
             console.log("Customer wishlist hqsbqhsbjqs:", response)
             if (response.data.statusCode === 200) {
-                setWishlistItems(response.data.data.wishlistItems || [])
+                setWishlistItems(response.data.data || [])
             } else {
                 setError(response.data.message)
             }
@@ -160,7 +160,7 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
     }
 
     useEffect(() => {
-        if (currentUser._id) {
+        if (currentUser?._id) {
             fetchCustomersWishList()
         }
     }, [currentUser])
@@ -206,9 +206,19 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
 
                                     <div className="relative">
                                         <div className="rounded-lg p-4 bg-[#FAFAFA]">
-                                            <span className="absolute top-2 left-2 bg-green-500 text-white text-[11px] px-1 py-[2px] rounded-sm">
-                                                {product?.badge?.name ? product?.badge?.name : ""}
-                                            </span>
+                                            {product.badge && (
+                                                <div className="absolute top-2 left-4 sm:left-6 z-10">
+                                                    <div
+                                                        className="px-2 py-1 rounded text-xs font-bold"
+                                                        style={{
+                                                            backgroundColor: product.badge.backgroundColor,
+                                                            color: product.badge.textColor || '#fff',
+                                                        }}
+                                                    >
+                                                        {product.badge.text}
+                                                    </div>
+                                                </div>
+                                            )}
                                             <img
                                                 src={productImages[selectedImage] || "/placeholder.svg"}
                                                 alt={product.ProductName}

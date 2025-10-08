@@ -79,7 +79,7 @@ const Carousel = () => {
                 className='h-[80%]'
                 // className="object-contain" // Use object-contain to maintain aspect ratio
                 // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                priority={image.id === 1} // Prioritize loading the first image
+                
               />
             </div>
           ))}

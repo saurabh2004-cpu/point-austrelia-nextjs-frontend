@@ -169,7 +169,7 @@ export default function SignUpComponent() {
           }
         })
 
-        console.log("signup response:", res)
+      console.log("signup response:", res)
       if (res.data.statusCode === 200) {
         setUser(res.data.data);
         window.location.href = '/my-account-review'
@@ -423,34 +423,40 @@ export default function SignUpComponent() {
                 )}
               </div>
               <div>
-                <label htmlFor="category" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                <label
+                  htmlFor="category"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2"
+                >
                   Type of Business<span className="text-red-500 ml-1">*</span>
                 </label>
+
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleBusinessTypeChange}
                   className={`
-                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
-                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                  `}
+      appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+      border border-gray-700  text-black
+      rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+      focus:border-blue-500 focus:z-10 text-sm sm:text-base
+      transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+      ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+    `}
                 >
                   <option value="">Select Business Type</option>
                   {businessTypes.map((type) => (
-                    <option key={type} value={type}>
+                    <option key={type} value={type} className="bg-gray-500 text-white">
                       {type}
                     </option>
                   ))}
                 </select>
+
                 {errors.category && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.category}</p>
                 )}
               </div>
+
             </motion.div>
 
             {/* Custom Business Type (shown only when "Other" is selected) */}
@@ -571,20 +577,18 @@ export default function SignUpComponent() {
                   value={formData.country}
                   onChange={handleInputChange}
                   className={`
-                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
-                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                  `}
+    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+    border border-gray-300 placeholder-gray-400 text-[#000000]/50
+    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+    ${errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+  `}
                 >
-                  <option value="">Select Country</option>
-                  <option value="australia">Australia</option>
-                  <option value="new-zealand">New Zealand</option>
-                  <option value="usa">United States</option>
-                  <option value="uk">United Kingdom</option>
+                  <option value="" className="bg-gray-500 text-white">Select Country</option>
+                  <option value="australia" className="bg-gray-500 text-white">Australia</option>
                 </select>
+
                 {errors.country && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.country}</p>
                 )}
@@ -603,24 +607,25 @@ export default function SignUpComponent() {
                   value={formData.state}
                   onChange={handleInputChange}
                   className={`
-                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
-                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.state ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                  `}
+    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+    border border-gray-300 placeholder-gray-400 text-[#000000]/50
+    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+    ${errors.state ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+  `}
                 >
-                  <option value="">Select State</option>
-                  <option value="nsw">New South Wales</option>
-                  <option value="vic">Victoria</option>
-                  <option value="qld">Queensland</option>
-                  <option value="wa">Western Australia</option>
-                  <option value="sa">South Australia</option>
-                  <option value="tas">Tasmania</option>
-                  <option value="nt">Northern Territory</option>
-                  <option value="act">Australian Capital Territory</option>
+                  <option value="" className="bg-gray-500 text-white">Select State</option>
+                  <option value="nsw" className="bg-gray-500 text-white">New South Wales</option>
+                  <option value="vic" className="bg-gray-500 text-white">Victoria</option>
+                  <option value="qld" className="bg-gray-500 text-white">Queensland</option>
+                  <option value="wa" className="bg-gray-500 text-white">Western Australia</option>
+                  <option value="sa" className="bg-gray-500 text-white">South Australia</option>
+                  <option value="tas" className="bg-gray-500 text-white">Tasmania</option>
+                  <option value="nt" className="bg-gray-500 text-white">Northern Territory</option>
+                  <option value="act" className="bg-gray-500 text-white">Australian Capital Territory</option>
                 </select>
+
                 {errors.state && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.state}</p>
                 )}

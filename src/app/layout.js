@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { League_Spartan } from "next/font/google";
 import { Footer } from "@/components/Footer";
+import { LoadingBar } from "@/components/LoadingBar";
 
 
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
         className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
+         <LoadingBar />
           {children}
           <Footer />
       </body>

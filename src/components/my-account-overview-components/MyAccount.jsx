@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ChevronDown, ArrowUpDown, CalendarDaysIcon, CalendarDays, Plus, X } from "lucide-react"
+import { ChevronDown, ArrowUpDown, CalendarDaysIcon, CalendarDays, Plus, X, Key, KeyIcon, MapIcon, LockIcon, Info, InfoIcon } from "lucide-react"
 import ProfileInformation from "./ProfileInformation"
 import Image from "next/image"
 import RecentPurchases from "./RecentPurchases"
 import useUserStore from "@/zustand/user"
 import axiosInstance from "@/axios/axiosInstance"
+import { set } from "nprogress"
 
 // Address Popup Component
 const AddressPopup = ({
@@ -291,6 +292,8 @@ const ConfirmDeletePopup = ({
 export default function MyAccount() {
   const currentUser = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
+  const [error, setError] = useState('');
+  const [sucessMessage, setSuccessMessage] = useState('');
 
   console.log("currentUser:", currentUser);
   const [activeSection, setActiveSection] = useState("overview")
@@ -325,8 +328,8 @@ export default function MyAccount() {
       isExpanded: false,
       image: '/icons/setting-icon-1.png',
       childrens: [
-        { id: "profile", label: "PROFILE INFORMATION", isExpandable: false },
-        { id: "security", label: "CHANGE PASSWORD", isExpandable: false },
+        { id: "profile", label: "PROFILE INFORMATION", isExpandable: false, icon: <InfoIcon className="h-5 w-5" /> },
+        { id: "security", label: "CHANGE PASSWORD", isExpandable: false, icon: <LockIcon className="h-5 w-5" /> },
       ],
     },
   ])
@@ -350,9 +353,16 @@ export default function MyAccount() {
 
       if (response.data.statusCode === 200) {
         console.log("Password changed successfully")
+        setError('')
+        setSuccessMessage(response.data.message)
+        setPasswordForm({
+          currentPassword: '',
+          newPassword: '',
+        })
       }
       else {
         console.error("Failed to change password:", response.data.message)
+        setError(response.data.message)
       }
     } catch (error) {
       console.error("Error changing password:", error)
@@ -572,6 +582,7 @@ export default function MyAccount() {
                         </span>
                         {item.isExpandable && (
                           <ChevronDown
+
                             className={`w-4 h-4 transition-transform ${item.isExpanded ? "rotate-180" : ""
                               }`}
                           />
@@ -587,8 +598,11 @@ export default function MyAccount() {
                         <div key={child.id} className="border-b-2 border-gray-200  px-8">
                           <button
                             onClick={() => setActiveSection(child.id)}
-                            className={`w-full px-8 py-2 text-left hover:bg-gray-100 transition-colors`}
+                            className={`w-full flex items-center px-2 space-x-4 py-2 text-left hover:bg-gray-100 transition-colors`}
                           >
+                            <span>
+                              {child.icon}
+                            </span>
                             <span
                               className={`text-[14px] font-[400] ${activeSection === child.id ? "text-[#2D2C70] font-[500]" : "text-[#000000]/70"
                                 }`}
@@ -1040,6 +1054,9 @@ export default function MyAccount() {
                   <h1 className="text-[24px]  font-medium text-black">
                     Update Your Password
                   </h1>
+
+                  {error && <p className="text-red-500">{error}</p>}
+                  {sucessMessage && <p className="text-green-500">{sucessMessage}</p>}
                 </div>
                 <div className="mb-4">
                   <span className="text-[14px] font-[400]">Required </span>

@@ -1,5 +1,6 @@
 'use client'
 import axiosInstance from '@/axios/axiosInstance';
+import { ChevronLeft } from 'lucide-react';
 import { useEffect, useState } from 'react'
 
 export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
@@ -13,6 +14,8 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
     limit: 5
   })
   const [loading, setLoading] = useState(false)
+  const [showProducts, setShowProducts] = useState(false)
+  const [products, setProducts] = useState([])
 
   // Parse the sortBy prop to get sort field and order
   const getSortParams = () => {
@@ -76,6 +79,33 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
     }
   }
 
+
+  const fetchProductsOfOrder = async (documentNumber) => {
+    setShowProducts(true)
+    try {
+      setLoading(true)
+      const response = await axiosInstance.get(`sales-order/get-products-by-sales-document-number/${documentNumber}`)
+
+
+      if (response.data.statusCode === 200) {
+        console.log("products of order", response.data.data);
+        setProducts(response.data.data || [])
+        setPagination(response.data.data.pagination || {
+          currentPage: 1,
+          totalPages: 0,
+          totalOrders: 0,
+          hasNext: false,
+          hasPrev: false,
+          limit: 5
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching products of order:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Fetch data when component mounts or filters/sort change
   useEffect(() => {
     fetchRecentPurchases(1)
@@ -115,11 +145,16 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       {/* Filter, Sort and Pagination Info */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pr-4 gap-4">
         <div className="flex flex-col">
-          <div className="text-sm text-gray-600">
+          {!showProducts && <div className="text-sm text-gray-600">
             Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
             {Math.min(pagination.currentPage * pagination.limit, pagination.totalOrders)} of{' '}
             {pagination.totalOrders} orders
-          </div>
+          </div>}
+          {showProducts &&
+            <button className="text-base text-black font-semibold cursor-pointer" onClick={() => setShowProducts(false)}>
+              <ChevronLeft height={20} width={20} className="inline-block"  />
+              Orders List
+            </button>}
           {hasTimeFilter && (
             <div className="text-xs text-gray-500 mt-1">
               Filtered by:
@@ -173,31 +208,31 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">#</th>
-                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">Document Number</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Date</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Customer Name</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Sales Channel</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Tracking Number</th>
-                <th className="py-4 pl-16 text-left font-semibold">Shipping Address</th>
-                <th className="py-4 pl-16 text-left font-semibold">Billing Address</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Image' : 'Document Number'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'SKU' : 'Date'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Amount' : 'Customer Name'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Tax' : 'Sales Channel'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Type of Pack' : 'Tracking Number'}</th>
+                <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">{showProducts ? 'Units' : 'Shipping Address'}</th>
+                {!showProducts &&
+                  <>
+                    <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Billing Address</th>
+                    <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Total Amount</th>
+                  </>}
               </tr>
             </thead>
             <tbody>
-              {orders.map((order, index) => (
+              {!showProducts && orders.map((order, index) => (
                 <tr key={order._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
-                  <td className="py-4 px-4 border-r">{order.documentNumber}</td>
+                  <td
+                    className="py-4 px-4 border-r hover:text-[#E9098D] cursor-pointer"
+                    onClick={() => fetchProductsOfOrder(order.documentNumber)}
+                  >
+                    {order.documentNumber}
+                  </td>
                   <td className="py-4 px-4 border-r">
-                    {/* <div className="flex justify-center"> */}
-                    {/* <img
-                        src={order.product?.imageUrl || '/product-listing-images/product-1.avif'}
-                        alt={order.product?.ProductName}
-                        className="h-20 w-20 object-cover rounded-md"
-                        onError={(e) => {
-                          e.target.src = '/product-listing-images/product-1.avif'
-                        }}
-                      /> */}
-                    {/* </div> */}
+                    
                     <div className='flex justify-start'>
                       <p className="font-medium truncate flex justify-start">{order.date}</p>
                     </div>
@@ -209,9 +244,55 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                   </td>
                   <td className="py-4 px-4 border-r">{order.salesChannel}</td>
                   <td className="py-4 px-4 border-r">{order.trackingNumber}</td>
+                  <td className="py-4 px-4 border-r text-start">
+                    {order?.shippingAddress instanceof Object ?
+                      `${order?.shippingAddress.shippingAddressLineOne || ''}  ${order?.shippingAddress.shippingAddressLineTwo || ''}  ${order?.shippingAddress.shippingAddressLineThree || ''}  ${order?.shippingAddress.shippingCity || ''}  ${order?.shippingAddress.shippingState || ''}  ${order?.shippingAddress.shippingZip || ''}`.trim()
+                      : `${order?.shippingAddress}`
+                    }
+                  </td>
+                  <td className="py-4 px-4 border-r text-start">
+                    {order?.billingAddress instanceof Object ?
+                      `${order?.billingAddress.billingAddressLineOne || ''} ${order?.billingAddress.billingAddressLineTwo || ''} ${order?.billingAddress.billingAddressLineThree || ''} ${order?.billingAddress.billingCity || ''} ${order?.billingAddress.billingState || ''} ${order?.billingAddress.billingZip || ''}`.trim()
+                      : `${order?.billingAddress}`
+                    }
+                  </td>
                   <td className="py-4 px-4 text-[#46BCF9] font-medium">${order.amount?.toFixed(2) || '0.00'}</td>
                 </tr>
               ))}
+
+
+              {showProducts && products.map((product, index) => (
+                <tr key={product.sku} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
+                  <td
+                    className="py-4 px-4 border-r hover:text-[#E9098D] flex justify-center "
+
+                  >
+                    <img src={`https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${product.itemSku}_1.jpg`}
+                      alt=""
+                      className="h-20 w-20 object-cover rounded-md" />
+                  </td>
+                  <td className="py-4 px-4 border-r">
+                    <div className='flex justify-start'>
+                      <p className="font-medium truncate flex justify-start">{product.itemSku}</p>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 border-r">
+                    <div className='flex justify-start'>
+                      <p className="font-medium truncate flex justify-start">{product.amount}</p>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 border-r max-w-xs">
+                    <p className="font-medium truncate flex justify-start">{product.taxPercentages || 'No Tax'}</p>
+                    <div className='flex justify-start'>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 border-r">{product.packType}</td>
+                  <td className="py-4 px-4 border-r">{product.unitsQuantity}</td>
+                </tr>
+              ))}
+
+
             </tbody>
           </table>
         </div>

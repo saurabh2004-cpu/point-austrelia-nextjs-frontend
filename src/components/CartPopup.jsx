@@ -16,6 +16,7 @@ const ShoppingCartPopup = () => {
   const [localQuantities, setLocalQuantities] = useState({});
   const [selectedPacks, setSelectedPacks] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
+  const [packDetails, setPackDetails] = useState({});
   const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
 
   const fetchCustomersCart = async () => {
@@ -29,15 +30,30 @@ const ShoppingCartPopup = () => {
         setCartItems(items);
         const quantities = {};
         const packs = {};
+        const packsInfo = {};
+        
         items.forEach(item => {
           quantities[item._id] = item.unitsQuantity;
-          const matchingPack = item.product.typesOfPacks?.find(
-            pack => parseInt(pack.quantity) === item.packQuentity
-          );
-          packs[item._id] = matchingPack?._id || item.product.typesOfPacks?.[0]?._id;
+          
+          // Store pack details for each item
+          if (item.product.typesOfPacks && Array.isArray(item.product.typesOfPacks)) {
+            packsInfo[item._id] = item.product.typesOfPacks;
+            
+            // Find matching pack based on current packQuentity
+            const matchingPack = item.product.typesOfPacks.find(
+              pack => {
+                const packQty = typeof pack === 'object' ? parseInt(pack.quantity) : null;
+                return packQty === item.packQuentity;
+              }
+            );
+            
+            packs[item._id] = matchingPack?._id || item.product.typesOfPacks[0]?._id;
+          }
         });
+        
         setLocalQuantities(quantities);
         setSelectedPacks(packs);
+        setPackDetails(packsInfo);
       } else {
         setError(response.data.message)
       }
@@ -93,7 +109,8 @@ const ShoppingCartPopup = () => {
     setUpdatingItems(prev => ({ ...prev, [item._id]: true }));
     try {
       const selectedPackId = selectedPacks[item._id];
-      const selectedPack = item.product.typesOfPacks?.find(pack => pack._id === selectedPackId);
+      const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
+      const selectedPack = availablePacks.find(pack => pack._id === selectedPackId);
       const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
       const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
       const totalQuantity = packQuantity * unitsQuantity;
@@ -104,11 +121,31 @@ const ShoppingCartPopup = () => {
         quantity: unitsQuantity,
         packQuentity: packQuantity,
         unitsQuantity: unitsQuantity,
-        totalQuantity: totalQuantity
+        totalQuantity: totalQuantity,
+        packType: selectedPack ? selectedPack.name : 'Each'
       });
 
       if (response.data.statusCode === 200) {
-        await fetchCustomersCart();
+        // Update only the specific cart item, preserving product details
+        setCartItems(prevItems => {
+          return prevItems.map(prevItem => {
+            if (prevItem.product._id === item.product._id) {
+              // Find the updated item from response
+              const updatedItem = response.data.data.cartItems.find(
+                cartItem => cartItem.product._id === item.product._id
+              );
+              
+              if (updatedItem) {
+                // Preserve the full product object from previous state
+                return {
+                  ...updatedItem,
+                  product: prevItem.product // Keep the original populated product
+                };
+              }
+            }
+            return prevItem;
+          });
+        });
         setError(null);
       } else {
         setError(response.data.message || "Failed to update cart item");
@@ -127,7 +164,8 @@ const ShoppingCartPopup = () => {
 
   const getSelectedPack = (item) => {
     const selectedPackId = selectedPacks[item._id];
-    return item.product.typesOfPacks?.find(pack => pack._id === selectedPackId) || item.product.typesOfPacks?.[0];
+    const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
+    return availablePacks.find(pack => pack._id === selectedPackId) || availablePacks[0];
   };
 
   const calculateDisplayTotalQuantity = (item) => {
@@ -158,9 +196,17 @@ const ShoppingCartPopup = () => {
   const isItemModified = (item) => {
     const currentUnits = localQuantities[item._id];
     const selectedPackId = selectedPacks[item._id];
-    const selectedPack = item.product.typesOfPacks?.find(pack => pack._id === selectedPackId);
+    const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
+    const selectedPack = availablePacks.find(pack => pack._id === selectedPackId);
     const currentPackQuantity = selectedPack ? parseInt(selectedPack.quantity) : item.packQuentity;
     return currentUnits !== item.unitsQuantity || currentPackQuantity !== item.packQuentity;
+  };
+
+  const getProductImage = (item) => {
+    if (item.product.images && Array.isArray(item.product.images) && item.product.images.length > 0) {
+      return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.images[0]}`;
+    }
+    return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.sku}_1.jpg`;
   };
 
   useEffect(() => {
@@ -192,12 +238,22 @@ const ShoppingCartPopup = () => {
                 const isOutOfStock = item.product.stockLevel <= 0;
                 const displayQuantity = getDisplayQuantity(item);
                 const hasModifications = isItemModified(item);
+                const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
 
                 return (
                   <div key={item._id} className="px-4 border-b border-gray-100">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 mb-3">
                       <div className="flex-shrink-0 flex justify-center sm:justify-start mb-3 sm:mb-0">
-                        <img src={item.product.images || "/placeholder.svg"} alt={item.product.ProductName} width={96} height={96} className="object-contain" />
+                        <img 
+                          src={getProductImage(item)} 
+                          alt={item.product.ProductName} 
+                          width={96} 
+                          height={96} 
+                          className="object-contain"
+                          onError={(e) => {
+                            e.target.src = '/product-listing-images/product-1.avif';
+                          }}
+                        />
                       </div>
 
                       <div className="flex-1 min-w-0 space-y-2">
@@ -219,8 +275,8 @@ const ShoppingCartPopup = () => {
                               className="object-contain"
                             />
                           </button>
-
                         </div>
+                        
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item.product.eachPrice.toFixed(2)}</span>
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
@@ -246,9 +302,14 @@ const ShoppingCartPopup = () => {
                           <div className="w-full sm:w-auto">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
                             <div className="relative">
-                              <select value={selectedPacks[item._id] || ''} onChange={(e) => handlePackChange(item._id, e.target.value)} disabled={isOutOfStock} className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed">
-                                {item.product.typesOfPacks && item.product.typesOfPacks.length > 0 ? (
-                                  item.product.typesOfPacks.map((pack) => (
+                              <select 
+                                value={selectedPacks[item._id] || ''} 
+                                onChange={(e) => handlePackChange(item._id, e.target.value)} 
+                                disabled={isOutOfStock} 
+                                className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              >
+                                {availablePacks && availablePacks.length > 0 ? (
+                                  availablePacks.map((pack) => (
                                     <option key={pack._id} value={pack._id}>{pack.name}</option>
                                   ))
                                 ) : (

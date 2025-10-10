@@ -707,7 +707,7 @@ export function Navbar() {
                   </div>
 
                   <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
-                    <span className="text-[1rem] font-semibold text-[#2d2c70] hover:text-[#E9098D] cursor-pointer">Quick Order</span>
+                    {/* <span className="text-[1rem] font-semibold text-[#2d2c70] hover:text-[#E9098D] cursor-pointer">Quick Order</span> */}
                   </div>
 
                   {/* Desktop Wishlist */}

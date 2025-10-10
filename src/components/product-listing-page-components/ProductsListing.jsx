@@ -442,7 +442,7 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
-            console.log("Cart items:", response.data.data)
+            console.log("Cart items:", response)
             if (response.data.statusCode === 200) {
                 setCartItems(response.data.data || [])
             }

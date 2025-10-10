@@ -524,7 +524,7 @@ const CheckoutComponent = () => {
                     setCartItemsCount(0);
                     setCartItems([]);
                 }
-                router.push('/thank-you');
+                router.push(`/thank-you/${documentNumber}`);
             } else {
                 const failedOrders = results.filter(res => res.data.statusCode !== 200);
                 console.error("Some orders failed:", failedOrders);

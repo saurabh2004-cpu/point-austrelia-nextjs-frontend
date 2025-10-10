@@ -797,7 +797,7 @@ export default function MyAccount() {
                 <div className="border-b-2 ml-8 border-black pb-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-[24px] font-medium ">
-                      Purchase History
+                      All Purchase History
                     </h2>
 
                     <button className="p-2 text-[17px] font-medium bg-[#2D2C70] text-white rounded-xl">

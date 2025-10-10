@@ -6,6 +6,6 @@ const axiosInstance = axios.create({
   withCredentials: true
 });
 
-// new code ..... updated
+// new code  updated ...
 
 export default axiosInstance;

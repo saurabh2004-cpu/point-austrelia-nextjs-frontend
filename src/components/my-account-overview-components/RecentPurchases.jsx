@@ -23,9 +23,9 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   const fetchRecentPurchases = async (page = 1) => {
     try {
       setLoading(true)
-      
+
       const { sortField, sortOrder } = getSortParams();
-      
+
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
@@ -44,6 +44,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
 
       const response = await axiosInstance.get(`sales-order/get-recent-purchases-by-customer?${params.toString()}`)
 
+      console.log("recent purchases response", response)
       if (response.data.statusCode === 200) {
         console.log("customers recent purchases data", response.data.data);
         setOrders(response.data.data.orders || [])
@@ -121,7 +122,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           </div>
           {hasTimeFilter && (
             <div className="text-xs text-gray-500 mt-1">
-              Filtered by: 
+              Filtered by:
               {timeLapse.from && ` From ${timeLapse.from}`}
               {timeLapse.to && ` To ${timeLapse.to}`}
             </div>
@@ -173,11 +174,12 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">#</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">Document Number</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Product Image</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Product name</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Pack Of Quantity</th>
-                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Unit quantity</th>
-                <th className="py-4 pl-16 text-left font-semibold">Final amount</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Date</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Customer Name</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Sales Channel</th>
+                <th className="py-4 pl-16 border-r border-gray-200 text-left font-semibold">Tracking Number</th>
+                <th className="py-4 pl-16 text-left font-semibold">Shipping Address</th>
+                <th className="py-4 pl-16 text-left font-semibold">Billing Address</th>
               </tr>
             </thead>
             <tbody>
@@ -186,24 +188,27 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                   <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
                   <td className="py-4 px-4 border-r">{order.documentNumber}</td>
                   <td className="py-4 px-4 border-r">
-                    <div className="flex justify-center">
-                      <img
+                    {/* <div className="flex justify-center"> */}
+                    {/* <img
                         src={order.product?.imageUrl || '/product-listing-images/product-1.avif'}
                         alt={order.product?.ProductName}
                         className="h-20 w-20 object-cover rounded-md"
                         onError={(e) => {
                           e.target.src = '/product-listing-images/product-1.avif'
                         }}
-                      />
+                      /> */}
+                    {/* </div> */}
+                    <div className='flex justify-start'>
+                      <p className="font-medium truncate flex justify-start">{order.date}</p>
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r max-w-xs">
                     <div className='flex justify-start'>
-                      <p className="font-medium truncate flex justify-start">{order.product?.ProductName || 'Product not found'}</p>
+                      <p className="font-medium truncate flex justify-start">{order.customerName || 'Product not found'}</p>
                     </div>
                   </td>
-                  <td className="py-4 px-4 border-r">{order.packQuantity}</td>
-                  <td className="py-4 px-4 border-r">{order.unitsQuantity}</td>
+                  <td className="py-4 px-4 border-r">{order.salesChannel}</td>
+                  <td className="py-4 px-4 border-r">{order.trackingNumber}</td>
                   <td className="py-4 px-4 text-[#46BCF9] font-medium">${order.amount?.toFixed(2) || '0.00'}</td>
                 </tr>
               ))}

@@ -127,7 +127,7 @@ export default function ProfileInformation({ setActiveSection }) {
                                 <div className="">
                                     <button
                                         onClick={handleUpdate}
-                                        className="w-[200px] h-[42px] bg-[#2D2C70] text-white hover:bg-[#46BCF9] py-1 rounded-2xl text-[20px] font-medium  "
+                                        className="w-[200px] border border-black  bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 py-1 rounded-2xl text-[20px] font-medium  "
                                     >
                                         Update
                                     </button>

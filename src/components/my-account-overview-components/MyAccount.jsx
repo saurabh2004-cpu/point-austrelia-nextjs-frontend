@@ -291,9 +291,27 @@ const ConfirmDeletePopup = ({
 
 export default function MyAccount() {
   const currentUser = useUserStore((state) => state.user);
-  const setUser = useUserStore((state) => state.setUser);
   const [error, setError] = useState('');
   const [sucessMessage, setSuccessMessage] = useState('');
+  const setUser = useUserStore((state) => state.setUser);
+
+
+  const fetchCurentUser = async () => {
+    try {
+      const response = await axiosInstance.get('user/get-current-user');
+
+      if (response.data.statusCode === 200) {
+        setUser(response.data.data);
+      }
+
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurentUser();
+  }, []);
 
   console.log("currentUser:", currentUser);
   const [activeSection, setActiveSection] = useState("overview")
@@ -782,22 +800,26 @@ export default function MyAccount() {
                       Purchase History
                     </h2>
 
+                    <button className="p-2 text-[17px] font-medium bg-[#2D2C70] text-white rounded-xl">
+                      Reorder Items
+                    </button>
+
                   </div>
 
                   {/* Filter Controls */}
                   <div className=" gap-4 items-start sm:items-center pt-4 border-t-2 border-black ">
                     {/* Status Filter */}
-                    <div className="flex items-center text-[1rem] font-[500] font-spartan inline-block border-2 rounded-lg  ">
+                    {/* <div className="flex items-center text-[1rem] font-[500] font-spartan inline-block border-2 rounded-lg  ">
                       <button className="px-4 py-1  w-1/2   rounded-l-lg text-sm font-medium`  ">
                         Open
                       </button>
                       <button className="px-4 w-1/2 py-1 bg-[#46BCF9] text-white rounded-r-lg  text-sm font-medium hover:bg-gray-300">
                         All
                       </button>
-                    </div>
+                    </div> */}
 
                     {/* Date Range */}
-                    <div className="flex items-end gap-10  justify-between mt-8">
+                    <div className="flex items-end gap-10  justify-between mt-2">
                       {/* From */}
                       <div className="flex gap-10">
                         <div className="flex flex-col">
@@ -1093,7 +1115,7 @@ export default function MyAccount() {
                 <div className="">
                   <button
                     onClick={changePassword}
-                    className="w-[200px] h-[42px] bg-[#2D2C70] text-white hover:bg-[#46BCF9] py-1 rounded-2xl text-[20px] font-medium  "
+                    className="w-[200px] border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/95 py-1 rounded-2xl text-[20px] font-medium  "
                   >
                     Update
                   </button>

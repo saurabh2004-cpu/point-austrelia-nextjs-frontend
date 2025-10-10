@@ -27,7 +27,7 @@ export function LoadingBar() {
       clearTimeout(timeout)
       NProgress.done()
     }
-  }, [pathname, searchParams])
+  }, [pathname])
 
   return null
 }

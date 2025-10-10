@@ -72,6 +72,24 @@ export function Navbar() {
 
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
   const getCurrentIndex = useNavStateStore((state) => state.getCurrentIndex)
+  const setUser = useUserStore((state) => state.setUser);
+
+  const fetchCurentUser = async () => {
+    try {
+      const response = await axiosInstance.get('user/get-current-user');
+
+      if (response.data.statusCode === 200) {
+        setUser(response.data.data);
+      }
+
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCurentUser();
+  }, []);
 
 
   useEffect(() => {
@@ -358,7 +376,7 @@ export function Navbar() {
 
 
   const handleCategoryClick = (link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
-    router.push(link)
+     router.replace(`/${link}`)
     setActiveDropdown(null)
     setHoveredCategory(null)
     setHoveredSubcategory(null)

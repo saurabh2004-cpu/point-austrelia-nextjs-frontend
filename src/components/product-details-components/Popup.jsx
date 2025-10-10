@@ -6,24 +6,184 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import useUserStore from "@/zustand/user"
+import useWishlistStore from "@/zustand/wishList"
+import useCartStore from "@/zustand/cartPopup"
+import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 
-export default function ProductPopup({ isOpen, onClose, productId }) {
+export default function ProductPopup({ isOpen, onClose, productId,
+    categoryId,
+    subCategoryId,
+    subCategoryTwoId,
+    brandId,
+    categorySlug,
+    subCategorySlug,
+    subCategoryTwoSlug,
+    brandSlug,
+    setFilters,
+    clearFilters,
+    wishListItems,
+    setWishlistItems,
+    customerGroupsDiscounts,
+    itemBasedDiscounts
+
+}) {
     const [selectedImage, setSelectedImage] = useState(0)
     const [quantity, setQuantity] = useState(1)
-    const [selectedUnit, setSelectedUnit] = useState("Each")
+    const [selectedUnitId, setSelectedUnitId] = useState("")
     const [productImages, setProductImages] = useState([])
     const [product, setProduct] = useState(null)
     const [loading, setLoading] = useState(false)
     const [cartItems, setCartItems] = useState([])
     const [error, setError] = useState(null)
+    const [stockError, setStockError] = useState(null)
     const [inCartItem, setInCartItem] = useState(null)
-    const [wishListItems, setWishlistItems] = useState([])
+    // const [wishListItems, setWishlistItems] = useState([])
+    // const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
+    // const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
 
+    const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
+    const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const currentUser = useUserStore((state) => state.user)
     const router = useRouter()
 
-    const incrementQuantity = () => setQuantity((prev) => prev + 1)
-    const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1))
+
+    // Calculate discounted price
+    const calculateDiscountedPrice = () => {
+        if (!product || !product.eachPrice) return 0;
+
+        const originalPrice = product.eachPrice;
+
+        // Check for item-based discount first (higher priority)
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser?.customerId
+        );
+
+        if (itemDiscount) {
+            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+            return originalPrice - discountAmount;
+        }
+
+        // Check for pricing group discount
+        if (product.pricingGroup && product.pricingGroup._id) {
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === product.pricingGroup._id &&
+                    discount.customerId === currentUser?.customerId
+            );
+
+            if (groupDiscount) {
+                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
+                return originalPrice - discountAmount;
+            }
+        }
+
+        return originalPrice;
+    };
+
+    // Get discount percentage for display
+    const getDiscountPercentage = () => {
+        if (!currentUser || !currentUser.customerId) {
+            return null;
+        }
+
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product?.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            return itemDiscount.percentage;
+        }
+
+        if (product?.pricingGroup && product.pricingGroup._id) {
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === product.pricingGroup._id &&
+                    discount.customerId === currentUser.customerId
+            );
+
+            if (groupDiscount) {
+                return groupDiscount.percentage;
+            }
+        }
+
+        return null;
+    };
+
+    // Check if product has any discount
+    const hasDiscount = () => {
+        return getDiscountPercentage() !== null;
+    };
+
+    const discountedPrice = calculateDiscountedPrice();
+    const discountPercentage = getDiscountPercentage();
+    const hasProductDiscount = hasDiscount();
+
+    const incrementQuantity = () => {
+        const newQuantity = quantity + 1;
+        setQuantity(newQuantity);
+        checkStock(newQuantity, selectedUnitId);
+    }
+
+    const decrementQuantity = () => {
+        const newQuantity = Math.max(1, quantity - 1);
+        setQuantity(newQuantity);
+        checkStock(newQuantity, selectedUnitId);
+    }
+
+    // Calculate total quantity based on pack quantity and units
+    const calculateTotalQuantity = () => {
+        if (!product) return 0;
+
+        const selectedPack = product.typesOfPacks?.find(pack => pack._id === selectedUnitId);
+        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
+        return packQuantity * quantity;
+    };
+
+    // Check stock level
+    const checkStock = (qty = quantity, unitId = selectedUnitId) => {
+        if (!product) return { isValid: true };
+
+        const selectedPack = product.typesOfPacks?.find(pack => pack._id === unitId);
+        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
+        const totalRequestedQuantity = packQuantity * qty;
+
+        const cartItem = getCartItem();
+        const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0;
+
+        const newTotalQuantity = isProductInCart()
+            ? totalRequestedQuantity
+            : totalRequestedQuantity + currentCartQuantity;
+
+        const isValid = newTotalQuantity <= product.stockLevel;
+
+        if (!isValid) {
+            setStockError(`Exceeds available stock (${product.stockLevel})`);
+        } else {
+            setStockError(null);
+        }
+
+        return {
+            isValid,
+            message: isValid ? null : `Exceeds available stock (${product.stockLevel})`,
+            requestedQuantity: totalRequestedQuantity,
+            currentStock: product.stockLevel
+        };
+    };
+
+    const handleUnitChange = (unitId) => {
+        setSelectedUnitId(unitId);
+        checkStock(quantity, unitId);
+    };
+
+    const getCartItem = () => {
+        return cartItems.find(item => item.product?._id === product?._id);
+    };
+
+    const isProductInCart = () => {
+        return cartItems.some(item => item.product?._id === product?._id);
+    };
 
     // Fetch product details
     const fetchProductDetail = async (productId) => {
@@ -38,6 +198,10 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                 if (productData.images?.length > 0) {
                     setProductImages(productData.images)
                 }
+                // Set default selected unit to the first available pack type
+                if (productData.typesOfPacks && productData.typesOfPacks.length > 0) {
+                    setSelectedUnitId(productData.typesOfPacks[0]._id);
+                }
             }
         } catch (error) {
             console.log(error)
@@ -50,96 +214,48 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
     const fetchCustomersCart = async () => {
         try {
             if (!currentUser?._id) return
-            setLoading(true)
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
             if (response.data.statusCode === 200) {
                 setCartItems(response.data.data || [])
             }
         } catch (error) {
             console.error("Error fetching customer cart:", error)
-        } finally {
-            setLoading(false)
         }
     }
 
-    useEffect(() => {
-        if (productId) {
-            fetchProductDetail(productId)
-        }
-    }, [productId])
-
-    useEffect(() => {
-        if (isOpen && currentUser?._id) {
-            fetchCustomersCart()
-        }
-    }, [isOpen])
-
-    // Check if product is already in cart
-    useEffect(() => {
-        if (product && cartItems.length > 0) {
-            const existing = cartItems.find(ci => ci.product._id === product._id)
-            setInCartItem(existing || null)
-            if (existing) {
-                setQuantity(existing.unitsQuantity)
-                const pack = product.typesOfPacks?.find(p => p.quantity === existing.packQuentity)
-                setSelectedUnit(pack ? pack.name : "Each")
-            }
-        } else {
-            setInCartItem(null)
-        }
-    }, [product, cartItems])
-
-    // --- Handlers ---
-
-    const handleAddToCart = async () => {
-        if (!currentUser?._id) {
-            setError("Please login to add to cart")
-            return
-        }
+    // Fetch groups discount
+    const fetchCustomersGroupsDiscounts = async () => {
         try {
-            const selectedPack = product.typesOfPacks?.find(p => p.name === selectedUnit)
-            console.log("selected pack", selectedPack)
-            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
-            const totalQuantity = packQuantity * quantity
+            if (!currentUser || !currentUser.customerId) return;
 
-            const res = await axiosInstance.post("cart/add-to-cart", {
-                customerId: currentUser._id,
-                productId: product._id,
-                packQuentity: packQuantity,
-                unitsQuantity: quantity,
-                totalQuantity
-            })
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`);
 
-            if (res.data.statusCode === 200) {
-                await fetchCustomersCart()
+            console.log("Customer groups discounts:", response.data.data);
+
+            if (response.data.statusCode === 200) {
+                setCustomerGroupsDiscounts(response.data.data || []);
             }
-        } catch (err) {
-            console.error(err)
-            setError("Error adding to cart")
+        } catch (error) {
+            console.error('Error fetching customer groups discounts:', error);
         }
-    }
+    };
 
-    const handleUpdateCart = async () => {
-        if (!inCartItem) return
-        await handleAddToCart() // same API call, overwrites
-    }
-
-    const handleAddToWishlist = async () => {
-        if (!currentUser?._id) {
-            setError("Please login to add to wishlist")
-            return
-        }
+    // Fetch item based discounts 
+    const fetchItemBasedDiscounts = async () => {
         try {
-            const res = await axiosInstance.post("wishlist/add-to-wishlist", {
-                customerId: currentUser._id,
-                productId: product._id
-            })
-            console.log("wishlist res", res.data)
-        } catch (err) {
-            console.error(err)
-            setError("Error adding to wishlist")
+            if (!currentUser || !currentUser.customerId) return;
+
+            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
+
+            console.log("customers item based discounts:", response.data.data);
+
+            if (response.data.statusCode === 200) {
+                setItemBasedDiscounts(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching item based discounts:', error);
         }
-    }
+    };
 
     const fetchCustomersWishList = async () => {
         try {
@@ -160,10 +276,149 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
     }
 
     useEffect(() => {
-        if (currentUser?._id) {
-            fetchCustomersWishList()
+        if (productId) {
+            fetchProductDetail(productId)
         }
-    }, [currentUser])
+    }, [productId])
+
+    useEffect(() => {
+        if (isOpen && currentUser?._id) {
+            fetchCustomersCart()
+            fetchCustomersWishList()
+            if (currentUser.customerId) {
+                fetchItemBasedDiscounts()
+                fetchCustomersGroupsDiscounts()
+            }
+        }
+    }, [isOpen, currentUser])
+
+    // Check if product is already in cart
+    useEffect(() => {
+        if (product && cartItems.length > 0) {
+            const existing = cartItems.find(ci => ci.product._id === product._id)
+            setInCartItem(existing || null)
+            if (existing) {
+                setQuantity(existing.unitsQuantity)
+                const pack = product.typesOfPacks?.find(p => p._id === existing.packType)
+                if (pack) {
+                    setSelectedUnitId(pack._id)
+                }
+            }
+        } else {
+            setInCartItem(null)
+        }
+    }, [product, cartItems])
+
+    // --- Handlers ---
+
+    const handleAddToCart = async () => {
+        if (!currentUser?._id) {
+            setError("Please login to add to cart")
+            return
+        }
+        if (!product) return;
+
+        setLoading(true);
+        try {
+            const selectedPack = product.typesOfPacks?.find(p => p._id === selectedUnitId)
+            console.log("selected pack", selectedPack)
+            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+            const totalQuantity = packQuantity * quantity
+
+            const stockCheck = checkStock();
+            if (!stockCheck.isValid) {
+                setError(stockCheck.message);
+                setLoading(false);
+                return;
+            }
+
+            const res = await axiosInstance.post("cart/add-to-cart", {
+                customerId: currentUser._id,
+                productId: product._id,
+                packQuentity: packQuantity,
+                unitsQuantity: quantity,
+                totalQuantity: totalQuantity,
+                packType: selectedPack ? selectedPack.name : 'Each'
+            })
+
+            if (res.data.statusCode === 200) {
+                await fetchCustomersCart()
+                setCartItemsCount(res.data.data.cartItems?.length || 0);
+                setError(null)
+                setStockError(null)
+            }
+        } catch (err) {
+            console.error(err)
+            setError("Error adding to cart")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleUpdateCart = async () => {
+        if (!inCartItem || !product) return
+        await handleAddToCart() // same API call, overwrites
+    }
+
+    const handleAddToWishlist = async () => {
+        if (!currentUser?._id) {
+            setError("Please login to add to wishlist");
+            return;
+        }
+        if (!product) return;
+
+        try {
+            const alreadyInWishlist = isInWishlist();
+
+            let res;
+            if (alreadyInWishlist) {
+                // Remove from wishlist
+                res = await axiosInstance.delete(
+                    `wishlist/remove-from-wishlist/${currentUser._id}/${product._id}`
+                );
+            } else {
+                // Add to wishlist
+                res = await axiosInstance.post("wishlist/add-to-wishlist", {
+                    customerId: currentUser._id,
+                    productId: product._id,
+                });
+            }
+
+            if (res.data.statusCode === 200) {
+                await fetchCustomersWishList();
+                setWishlistItemsCount(res.data.data?.length || 0);
+            }
+        } catch (err) {
+            console.error(err);
+            setError("Error updating wishlist");
+        }
+    };
+
+
+    const isInWishlist = () => {
+        return wishListItems.some(
+            (item) => item.productId === product?._id || item.product?._id === product?._id
+        );
+    };
+
+    useEffect(() => {
+        isInWishlist();
+    }, [wishListItems]);
+
+    const isOutOfStock = product?.stockLevel <= 0;
+    const totalRequestedQuantity = calculateTotalQuantity();
+
+    const handleViewProductDetails = () => {
+        setFilters({
+            categorySlug: categorySlug || null,
+            subCategorySlug: subCategorySlug || null,
+            subCategoryTwoSlug: subCategoryTwoSlug || null,
+            brandSlug: brandSlug || null,
+            productID: product._id
+        })
+        const productSlug = product.ProductName.replace(/\s+/g, '-').toLowerCase();
+        router.push(`/product-details/${productSlug}`);
+    }
 
     if (!isOpen) return null
 
@@ -229,29 +484,44 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                                 </div>
                             </div>
 
-
-
                             {/* Right side details */}
                             <div className="flex-1 space-y-3 font-spartan">
-                                <h1 className="text-[26px] font-semibold text-black uppercase">{product.ProductName}</h1>
+                                <h1 className="text-[18px] font-semibold text-black uppercase">{product.ProductName}</h1>
                                 <div className="space-y-1 flex justify-between items-center">
                                     <p className="text-xs sm:text-sm text-gray-600 font-spartan">
                                         SKU {product.sku}
                                     </p>
 
                                     {/* Stock Status */}
-                                    <div className={`flex items-center space-x-2 px-2 ${product.stockLevel > 0 ? 'bg-[#E7FAEF]' : 'bg-red-100'}`}>
-                                        <svg className={`w-5 h-5 ${product.stockLevel < 0 ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                    <div className={`flex items-center space-x-2 px-2 ${!isOutOfStock ? 'bg-[#E7FAEF]' : 'bg-red-100'}`}>
+                                        <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
-                                        <span className={` ${product.stockLevel > 0 ? 'text-[14px]' : 'text-[12px]'} font-semibold font-spartan py-1 rounded ${product.stockLevel > 0 ? 'text-black' : 'text-red-600'}`}>
-                                            {product.stockLevel > 0 ? 'IN STOCK' : 'OUT OF STOCK'}
+                                        <span className={` ${!isOutOfStock ? 'text-[14px]' : 'text-[12px]'} font-semibold font-spartan py-1 rounded ${!isOutOfStock ? 'text-black' : 'text-red-600'}`}>
+                                            {!isOutOfStock ? 'IN STOCK' : 'OUT OF STOCK'}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="text-[24px] font-semibold text-[#2D2C70]">
-                                    ${product.eachPrice ? product.eachPrice.toFixed(2) : "0.00"}
+
+                                {/* Price */}
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-[24px] font-semibold text-[#2D2C70]">
+                                        ${discountedPrice.toFixed(2)}
+                                    </span>
+                                    {hasProductDiscount && product.eachPrice && (
+                                        <span className="text-sm text-gray-500 line-through">
+                                            ${product.eachPrice.toFixed(2)}
+                                        </span>
+                                    )}
+
                                 </div>
+
+                                {/* Stock Error Message */}
+                                {stockError && (
+                                    <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                                        {stockError}
+                                    </div>
+                                )}
 
                                 {/* Quantity & Units */}
                                 <div className="flex items-center space-x-6">
@@ -260,14 +530,16 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                                         <div className="flex items-center">
                                             <button
                                                 onClick={decrementQuantity}
-                                                className="px-2 py-1 bg-black text-white rounded-md"
+                                                disabled={quantity <= 1 || isOutOfStock}
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400"
                                             >
                                                 <Minus className="w-4 h-4" />
                                             </button>
                                             <span className="px-4">{quantity}</span>
                                             <button
                                                 onClick={incrementQuantity}
-                                                className="px-2 py-1 bg-black text-white rounded-md"
+                                                disabled={isOutOfStock || totalRequestedQuantity >= product.stockLevel}
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </button>
@@ -277,58 +549,87 @@ export default function ProductPopup({ isOpen, onClose, productId }) {
                                     <div className="flex flex-col space-y-2 w-full">
                                         <span className="text-sm">Units</span>
                                         <select
-                                            value={selectedUnit}
-                                            onChange={(e) => setSelectedUnit(e.target.value)}
-                                            className="w-full border rounded-md p-2"
+                                            value={selectedUnitId}
+                                            onChange={(e) => handleUnitChange(e.target.value)}
+                                            disabled={isOutOfStock}
+                                            className="w-full border rounded-md p-2 disabled:bg-gray-100"
                                         >
-                                            <option value="Each">Each</option>
-                                            {product.typesOfPacks?.map((pack) => (
-                                                <option key={pack._id} value={pack._id}>
-                                                    {pack.name}
-                                                </option>
-                                            ))}
+                                            {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
+                                                product.typesOfPacks.map((pack) => (
+                                                    <option key={pack._id} value={pack._id}>
+                                                        {pack.name}
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <option value="">No packs available</option>
+                                            )}
                                         </select>
                                     </div>
                                 </div>
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center space-x-3">
-                                    {!inCartItem ? (
-                                        <>
-                                            <button
-                                                onClick={handleAddToCart}
-                                                className="flex-1 bg-[#46BCF9] text-white py-2 rounded-lg"
+
+                                    <>
+                                        <button
+                                            onClick={handleAddToCart}
+                                            disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
+                                            className="flex-1 bg-[#46BCF9] border border-black text-white py-2 rounded-lg disabled:bg-gray-400"
+                                        >
+                                            {loading ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
+                                            ) : (
+                                                "Add to Cart"
+                                            )}
+                                        </button>
+                                        <div
+                                            onClick={handleAddToWishlist}
+                                            className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full cursor-pointer"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill={isInWishlist() ? "#E799A9" : "none"}
+                                                stroke="#E799A9"
+                                                strokeWidth="2"
                                             >
-                                                Add to Cart
-                                            </button>
-                                            <div
-                                                onClick={handleAddToWishlist}
-                                                className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full cursor-pointer"
-                                            >
-                                                <Heart className="w-5 h-5 text-red-500" />
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                            <button className="flex-1 bg-[#2D2C70] text-white py-2 rounded-lg">
-                                                Added <Check className="inline-block ml-2 h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={handleUpdateCart}
-                                                className="flex-1 bg-[#E799A9] text-white py-2 rounded-lg"
-                                            >
-                                                Update
-                                            </button>
+                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                                                    2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 
+                                                    4.5 2.09C13.09 3.81 14.76 3 16.5 3 
+                                                    19.58 3 22 5.42 22 8.5c0 
+                                                    3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                            </svg>
+
+
                                         </div>
-                                    )}
+                                    </>
+
+
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                    <button className="flex-1 bg-[#2D2C70] border border-black text-white py-2 rounded-lg">
+                                        Added <Check className="inline-block ml-2 h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={handleUpdateCart}
+                                        disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
+                                        className="flex-1 bg-[#E799A9] border border-black text-white py-2 rounded-lg disabled:bg-gray-400"
+                                    >
+                                        {loading ? 'Updating...' : 'Update'}
+                                    </button>
+
                                 </div>
 
                                 {/* Cart Quantity */}
-                                <div className="text-sm text-black">
-                                    In Cart Quantity: {inCartItem ? inCartItem.totalQuantity : 0}
-                                </div>
+                                {inCartItem && (
+                                    <div className="text-sm text-black">
+                                        In Cart Quantity: {inCartItem.unitsQuantity} ({inCartItem.packType})
+                                    </div>
+                                )}
 
-                                <button className="text-sm underline flex items-center">
+                                <button onClick={handleViewProductDetails} className="text-sm underline flex items-center">
                                     View product details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>
                             </div>

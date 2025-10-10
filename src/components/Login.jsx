@@ -60,7 +60,7 @@ export default function LoginComponent() {
 
     if (!formData.password.trim()) {
       newErrors.password = 'Password is required'
-    } 
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -68,7 +68,7 @@ export default function LoginComponent() {
 
   const validateForgotPasswordEmail = () => {
     const newErrors = {}
-    
+
     if (!forgotPasswordEmail.trim()) {
       newErrors.email = 'Email Address is required'
     } else if (!/\S+@\S+\.\S+/.test(forgotPasswordEmail)) {
@@ -106,24 +106,24 @@ export default function LoginComponent() {
         setUser(res.data.data);
         window.location.href = '/my-account-review'
       } else {
-        setErrors(prev => ({ 
-          ...prev, 
-          loginError: res.data.message || 'Login failed. Please try again.' 
+        setErrors(prev => ({
+          ...prev,
+          loginError: res.data.message || 'Login failed. Please try again.'
         }))
       }
     } catch (error) {
       console.error('Login error:', error)
       let errorMessage = 'An error occurred during login'
-      
+
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error.message) {
         errorMessage = error.message
       }
-      
-      setErrors(prev => ({ 
-        ...prev, 
-        loginError: errorMessage 
+
+      setErrors(prev => ({
+        ...prev,
+        loginError: errorMessage
       }))
     } finally {
       setIsLoading(false)
@@ -138,7 +138,7 @@ export default function LoginComponent() {
     setForgotPasswordError('')
 
     try {
-      const res = await axiosInstance.post('user/send-password-reset-email', 
+      const res = await axiosInstance.post('user/send-password-reset-email',
         { email: forgotPasswordEmail },
         {
           headers: {
@@ -163,13 +163,13 @@ export default function LoginComponent() {
     } catch (error) {
       console.error('Forgot password error:', error)
       let errorMessage = 'An error occurred while sending reset email. Please try again.'
-      
+
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       setForgotPasswordError(errorMessage)
     } finally {
       setForgotPasswordLoading(false)
@@ -218,13 +218,13 @@ export default function LoginComponent() {
 
   const popupVariants = {
     hidden: { opacity: 0, scale: 0.8 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       scale: 1,
       transition: { duration: 0.3 }
     },
-    exit: { 
-      opacity: 0, 
+    exit: {
+      opacity: 0,
       scale: 0.8,
       transition: { duration: 0.2 }
     }
@@ -358,14 +358,14 @@ export default function LoginComponent() {
             </div>
 
             {/* Login Button */}
-            <div className=''>
-              <motion.div variants={itemVariants} className='mb-1'>
+            <div className='space-y-3'>
+              <motion.div variants={itemVariants} className=''>
                 <motion.button
                   type="submit"
                   disabled={isLoading}
                   className="
-                  group relative w-full flex justify-center py-3 px-4 
-                  border border-transparent text-sm sm:text-base font-medium rounded-md 
+                  group relative w-full flex justify-center py-2 px-4 border border-black 
+                   text-sm sm:text-base font-medium rounded-md 
                   text-white bg-[#74C7F0] hover:bg-sky-500 
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
                   disabled:opacity-50 disabled:cursor-not-allowed
@@ -375,7 +375,7 @@ export default function LoginComponent() {
                   whileTap={{ scale: isLoading ? 1 : 0.98 }}
                 >
                   {isLoading ? (
-                    <div className="flex items-center">
+                    <div className="flex items-centerb text-[17px] font-semibold">
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -388,15 +388,24 @@ export default function LoginComponent() {
                 </motion.button>
               </motion.div>
 
-              {/* Forgot Password Link */}
-              <motion.div className="text-end mb-1" variants={itemVariants}>
-                <button
+              
+
+              <motion.div variants={itemVariants}>
+                <motion.button
                   type="button"
                   onClick={openForgotPasswordPopup}
-                  className="text-[13px] font-medium text-[#74C7F0] hover:text-sky-600 transition-colors duration-200"
+                  className="
+                  w-full flex justify-center py-2 px-4  border border-black 
+                   text-sm sm:text-base font-medium rounded-md 
+                  text-white bg-[#E799A9] hover:bg-[#E799A9]/80
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                  transition-all duration-200 text-[1rem] font-[500]
+                "
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   Forgot password?
-                </button>
+                </motion.button>
               </motion.div>
 
               {/* Wholesale Register Button */}
@@ -405,9 +414,9 @@ export default function LoginComponent() {
                   type="button"
                   onClick={handleWholesaleRegister}
                   className="
-                  w-full flex justify-center py-3 px-4 
-                  border border-transparent text-sm sm:text-base font-medium rounded-md 
-                  text-white bg-[#2D2B70] hover:bg-indigo-700
+                  w-full flex justify-center py-2 px-4 border border-black 
+                   text-sm sm:text-base font-medium rounded-md 
+                  text-white bg-[#2D2B70] hover:[#2D2B70]/80
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                   transition-all duration-200 text-[1rem] font-[500]
                 "

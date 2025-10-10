@@ -64,7 +64,7 @@ const ProductCard = ({
                 </div>
 
                 {/* Product Details */}
-                <div className="flex-1 min-w-0 space-y-2 max-w-[270px] mx-auto xl:mx-0">
+                <div className="flex-1 min-w-0 space-y-2 max-w-[350px] mx-auto xl:mx-0">
                     <h3 className="text-[15px] font-semibold line-clamp-2 mb-2">
                         {product.ProductName}
                     </h3>
@@ -171,14 +171,14 @@ const ProductCard = ({
                                 productQuantities[productId],
                                 selectedUnits[productId]
                             )}
-                            className="text-[13px] font-semibold bg-[#2D2C70] text-white rounded-lg py-1 px-6 disabled:opacity-50"
+                            className="text-[13px] font-semibold bg-[#E799A9] border border-black text-white rounded-2xl py-1 px-15 disabled:opacity-50"
                             disabled={isLoading}
                         >
                             {isLoading ? 'Updating...' : 'Update'}
                         </button>
                         <button
                             onClick={() => onAddToCart(productId)}
-                            className="flex py-2 gap-2 text-[13px] text-[#2D2C70] font-semibold border border-[#2D2C70] rounded-lg py-1 px-3 disabled:opacity-50"
+                            className="flex py-2 gap-2 text-[13px] text-[#2D2C70] bg-[#46BCF9] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50"
                             disabled={isLoading}
                         >
                             <svg
@@ -194,12 +194,10 @@ const ProductCard = ({
 
                         <button
                             onClick={() => onRemoveFromWishlist(productId)}
-                            className='h-9 w-9 border border-[#E9098D] rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50'
+                            className='h-9 w-9 border border-[#E799A9] rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50'
                             disabled={isLoading}
                         >
-                            <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="currentColor" />
-                            </svg>
+                          <img src="/icons/dustbin-1.png" className='w-4 h-4' alt="" />
                         </button>
                     </div>
                 </div>

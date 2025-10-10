@@ -699,9 +699,9 @@ export default function SignUpComponent() {
               disabled={isLoading}
               className="
                 group relative w-[403px] h-[44px] flex justify-center align-middle items-center   
-                border border-transparent text-sm sm:text-base lg:text-[1rem] font-medium rounded-lg 
+                border border-black text-sm sm:text-base lg:text-[17px] font-medium rounded-lg 
                 text-white bg-[#2D2C70]   
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
+                
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all duration-200 font-[600] 
               "

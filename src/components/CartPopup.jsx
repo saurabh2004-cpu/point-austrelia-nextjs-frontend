@@ -202,17 +202,25 @@ const ShoppingCartPopup = () => {
 
                       <div className="flex-1 min-w-0 space-y-2">
                         <div className="flex justify-between items-start">
-                          <h3 className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">{item.product.ProductName}</h3>
+                          <div className="flex justify-between items-start">
+                            <h3 className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">{item.product.ProductName}</h3>
+                          </div>
                           <button
                             type="button"
                             onClick={() => removeCartItem(currentUser._id, item.product._id)}
                             disabled={isLoading}
-                            className="flex items-center justify-center h-6 w-6 border border-[#E799A9] rounded-full disabled:opacity-50"
+                            className="flex items-center justify-center h-8 w-8 p-1.5 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
                           >
-                            <X className="w-3 h-3 text-[#E799A9]" />
+                            <Image
+                              src="/icons/dustbin-1.png"
+                              alt="Remove item"
+                              width={16}
+                              height={16}
+                              className="object-contain"
+                            />
                           </button>
-                        </div>
 
+                        </div>
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item.product.eachPrice.toFixed(2)}</span>
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
@@ -277,10 +285,10 @@ const ShoppingCartPopup = () => {
           </div>
           <div className="bg-gray-200 h-[0.7px] w-full"></div>
           <div className="flex flex-col sm:flex-row gap-2 text-[15px] font-medium p-4">
-            <button onClick={() => { setIsOpen(false); router.push('/cart'); }} className="flex-1 bg-[#2D2C70] hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors">
+            <button onClick={() => { setIsOpen(false); router.push('/cart'); }} className="flex-1 bg-[#2D2C70] border border-black hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors">
               View Cart
             </button>
-            <button onClick={() => { setIsOpen(false); router.push('/checkout'); }} className="flex-1 bg-[#46BCF9] hover:bg-[#2D2C70] text-white py-2 rounded-full transition-colors">
+            <button onClick={() => { setIsOpen(false); router.push('/checkout'); }} className="flex-1 border border-black bg-[#46BCF9] hover:bg-[#2D2C70] text-white py-2 rounded-full transition-colors">
               Checkout
             </button>
           </div>

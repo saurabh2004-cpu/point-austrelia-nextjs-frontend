@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Heart, Plus, Minus, Check, AlertTriangle, X, AlertCircle } from 'lucide-react';
+import { ChevronDown, Heart, Plus, Minus, Check, AlertTriangle, X, AlertCircle, ChevronDownIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useRouter } from "next/navigation";
@@ -20,6 +20,10 @@ const ShoppingCart = () => {
     const currentUser = useUserStore((state) => state.user);
     const router = useRouter();
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const [isTaxShippingOpen, setIsTaxShippingOpen] = useState(false);
+
+    // Confirmation popup state
+    const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
 
     // Calculate out of stock items
     const outOfStockItems = cartItems.filter(item => item.product.stockLevel <= 0);
@@ -305,6 +309,7 @@ const ShoppingCart = () => {
                 setError(null);
                 setCartItemsCount(0);
                 setCartItems([]);
+                setShowClearCartConfirm(false); // Close confirmation popup
             } else {
                 setError(res.data.message)
             }
@@ -313,6 +318,20 @@ const ShoppingCart = () => {
             console.error('Error clearing cart:', error);
             setError('An error occurred while clearing cart');
         }
+    };
+
+    // Show confirmation popup
+    const handleClearCartClick = () => {
+        if (cartItems.length === 0) {
+            setError("Your cart is already empty");
+            return;
+        }
+        setShowClearCartConfirm(true);
+    };
+
+    // Close confirmation popup
+    const handleCancelClearCart = () => {
+        setShowClearCartConfirm(false);
     };
 
     useEffect(() => {
@@ -429,13 +448,12 @@ const ShoppingCart = () => {
 
                                             return (
                                                 <div key={item._id} className="lg:py-6">
-                                                    <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0 md:space-x-25 ${
-                                                        isOutOfStock 
-                                                            ? 'border-red-300 bg-red-50/30' 
-                                                            : exceedsStock 
-                                                            ? 'border-orange-300 bg-orange-50/30' 
+                                                    <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0 md:space-x-25 ${isOutOfStock
+                                                        ? 'border-red-300 bg-red-50/30'
+                                                        : exceedsStock
+                                                            ? 'border-orange-300 bg-orange-50/30'
                                                             : 'border-[#00000040]'
-                                                    }`}>
+                                                        }`}>
                                                         {/* Product Image */}
                                                         <div className="">
                                                             <div className="rounded-lg flex items-center w-full  justify-items-center  ">
@@ -552,11 +570,6 @@ const ShoppingCart = () => {
                                                                                 <Plus className="w-4 h-4 text-white " />
                                                                             </button>
                                                                         </div>
-                                                                        {/* {!isOutOfStock && (
-                                                                            <p className="text-[11px] text-gray-600">
-                                                                                Total: {totalQuantity} units
-                                                                            </p>
-                                                                        )} */}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -566,11 +579,6 @@ const ShoppingCart = () => {
                                                                 <span className="text-[13px] font-semibold ">
                                                                     Amount: <span className="text-[#2D2C70] text-[15px] font-semibold">${itemTotal.toFixed(2)}</span>
                                                                 </span>
-                                                                {/* {item.product.taxable && item.product.taxPercentages > 0 && (
-                                                                    <p className="text-[11px] text-gray-600">
-                                                                        (Includes ${itemTax.toFixed(2)} tax at {item.product.taxPercentages}%)
-                                                                    </p>
-                                                                )} */}
                                                             </div>
 
                                                             {/* Action Buttons */}
@@ -616,18 +624,13 @@ const ShoppingCart = () => {
                                                                     disabled={isLoading}
                                                                     className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50"
                                                                 >
-                                                                    <svg
-                                                                        width="15"
-                                                                        height="16"
-                                                                        viewBox="0 0 15 16"
-                                                                        fill="none"
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                    >
-                                                                        <path
-                                                                            d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z"
-                                                                            fill="black"
-                                                                        />
-                                                                    </svg>
+                                                                    <Image
+                                                                        src="/icons/dustbin-1.png"
+                                                                        alt="Remove item"
+                                                                        width={16}
+                                                                        height={16}
+                                                                        className="object-contain"
+                                                                    />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -642,11 +645,10 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors ${
-                                                    exceedingStockCount > 0 || outOfStockCount > 0
-                                                        ? 'bg-gray-400 cursor-not-allowed'
-                                                        : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
-                                                }`}
+                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
+                                                    }`}
                                                 title={
                                                     exceedingStockCount > 0 || outOfStockCount > 0
                                                         ? 'Please fix stock issues before checkout'
@@ -682,16 +684,6 @@ const ShoppingCart = () => {
                                             </div>
                                         ))}
 
-                                        {/* Tax Information */}
-                                        {totalTax > 0 && (
-                                            <div className="border-t border-gray-200 pt-4">
-                                                <div className="flex justify-between text-sm mb-2">
-                                                    <span className="text-[14px] text-[500] text-[#000000]/80">GST</span>
-                                                    <span className="text-[14px] font-medium">${totalTax.toFixed(2)}</span>
-                                                </div>
-                                            </div>
-                                        )}
-
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">
                                             <div className="flex justify-between text-lg font-semibold mb-2">
@@ -716,15 +708,51 @@ const ShoppingCart = () => {
                                             </div>
                                         )}
 
-                                        <div className="border-t border-gray-200 pt-4">
+                                        <div className="border-t border-gray-200 pt-4 space-y-2 text-[15px] font-semibold ">
+                                            <div className="border-1 border-black rounded-2xl overflow-hidden">
+                                                <button
+                                                    onClick={() => setIsTaxShippingOpen(!isTaxShippingOpen)}
+                                                    className="w-full flex px-3 py-2 justify-between transition-colors items-center"
+                                                >
+                                                    <div className='flex gap-2 items-center'>
+                                                        Estimate tax & shipping
+                                                        <span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-circle-question-mark-icon lucide-circle-question-mark">
+                                                                <circle cx="12" cy="12" r="10" />
+                                                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                                                <path d="M12 17h.01" />
+                                                            </svg>
+                                                        </span>
+                                                    </div>
+                                                    <div className='pr-4'>
+                                                        <ChevronDownIcon
+                                                            strokeWidth={3}
+                                                            className={`w-5 h-5 font-bold transition-transform ${isTaxShippingOpen ? 'rotate-180' : ''}`}
+                                                        />
+                                                    </div>
+                                                </button>
+
+                                                {/* Dropdown content */}
+                                                {isTaxShippingOpen && (
+                                                    <div className="px-3 pb-3 border-t border-gray-200">
+                                                        {/* GST in dropdown */}
+                                                        {totalTax > 0 && (
+                                                            <div className="flex justify-between text-sm py-2">
+                                                                <span className="text-[14px] text-[500] text-[#000000]/80">GST</span>
+                                                                <span className="text-[14px] font-medium">${totalTax.toFixed(2)}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors mb-3 ${
-                                                    exceedingStockCount > 0 || outOfStockCount > 0
-                                                        ? 'bg-gray-400 border-gray-400 cursor-not-allowed'
-                                                        : 'bg-[#2D2C70] border-[#2D2C70] hover:border-[#46BCF9] hover:bg-[#46BCF9]'
-                                                }`}
+                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors  ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                    ? 'bg-gray-400 border-black cursor-not-allowed'
+                                                    : 'bg-[#2D2C70] border-[#2D2C70] ] '
+                                                    }`}
                                                 title={
                                                     exceedingStockCount > 0 || outOfStockCount > 0
                                                         ? 'Please fix stock issues before checkout'
@@ -736,9 +764,24 @@ const ShoppingCart = () => {
                                                     : 'Proceed to checkout'}
                                             </button>
 
+                                            <div className="flex items-center space-x-3">
+                                                <button
+                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group 'bg-gray-400 text-gray-200 border-gray-400  bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                >
+                                                    <svg
+                                                        className="w-5 h-5 transition-colors duration-300 "
+                                                        viewBox="0 0 21 21"
+                                                        fill="currentColor"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                                    </svg>
+                                                    Continue Shopping
+                                                </button>
+                                            </div>
                                             <button
-                                                onClick={clearCart}
-                                                className="w-full border-1 border-[#2D2C70] rounded-2xl text-[15px]  py-2 text-sm font-medium hover:text-pink-600 transition-colors">
+                                                onClick={handleClearCartClick}
+                                                className="w-full border-1 border-black rounded-2xl py-2 transition-colors hover:bg-gray-50">
                                                 Clear cart
                                             </button>
                                         </div>
@@ -748,7 +791,40 @@ const ShoppingCart = () => {
                         </div>
                     </div>
                 </div>
-            </div >
+            </div>
+
+            {/* Clear Cart Confirmation Popup */}
+            {showClearCartConfirm && (
+                <div className="fixed inset-0 bg-[#000000]/10 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+                        <div className="flex items-center mb-4">
+                            <div className="flex-shrink-0">
+                                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold ml-3">Clear Shopping Cart</h3>
+                        </div>
+
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to clear your entire cart? This action will remove all {cartItems.length} items and cannot be undone.
+                        </p>
+
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={handleCancelClearCart}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={clearCart}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Clear Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

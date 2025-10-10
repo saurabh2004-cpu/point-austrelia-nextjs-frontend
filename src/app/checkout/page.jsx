@@ -438,7 +438,7 @@ const CheckoutComponent = () => {
                 amount: (item.totalQuantity * item.product.eachPrice) + (item.product.taxable ? (item.totalQuantity * item.product.eachPrice * (item.product.taxPercentages || 0) / 100) : 0),
                 taxable: item.product.taxable,
                 taxPercentage: item.product.taxPercentages || 0,
-                packType: item.packType 
+                packType: item.packType
             }));
 
             setSubmitForm(prev => ({
@@ -782,27 +782,47 @@ const CheckoutComponent = () => {
                                 </div>
 
                                 {step < 3 ?
-                                    <button
-                                        className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
-                                        onClick={() => setStep(step + 1)}
-                                    >
-                                        Continue
-                                    </button>
+                                    <>
+                                        <button
+                                            className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black"
+                                            onClick={() => setStep(step + 1)}
+                                        >
+                                            Continue
+                                        </button>
+
+                                        <div className="flex items-center space-x-3 mb-8">
+                                            <button
+                                                className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group 'bg-gray-400 text-gray-200 border-gray-400  bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                            >
+                                                <svg
+                                                    className="w-5 h-5 transition-colors duration-300 "
+                                                    viewBox="0 0 21 21"
+                                                    fill="currentColor"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                                </svg>
+                                                Continue Shopping
+                                            </button>
+                                        </div>
+                                    </>
                                     :
                                     <button
-                                        className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4"
+                                        className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black"
                                         onClick={handleCompleteCheckout}
                                     >
                                         Complete Checkout
                                     </button>
                                 }
 
+
+
+                                <div className='flex items-center bg-[#2D2C70] text-white justify-between mb-2 flex-row border-1 border-black rounded-2xl px-3 py-3'>
+                                    <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship ({totalItems})</p>
+                                    <span><ChevronDown className="w-4 h-4 text-white" /></span>
+                                </div>
                                 {/* Order Items */}
                                 <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg">
-                                    <div className='flex items-center justify-between flex-row border-2 border-gray-400 rounded-lg px-3 py-2'>
-                                        <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship ({totalItems})</p>
-                                        <span><ChevronDown className="w-4 h-4 text-black" /></span>
-                                    </div>
                                     <div className='space-y-4 mt-4 p-3 sm:p-4'>
                                         {cartItems.map((item) => {
                                             const itemAmount = item.totalQuantity * item.product.eachPrice;
@@ -871,7 +891,7 @@ const CheckoutComponent = () => {
                     mode={popupState.mode}
                 />
             </div>
-        </div>
+        </div >
     );
 };
 

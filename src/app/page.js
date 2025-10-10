@@ -18,25 +18,25 @@ export default function Home() {
   console.log("current index:", currentIndex)
   const currentUser = useUserStore((state) => state.user);
   console.log("current user:", currentUser);
-  const setUser = useUserStore((state) => state.setUser);
+  // const setUser = useUserStore((state) => state.setUser);
 
 
-  const fetchCurentUser = async () => {
-    try {
-      const response = await axiosInstance.get('user/get-current-user');
+  // const fetchCurentUser = async () => {
+  //   try {
+  //     const response = await axiosInstance.get('user/get-current-user');
 
-      if (response.data.statusCode === 200) {
-        setUser(response.data.data);
-      }
+  //     if (response.data.statusCode === 200) {
+  //       setUser(response.data.data);
+  //     }
 
-    } catch (error) {
-      console.error("Error fetching current user:", error);
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Error fetching current user:", error);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchCurentUser();
-  }, []);
+  // useEffect(() => {
+  //   fetchCurentUser();
+  // }, []);
 
   return (
     <>

@@ -35,10 +35,12 @@ export default function RootLayout({ children }) {
       <body
         className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
-         <LoadingBar />
+        <Suspense fallback={<div>Loading...</div>}>
+          <Navbar />
+          <LoadingBar />
           {children}
           <Footer />
+        </Suspense>
       </body>
     </html>
   );

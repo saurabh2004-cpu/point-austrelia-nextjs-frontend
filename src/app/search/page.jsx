@@ -7,7 +7,7 @@ import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
-export const dynamic = 'force-dynamic'
+
 
 const SearchPage = () => {
     const [sortBy, setSortBy] = useState("Best Seller")

@@ -74,6 +74,9 @@ export function Navbar() {
   const getCurrentIndex = useNavStateStore((state) => state.getCurrentIndex)
   const setUser = useUserStore((state) => state.setUser);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("")
+
   const fetchCurentUser = async () => {
     try {
       const response = await axiosInstance.get('user/get-current-user');
@@ -149,6 +152,16 @@ export function Navbar() {
     setActiveDropdown(null);
   }
 
+  // Handle search
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' || e.type === 'click') {
+      if (searchQuery.trim()) {
+        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setSearchQuery("");
+        setIsSearchOpen(false);
+      }
+    }
+  }
   // Fetch all brands on component mount
   useEffect(() => {
     fetchBrands()
@@ -242,10 +255,10 @@ export function Navbar() {
     brands.forEach((brand, idx) => {
       const categories = categoriesByBrand[brand._id] || []
 
-      // Set brand-specific routes for non-logged in users
+      // FIXED: Consistent brand routes for non-logged in users
       let brandRoute = '';
       if (brand.name.toLowerCase().includes('point accessories')) {
-        brandRoute = '/point-accessories';
+        brandRoute = '/point-accessories'; // FIXED: consistent route
       } else if (brand.name.toLowerCase().includes('asra aromas')) {
         brandRoute = '/asra-armos';
       } else if (brand.name.toLowerCase().includes('matador wholesale')) {
@@ -290,7 +303,7 @@ export function Navbar() {
         index: idx + 1,
         brandId: brand._id,
         brandSlug: brand.slug,
-        brandRoute: brandRoute,
+        brandRoute: brandRoute, // FIXED: Using consistent route
         hasDropdown: true,
         categories: categoriesWithColumns
       })
@@ -356,6 +369,7 @@ export function Navbar() {
       } else {
         // Handle brand clicks - if not logged in, navigate to brand route
         if (!currentUser && item.brandRoute) {
+          // FIXED: Use the brandRoute from the navigation item
           router.push(item.brandRoute);
           setActiveDropdown(null);
           setIsMenuOpen(false);
@@ -376,7 +390,7 @@ export function Navbar() {
 
 
   const handleCategoryClick = (link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
-     router.replace(`/${link}`)
+    router.replace(`/${link}`)
     setActiveDropdown(null)
     setHoveredCategory(null)
     setHoveredSubcategory(null)
@@ -700,10 +714,25 @@ export function Navbar() {
                 </div>
 
                 {/* Desktop: Full search, quick order, wishlist, cart */}
-                <div className="hidden lg:flex lg:space-x-10">
-                  <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
-                    <Search strokeWidth={3} className="w-4 h-4 hover:text-[#E9098D] cursor-pointer" />
-                    <span className="text-[1rem] font-semibold text-[#2d2c70] cursor-pointer hover:text-[#E9098D]">Search</span>
+                <div className="hidden lg:flex lg:space-x-10 items-center">
+
+                  {/* ADDED: Desktop Search Bar */}
+                  <div className="flex items-center relative w-64">
+                    <Input
+                      placeholder="Search products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={handleSearch}
+                      className="pr-10 border-[#2d2c70] focus:border-[#E9098D]"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSearch}
+                      className="absolute right-0 h-full px-3 hover:bg-transparent"
+                    >
+                      <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
+                    </Button>
                   </div>
 
                   <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
@@ -760,12 +789,22 @@ export function Navbar() {
         {isSearchOpen && (
           <div className="lg:hidden border-b border-[#2d2c70] p-4">
             <div className="flex items-center space-x-2">
-              <Search className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
               <Input
-                placeholder="Search..."
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearch}
                 className="flex-1 border-[#2d2c70] focus:border-[#E9098D]"
                 autoFocus
               />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSearch}
+                className="p-2"
+              >
+                <Search className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
             </div>
           </div>
         )}
@@ -809,7 +848,6 @@ export function Navbar() {
                   <div
                     className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     ref={companyDropdownRef}
-
                   >
                     <div className="py-1">
                       <button
@@ -821,9 +859,10 @@ export function Navbar() {
                       >
                         Metador Wholesale
                       </button>
+                      {/* FIXED: Consistent Point Accessories route */}
                       <button
                         onClick={() => {
-                          router.push('/point-accessories-page');
+                          router.push('/point-accessories');
                           setShowCompanyDropDown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
@@ -855,131 +894,133 @@ export function Navbar() {
             ))}
           </div>
 
-
           {/* Mobile & Tablet Navigation Menu */}
-          {isMenuOpen && <div className="space-y-2">
-            {navigationItems.map((item) => (
-              <div key={item.index}>
-                <button
-                  onClick={() => {
-                    if (item.hasDropdown) {
-                      // For COMPANY item
-                      if (item.label === "COMPANY") {
-                        if (!currentUser) {
-                          // If not logged in, navigate to contact-us
-                          router.push('/contact-us');
-                          setIsMenuOpen(false);
+          {isMenuOpen && (
+            <div className="space-y-2">
+              {navigationItems.map((item) => (
+                <div key={item.index}>
+                  <button
+                    onClick={() => {
+                      if (item.hasDropdown) {
+                        // For COMPANY item
+                        if (item.label === "COMPANY") {
+                          if (!currentUser) {
+                            // If not logged in, navigate to contact-us
+                            router.push('/contact-us');
+                            setIsMenuOpen(false);
+                          } else {
+                            // If logged in, toggle dropdown
+                            setActiveDropdown(activeDropdown === item.index ? null : item.index)
+                          }
                         } else {
-                          // If logged in, toggle dropdown
-                          setActiveDropdown(activeDropdown === item.index ? null : item.index)
+                          // For brands: if user is logged in, navigate to products-list with brand slug
+                          if (currentUser && item.brandId) {
+                            handleBrandClick(item.brandId, item.brandSlug);
+                            setIsMenuOpen(false);
+                          } else if (!currentUser && item.brandRoute) {
+                            // If not logged in, navigate to brand route
+                            router.push(item.brandRoute);
+                            setIsMenuOpen(false);
+                          }
                         }
                       } else {
-                        // For brands: if user is logged in, navigate to products-list with brand slug
-                        if (currentUser && item.brandId) {
-                          handleBrandClick(item.brandId, item.brandSlug);
-                          setIsMenuOpen(false);
-                        } else if (!currentUser && item.brandRoute) {
-                          // If not logged in, navigate to brand route
-                          router.push(item.brandRoute);
-                          setIsMenuOpen(false);
-                        }
+                        handleNavigation(item)
                       }
-                    } else {
-                      handleNavigation(item)
-                    }
-                  }}
-                  className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
-                >
-                  {item.label}
-                  {item.hasDropdown && currentUser && ( // Only show dropdown arrow if user is logged in
-                    <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
-                  )}
-                </button>
-
-                {/* COMPANY Dropdown Menu - Only show if user is logged in */}
-                {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
-                  <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                    <button
-                      onClick={() => {
-                        router.push('/metador-wholesale');
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                    >
-                      Metador Wholesale
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push('/point-accessories');
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                    >
-                      Point Accessories
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push('/asra-armos');
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                    >
-                      Asra Armos
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push('/contact-us');
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                    >
-                      Contact Us
-                    </button>
-                  </div>
-                )}
-
-                {/* Brand Dropdown - Only show if user is logged in */}
-                {item.hasDropdown && item.label !== "COMPANY" && activeDropdown === item.index && item.categories && currentUser && (
-                  <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
-                    {item.categories.length > 0 ? (
-                      item.categories.map((category, idx) => (
-                        <div key={category.id || idx}>
-                          <button
-                            onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId)}
-                            className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
-                          >
-                            {category.label}
-                            {category.subcategories && (
-                              <ChevronRight className={`w-4 h-4 transition-transform ${hoveredCategory === category.id ? 'rotate-90' : ''}`} />
-                            )}
-                          </button>
-
-                          {/* Mobile Subcategories */}
-                          {category.subcategories && hoveredCategory === category.id && (
-                            <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
-                              {category.subcategories.map((subcat) => (
-                                <button
-                                  key={subcat.id}
-                                  onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId)}
-                                  className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
-                                >
-                                  {subcat.label}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-2 text-sm text-gray-500">
-                        {loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}
-                      </div>
+                    }}
+                    className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
+                  >
+                    {item.label}
+                    {item.hasDropdown && currentUser && ( // Only show dropdown arrow if user is logged in
+                      <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
                     )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>}
+                  </button>
+
+                  {/* COMPANY Dropdown Menu - Only show if user is logged in */}
+                  {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
+                    <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                      <button
+                        onClick={() => {
+                          router.push('/metador-wholesale');
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                      >
+                        Metador Wholesale
+                      </button>
+                      {/* FIXED: Consistent Point Accessories route */}
+                      <button
+                        onClick={() => {
+                          router.push('/point-accessories');
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                      >
+                        Point Accessories
+                      </button>
+                      <button
+                        onClick={() => {
+                          router.push('/asra-armos');
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                      >
+                        Asra Armos
+                      </button>
+                      <button
+                        onClick={() => {
+                          router.push('/contact-us');
+                          setIsMenuOpen(false);
+                        }}
+                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                      >
+                        Contact Us
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Brand Dropdown - Only show if user is logged in */}
+                  {item.hasDropdown && item.label !== "COMPANY" && activeDropdown === item.index && item.categories && currentUser && (
+                    <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
+                      {item.categories.length > 0 ? (
+                        item.categories.map((category, idx) => (
+                          <div key={category.id || idx}>
+                            <button
+                              onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId)}
+                              className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
+                            >
+                              {category.label}
+                              {category.subcategories && (
+                                <ChevronRight className={`w-4 h-4 transition-transform ${hoveredCategory === category.id ? 'rotate-90' : ''}`} />
+                              )}
+                            </button>
+
+                            {/* Mobile Subcategories */}
+                            {category.subcategories && hoveredCategory === category.id && (
+                              <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
+                                {category.subcategories.map((subcat) => (
+                                  <button
+                                    key={subcat.id}
+                                    onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId)}
+                                    className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
+                                  >
+                                    {subcat.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-2 text-sm text-gray-500">
+                          {loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Desktop Full-Width Dropdown */}
@@ -1106,7 +1147,3 @@ export function Navbar() {
     </>
   )
 }
-
-
-
-

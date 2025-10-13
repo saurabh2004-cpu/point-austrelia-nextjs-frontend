@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
 import { Heart, HeartIcon, Minus, Plus } from "lucide-react"
-import { useRouter, } from "next/navigation"
+import { useRouter, useSearchParams, } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
@@ -25,7 +25,6 @@ const ProductListing = () => {
     const [productQuantities, setProductQuantities] = useState({})
     const [selectedUnits, setSelectedUnits] = useState({})
     const currentUser = useUserStore((state) => state.user);
-
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
@@ -49,6 +48,18 @@ const ProductListing = () => {
     const [expandedCategory, setExpandedCategory] = useState(null)
     const [hoveredSubCategory, setHoveredSubCategory] = useState(null)
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+    const [customerSpecificAmountGroups, setCustomerSpecificAmountGroups] = useState({})
+
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get('q') || '';
+
+
+    useEffect(() => {
+        if (searchQuery !== '') {
+            router.push(`/search?q=${searchQuery}`);
+        }
+    }, [searchParams])
+
 
 
     const {
@@ -71,8 +82,6 @@ const ProductListing = () => {
 
     // Check if product is in wishlist
     const isProductInWishlist = (productId) => {
-
-
         return wishListItems.some(item => item.product?._id === productId)
     }
 
@@ -157,28 +166,31 @@ const ProductListing = () => {
         return cartItems.find(item => item.product._id === productId)
     }
 
-    // Calculate total quantity based on pack quantity and units
-    const calculateTotalQuantity = (productId) => {
+    // Calculate total quantity based on pack quantity and units - FIXED VERSION
+    const calculateTotalQuantity = (productId, packId = null, unitsQty = null) => {
         const product = products.find(p => p._id === productId)
         if (!product) return 0
 
-        const selectedPack = product.typesOfPacks?.find(pack =>
-            pack._id === selectedUnits[productId]
-        )
+        // Use provided values or fall back to state
+        const packIdToUse = packId !== null ? packId : selectedUnits[productId]
+        const unitsToUse = unitsQty !== null ? unitsQty : (productQuantities[productId] || 1)
+
+        const selectedPack = product.typesOfPacks?.find(pack => pack._id === packIdToUse)
         const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
-        const unitsQuantity = productQuantities[productId] || 1
-        return packQuantity * unitsQuantity
+
+        return packQuantity * unitsToUse
     }
 
-    // Check if requested quantity exceeds stock
-    const checkStockLevel = (productId) => {
+    // Check if requested quantity exceeds stock - FIXED VERSION
+    const checkStockLevel = (productId, packId = null, unitsQty = null) => {
         const product = products.find(p => p._id === productId)
         if (!product) return { isValid: true }
 
-        const totalRequestedQuantity = calculateTotalQuantity(productId)
+        const totalRequestedQuantity = calculateTotalQuantity(productId, packId, unitsQty)
         const cartItem = getCartItem(productId)
         const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0
 
+        // If product is already in cart, we're updating it, not adding new quantity
         const newTotalQuantity = isProductInCart(productId)
             ? totalRequestedQuantity
             : totalRequestedQuantity + currentCartQuantity
@@ -210,76 +222,60 @@ const ProductListing = () => {
         setShowProductPopup(true)
     }
 
+    // FIXED: Handle quantity change with proper stock checking
     const handleQuantityChange = (productId, change) => {
         const currentQuantity = productQuantities[productId] || 1;
         const newQuantity = Math.max(1, currentQuantity + change);
 
-        // Always allow decreasing quantity
-        if (change < 0) {
-            setProductQuantities(prev => ({
-                ...prev,
-                [productId]: newQuantity
-            }));
+        // Update quantity first
+        setProductQuantities(prev => ({
+            ...prev,
+            [productId]: newQuantity
+        }));
 
-            // Check if the new quantity is within stock limits
-            const stockCheck = checkStockLevel(productId);
-            if (stockCheck.isValid) {
-                // Clear the warning if quantity is now within stock
-                setStockErrors(prev => ({
-                    ...prev,
-                    [productId]: null
-                }));
-            } else {
-                // Keep the warning but allow the decrease
-                setStockErrors(prev => ({
-                    ...prev,
-                    [productId]: stockCheck.message
-                }));
-            }
-            return;
-        }
+        // Check stock with the NEW quantity
+        const stockCheck = checkStockLevel(productId, null, newQuantity);
 
-        // For increasing quantity, check stock
-        const stockCheck = checkStockLevel(productId);
         if (!stockCheck.isValid) {
+            // Set error if exceeds stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: stockCheck.message
             }));
-            return;
         } else {
-            // Clear the warning if increasing and it's within stock
+            // Clear error if within stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: null
             }));
         }
-
-        setProductQuantities(prev => ({
-            ...prev,
-            [productId]: newQuantity
-        }));
     }
 
-    // Also update the handleUnitChange function to clear warnings when units change:
+    // FIXED: Handle unit change with proper stock checking
     const handleUnitChange = (productId, unitId, product) => {
         const selectedPack = product.typesOfPacks.find(pack => pack._id === unitId)
         setSelectedPackType(selectedPack.name)
 
         console.log("selected pack on unit change", selectedPack)
+
+        // Update selected unit
         setSelectedUnits(prev => ({
             ...prev,
             [productId]: unitId
         }))
 
-        const stockCheck = checkStockLevel(productId)
+        // Check stock with the NEW pack but current quantity
+        const currentQuantity = productQuantities[productId] || 1
+        const stockCheck = checkStockLevel(productId, unitId, currentQuantity)
+
         if (!stockCheck.isValid) {
+            // Set error if exceeds stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: stockCheck.message
             }))
         } else {
-            // Clear warning if changing units brings quantity within stock
+            // Clear error if within stock
             setStockErrors(prev => ({
                 ...prev,
                 [productId]: null
@@ -294,6 +290,17 @@ const ProductListing = () => {
             return
         }
 
+        // Final stock check before adding to cart
+        const stockCheck = checkStockLevel(productId)
+        if (!stockCheck.isValid) {
+            setError(stockCheck.message)
+            setStockErrors(prev => ({
+                ...prev,
+                [productId]: stockCheck.message
+            }))
+            return
+        }
+
         setLoadingProducts(prev => ({ ...prev, [productId]: true }))
 
         try {
@@ -304,12 +311,6 @@ const ProductListing = () => {
             const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
             const unitsQuantity = productQuantities[productId] || 1
             const totalQuantity = packQuantity * unitsQuantity
-
-            const stockCheck = checkStockLevel(productId)
-            if (!stockCheck.isValid) {
-                setError(stockCheck.message)
-                return
-            }
 
             const cartData = {
                 customerId: currentUser._id,
@@ -326,6 +327,11 @@ const ProductListing = () => {
                 await fetchCustomersCart()
                 setCartItemsCount(response.data.data.cartItems.length);
                 setError(null)
+                // Clear any stock errors after successful add
+                setStockErrors(prev => ({
+                    ...prev,
+                    [productId]: null
+                }))
             }
         } catch (error) {
             console.error('Error adding to cart:', error)
@@ -399,6 +405,8 @@ const ProductListing = () => {
                 })
                 setProductQuantities(initialQuantities)
                 setSelectedUnits(initialUnits)
+                // Clear all stock errors when fetching new products
+                setStockErrors({})
             } else {
                 setError(response.data.message)
                 setProducts([])
@@ -836,6 +844,54 @@ const ProductListing = () => {
         // Keep category and subcategory expanded when clicked
         setExpandedCategory(categoryId);
     }
+
+    const fetchCustomerSpecificAmountGroups = async () => {
+        try {
+            const res = await axiosInstance.get('customer-secific-amounts/get-customer-specific-amount')
+
+            console.log("customer specific amouint grouyps ", res)
+
+            if (res.data.statusCode === 200) {
+                setCustomerSpecificAmountGroups(res.data.data)
+            } else {
+                console.error('Error fetching customer specific amount groups:', res.data.message)
+                setCustomerSpecificAmountGroups([])
+            }
+
+        } catch (error) {
+            console.error('Error fetching customer specific amount groups:', error)
+        }
+    }
+
+    useEffect(() => {
+        fetchCustomerSpecificAmountGroups()
+    }, [currentUser])
+
+
+    const sortProductsBySequenceAndDate = (products) => {
+        // Separate products into two groups
+        const productsWithSequence = products.filter(product =>
+            product.sequence !== undefined && product.sequence !== null
+        );
+
+        const productsWithoutSequence = products.filter(product =>
+            product.sequence === undefined || product.sequence === null
+        );
+
+        // Sort products with sequence by sequence number (ascending)
+        productsWithSequence.sort((a, b) => a.sequence - b.sequence);
+
+        // Sort products without sequence by createdAt date (newest first)
+        productsWithoutSequence.sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        // Combine both arrays: sequenced products first, then dated products
+        return [...productsWithSequence, ...productsWithoutSequence];
+    };
+
+    const sortedProducts = sortProductsBySequenceAndDate(products);
+
     if (!productID) {
         return (
             <div className="min-h-screen">
@@ -1119,7 +1175,7 @@ const ProductListing = () => {
                                     {products.length > 0 ? (
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-1">
-                                                {products.map((product, index) => {
+                                                {sortedProducts.map((product, index) => {
                                                     const isInCart = isProductInCart(product._id)
                                                     const cartItem = getCartItem(product._id)
                                                     const isInWishlist = isProductInWishlist(product._id)
@@ -1149,7 +1205,7 @@ const ProductListing = () => {
                                                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
 
                                                                         ) : (
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
                                                                         )}
                                                                     </div>
                                                                 </button>
@@ -1305,17 +1361,17 @@ const ProductListing = () => {
                                                                 {/* Add to Cart Button */}
                                                                 <div className="flex items-center space-x-3">
                                                                     <button
-                                                                        className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isLoading
+                                                                        className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isLoading || stockError
                                                                             ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                                             : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
                                                                             }`}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            if (!isOutOfStock && !isLoading) {
+                                                                            if (!isOutOfStock && !isLoading && !stockError) {
                                                                                 handleAddToCart(product._id);
                                                                             }
                                                                         }}
-                                                                        disabled={isOutOfStock || isLoading}
+                                                                        disabled={isOutOfStock || isLoading || !!stockError}
                                                                     >
                                                                         {isLoading ? (
                                                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

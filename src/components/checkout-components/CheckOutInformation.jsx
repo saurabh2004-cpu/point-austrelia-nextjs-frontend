@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Circle, LockIcon } from 'lucide-react';
+import { ChevronDown, Circle, LockIcon, Plus } from 'lucide-react';
 import Image from 'next/image';
 import useUserStore from '@/zustand/user';
+import axiosInstance from '@/axios/axiosInstance';
+import { useSearchParams } from 'next/navigation';
 
 const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submitForm, setSubmitForm }) => {
     const [orderComments, setOrderComments] = useState(submitForm.comments || '');
     const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(submitForm.customerPO || '');
     const [selectedPayment, setSelectedPayment] = useState(submitForm.salesChannel || 'credit-card');
     const currentUser = useUserStore((state) => state.user);
+    const [cardData, setCardData] = useState(null);
+    const [loadingCard, setLoadingCard] = useState(true);
+    const [params] = useSearchParams();
 
     const handlePaymentChange = (paymentType) => {
         setSelectedPayment(paymentType);
@@ -41,6 +46,95 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     // Get shipping rate
     const shippingRate = parseFloat(currentUser?.defaultShippingRate || 0);
     const deliveryMethodText = shippingRate === 0 ? 'Free' : `$${shippingRate.toFixed(2)}`;
+
+    const fetchCustomersCardDetails = async () => {
+        try {
+            setLoadingCard(true);
+            const response = await axiosInstance.get(`card/get-card-by-customer-id/${currentUser._id}`);
+
+            if (response.data.statusCode === 200) {
+                // Check if card data exists and is not empty
+                const cards = response.data.data;
+                if (cards && Array.isArray(cards) && cards.length > 0) {
+                    setCardData(cards[0]); // Get the first card
+                } else if (cards && !Array.isArray(cards) && Object.keys(cards).length > 0) {
+                    setCardData(cards);
+                } else {
+                    setCardData(null); // No card found
+                }
+            } else {
+                setCardData(null);
+            }
+        } catch (error) {
+            console.error('Error fetching customer card details:', error);
+            setCardData(null);
+        } finally {
+            setLoadingCard(false);
+        }
+    };
+
+    const handleVerifyCard = async () => {
+        try {
+            const response = await axiosInstance.post("card/create-session", {
+                userName: currentUser.customerName,
+                email: currentUser.customerEmail,
+            });
+
+            console.log("response", response);
+
+            if (response.data.statusCode === 200) {
+                window.location.href = response.data.data.SharedPaymentUrl;
+            }
+        } catch (error) {
+            console.error("Error starting Eway verification:", error);
+            alert("Failed to start verification.");
+        }
+    };
+
+    const handleRemoveCard = async () => {
+        if (!confirm('Are you sure you want to remove this card?')) {
+            return;
+        }
+
+        try {
+            const response = await axiosInstance.delete(`card/delete-card/${cardData._id}`);
+            
+            if (response.data.statusCode === 200) {
+                setCardData(null);
+                alert('Card removed successfully');
+            }
+        } catch (error) {
+            console.error('Error removing card:', error);
+            alert('Failed to remove card');
+        }
+    };
+
+    // useEffect(() => {
+    //     const accessCode = params.get("AccessCode");
+    //     if (accessCode) {
+    //         const fetchEwayResult = async () => {
+    //             try {
+    //                 const response = await axiosInstance.get(`card/eway-result?AccessCode=${accessCode}`);
+                    
+    //                 if (response.data.statusCode === 200) {
+    //                     console.log("eway response", response.data);
+    //                     // Refresh card details after successful verification
+    //                     await fetchCustomersCardDetails();
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error fetching eway result:", error);
+    //             }
+    //         };
+            
+    //         fetchEwayResult();
+    //     }
+    // }, [params]);
+
+    useEffect(() => {
+        if (currentUser?._id) {
+            fetchCustomersCardDetails();
+        }
+    }, [currentUser?._id]);
 
     return (
         <div className="p-4 col-span-2 bg-gray-50 min-h-screen font-spartan mt-5">
@@ -92,9 +186,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                     </div>
                     <label className="ml-2 text-base font-medium">{deliveryMethodText}</label>
                 </div>
-
             </div>
-
 
             <h2 className="text-[24px] font-semibold mb-4 mt-8">Order Comments</h2>
             <div className="bg-white rounded-lg mb-4">
@@ -132,26 +224,58 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 </label>
                             </div>
                         </div>
-                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md relative flex flex-col justify-between">
-                            <div className="flex flex-row justify-between items-start">
-                                <div className="space-y-2 text-sm">
-                                    <p className="font-[600]">Ending in <span className="font-[400]">6844</span></p>
-                                    <p className="font-[600]">Expires in <span className="font-[400]">12/22</span></p>
-                                    <p className="font-[500]">Devendra Chandora</p>
-                                    <div className="flex-col space-y-2">
-                                        <p className="font-[500]">Security Number</p>
-                                        <div className="border-[#FF0000] h-[29px] w-[66px] border"></div>
+
+                        {loadingCard ? (
+                            <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md flex justify-center items-center">
+                                <div className="text-sm text-gray-500">Loading card details...</div>
+                            </div>
+                        ) : cardData ? (
+                            <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md relative flex flex-col justify-between">
+                                <div className="flex flex-row justify-between items-start">
+                                    <div className="space-y-2 text-sm">
+                                        <p className="font-[600]">Ending in <span className="font-[400]">{cardData?.lastFourDigits || '****'}</span></p>
+                                        <p className="font-[600]">Expires in <span className="font-[400]">{cardData?.expirationMonth && cardData?.expirationYear ? `${cardData.expirationMonth}/${cardData.expirationYear}` : 'N/A'}</span></p>
+                                        <p className="font-[500]">{cardData?.userId?.name || currentUser?.customerName || 'N/A'}</p>
+                                        <div className="flex-col space-y-2">
+                                            <p className="font-[500]">Token ID</p>
+                                            <div className="text-xs text-gray-600">
+                                                {cardData?.tokenCustomerId || 'N/A'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <Image src="/account-details/payment-images.png" alt="card" width={50} height={50} />
                                     </div>
                                 </div>
-                                <div className="mt-4">
-                                    <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
+                                <div className="flex justify-end gap-2 text-[14px] mt-4">
+                                    <button 
+                                        onClick={handleVerifyCard}
+                                        className="text-[#2D2C70] font-medium hover:underline"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button 
+                                        onClick={handleRemoveCard}
+                                        className="text-[#46BCF9] font-medium hover:underline"
+                                    >
+                                        Remove
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex justify-end gap-2 text-[14px] mt-4">
-                                <button className="text-[#2D2C70] font-medium">Edit</button>
-                                <button className="text-[#46BCF9] font-medium">Remove</button>
+                        ) : (
+                            <div 
+                                onClick={handleVerifyCard}
+                                className="border h-full min-h-[212px] border-dashed border-gray-300 rounded-lg p-6 shadow-md flex flex-col justify-center items-center cursor-pointer hover:border-[#2D2C70] hover:bg-gray-50 transition-all"
+                            >
+                                <div className="flex flex-col items-center space-y-4">
+                                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                        <Plus size={32} className="text-gray-400" />
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-600">Add Credit Card</p>
+                                    <p className="text-xs text-gray-400 text-center">Click to add a new card</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* person card */}

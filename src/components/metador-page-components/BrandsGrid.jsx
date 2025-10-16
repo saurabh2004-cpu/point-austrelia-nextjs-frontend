@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
-import useBrandStore from '@/zustand/BrandPAge';
+// import useBrandStore from '@/zustand/BrandPAge';
 import axiosInstance from '@/axios/axiosInstance';
 import { useParams } from 'next/navigation';
 

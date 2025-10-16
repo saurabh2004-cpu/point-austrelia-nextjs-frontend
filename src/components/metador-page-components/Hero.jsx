@@ -1,6 +1,6 @@
 "use client";
 import axiosInstance from "@/axios/axiosInstance";
-import useBrandStore from "@/zustand/BrandPAge";
+// import useBrandStore from "@/zustand/BrandPAge";
 import Image from "next/image";
 import { useParams } from "next/navigation"
 import { set } from "nprogress";
@@ -10,7 +10,7 @@ export default function HeroSection() {
   const params = useParams();
   const slug = params.slug
   const [brand, setBrand] = useState(null);
-  const setBrandPage = useBrandStore((state) => state.setBrandPage);
+  // const setBrandPage = useBrandStore((state) => state.setBrandPage);
   const [heroImg, setHeroImg] = useState('');
 
   const fetchBrandBySlug = async (slug) => {

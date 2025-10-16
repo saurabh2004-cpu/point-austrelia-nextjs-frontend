@@ -209,6 +209,8 @@ const ShoppingCartPopup = () => {
     return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.sku}_1.jpg`;
   };
 
+  
+
   useEffect(() => {
     fetchCustomersCart();
   }, [currentUser]);

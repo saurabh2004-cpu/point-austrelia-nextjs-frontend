@@ -6,6 +6,7 @@ import HeroSection from '@/components/metador-page-components/Hero'
 import axiosInstance from '@/axios/axiosInstance'
 import { useParams } from 'next/navigation'
 import React, { useEffect } from 'react'
+import { Navbar } from '@/components/Navbar'
 
 const page = () => {
     // const params = useParams();
@@ -32,6 +33,7 @@ const page = () => {
 
     return (
         <>
+            <Navbar />
             <HeroSection />
             <CategoriesGrid />
             <BrandsGrid />

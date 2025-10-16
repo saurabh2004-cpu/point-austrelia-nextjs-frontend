@@ -5,6 +5,7 @@ import Carousel from "@/components/Home-components/Carousel";
 import useUserStore from "@/zustand/user";
 import MetaTags from "../components/metaTags/metaTags";
 import { useMetaData } from "@/hooks/useMetaData";
+import { Navbar } from "@/components/Navbar";
 
 export default function Home() {
   const currentUser = useUserStore((state) => state.user);
@@ -36,6 +37,7 @@ export default function Home() {
         ogImage={metaData?.ogImage}
       />
 
+      <Navbar />
       <BrandCards />
       <Carousel />
     </>

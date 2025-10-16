@@ -9,6 +9,7 @@ import useUserStore from "@/zustand/user"
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
 import { set } from 'nprogress';
+import { Navbar } from '@/components/Navbar';
 
 const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -428,6 +429,7 @@ const ShoppingCart = () => {
 
     return (
         <>
+            <Navbar />
             <div className="bg-white justify-items-center pt-6 font-spartan">
                 <div className="max-w-8xl mx-auto px-2  lg:px-6 xl:px-8 ">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">

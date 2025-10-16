@@ -6,6 +6,7 @@ import Image from 'next/image';
 import axiosInstance from '@/axios/axiosInstance';
 import useUserStore from '@/zustand/user';
 import useWishlistStore from '@/zustand/wishList';
+import { Navbar } from '@/components/Navbar';
 
 // Move ProductCard outside the main component to prevent re-creation on every render
 const ProductCard = ({
@@ -197,7 +198,7 @@ const ProductCard = ({
                             className='h-9 w-9 border border-[#E799A9] rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50'
                             disabled={isLoading}
                         >
-                          <img src="/icons/dustbin-1.png" className='w-4 h-4' alt="" />
+                            <img src="/icons/dustbin-1.png" className='w-4 h-4' alt="" />
                         </button>
                     </div>
                 </div>
@@ -437,7 +438,7 @@ const Page = () => {
             fetchCustomersWishList();
             fetchCustomersCart();
         }
-    }, [currentUser]);
+    }, []);
 
     if (loading) {
         return (
@@ -451,60 +452,43 @@ const Page = () => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-[24px] font-semibold">
-                        Wishlist <span className="text-[20px] font-semibold text-[#2D2C70]">
-                            ({wishListItems.length} {wishListItems.length === 1 ? 'Product' : 'Products'})
-                        </span>
-                    </h1>
-                    <div className="w-full h-[2px] bg-[#2D2C70] mt-2"></div>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
+        <>
+            <Navbar />
+            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h1 className="text-[24px] font-semibold">
+                            Wishlist <span className="text-[20px] font-semibold text-[#2D2C70]">
+                                ({wishListItems.length} {wishListItems.length === 1 ? 'Product' : 'Products'})
+                            </span>
+                        </h1>
+                        <div className="w-full h-[2px] bg-[#2D2C70] mt-2"></div>
                     </div>
-                )}
 
-                {/* Empty State */}
-                {wishListItems.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
-                        <p className="text-gray-500">Add products to your wishlist to save them for later</p>
-                    </div>
-                ) : (
-                    <>
-                        {/* Product Grid */}
-                        <div className="grid gap-6">
-                            {/* Large screens: 2 cards per row */}
-                            <div className="hidden md:grid md:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0">
-                                {wishListItems.map((item) => (
-                                    <ProductCard
-                                        key={item._id}
-                                        item={item}
-                                        productQuantities={productQuantities}
-                                        selectedUnits={selectedUnits}
-                                        loadingProducts={loadingProducts}
-                                        currentUser={currentUser}
-                                        onUpdateQuantity={updateQuantity}
-                                        onUpdateUnit={updateSelectedUnit}
-                                        onAddToCart={handleAddToCart}
-                                        onUpdateWishlist={handleUpdateWishlistItem}
-                                        onRemoveFromWishlist={removeFromWishlist}
-                                    />
-                                ))}
-                            </div>
+                    {/* Error Message */}
+                    {error && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            {error}
+                        </div>
+                    )}
 
-                            {/* Medium and smaller screens: 1 card per row */}
-                            <div className="md:hidden">
-                                {wishListItems.map((item) => (
-                                    <div key={item._id} className="mb-6 overflow-x-auto">
+                    {/* Empty State */}
+                    {wishListItems.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                            <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
+                            <p className="text-gray-500">Add products to your wishlist to save them for later</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Product Grid */}
+                            <div className="grid gap-6">
+                                {/* Large screens: 2 cards per row */}
+                                <div className="hidden md:grid md:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0">
+                                    {wishListItems.map((item) => (
                                         <ProductCard
+                                            key={item._id}
                                             item={item}
                                             productQuantities={productQuantities}
                                             selectedUnits={selectedUnits}
@@ -516,14 +500,34 @@ const Page = () => {
                                             onUpdateWishlist={handleUpdateWishlistItem}
                                             onRemoveFromWishlist={removeFromWishlist}
                                         />
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
+
+                                {/* Medium and smaller screens: 1 card per row */}
+                                <div className="md:hidden">
+                                    {wishListItems.map((item) => (
+                                        <div key={item._id} className="mb-6 overflow-x-auto">
+                                            <ProductCard
+                                                item={item}
+                                                productQuantities={productQuantities}
+                                                selectedUnits={selectedUnits}
+                                                loadingProducts={loadingProducts}
+                                                currentUser={currentUser}
+                                                onUpdateQuantity={updateQuantity}
+                                                onUpdateUnit={updateSelectedUnit}
+                                                onAddToCart={handleAddToCart}
+                                                onUpdateWishlist={handleUpdateWishlistItem}
+                                                onRemoveFromWishlist={removeFromWishlist}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

@@ -231,6 +231,7 @@ export default function ProductDetail() {
   };
 
   // Add to cart function
+  // Add to cart function
   const handleAddToCart = async () => {
     if (!currentUser || !currentUser._id) {
       setError("Please login to add items to cart");
@@ -239,6 +240,13 @@ export default function ProductDetail() {
 
     if (!product) return;
 
+    // Final stock check before adding to cart
+    const stockCheck = checkStock();
+    if (!stockCheck.isValid) {
+      setError(stockCheck.message);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -246,12 +254,11 @@ export default function ProductDetail() {
       const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
       const totalQuantity = packQuantity * quantity;
 
-      const stockCheck = checkStock();
-      if (!stockCheck.isValid) {
-        setError(stockCheck.message);
-        setLoading(false);
-        return;
-      }
+      // Calculate the discounted price for this product
+      const currentDiscountedPrice = calculateDiscountedPrice();
+
+      // Calculate total amount using the discounted price
+      const totalAmount = totalQuantity * currentDiscountedPrice;
 
       const cartData = {
         customerId: currentUser._id,
@@ -259,7 +266,8 @@ export default function ProductDetail() {
         packQuentity: packQuantity,
         unitsQuantity: quantity,
         totalQuantity: totalQuantity,
-        packType: selectedPack ? selectedPack.name : 'Each'
+        packType: selectedPack ? selectedPack.name : 'Each',
+        amount: totalAmount // Store the discounted total amount
       };
 
       const response = await axiosInstance.post('cart/add-to-cart', cartData);
@@ -279,6 +287,7 @@ export default function ProductDetail() {
   };
 
   // Update cart function
+  // Update cart function
   const handleUpdateCart = async () => {
     if (!currentUser || !currentUser._id || !product) return;
 
@@ -296,13 +305,20 @@ export default function ProductDetail() {
         return;
       }
 
+      // Calculate the discounted price for this product
+      const currentDiscountedPrice = calculateDiscountedPrice();
+
+      // Calculate total amount using the discounted price
+      const totalAmount = totalQuantity * currentDiscountedPrice;
+
       const cartData = {
         customerId: currentUser._id,
         productId: product._id,
         packQuentity: packQuantity,
         unitsQuantity: quantity,
         totalQuantity: totalQuantity,
-        packType: selectedPack ? selectedPack.name : 'Each'
+        packType: selectedPack ? selectedPack.name : 'Each',
+        amount: totalAmount // Store the discounted total amount
       };
 
       const response = await axiosInstance.post('cart/add-to-cart', cartData);
@@ -731,6 +747,7 @@ export default function ProductDetail() {
                 </button>
               </div>
             </div>
+            
             {isInCart &&
               <div className="flex space-x-2 w-full">
                 <button className="flex-1 text-xs sm:text-sm border border-black font-semibold text-white  bg-[#2D2C70]  rounded-lg text-white py-2 flex justify-center items-center">

@@ -10,7 +10,10 @@ import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 
-export default function ProductPopup({ isOpen, onClose, productId,
+export default function ProductPopup({ 
+    isOpen, 
+    onClose, 
+    productId,
     categoryId,
     subCategoryId,
     subCategoryTwoId,
@@ -25,7 +28,6 @@ export default function ProductPopup({ isOpen, onClose, productId,
     setWishlistItems,
     customerGroupsDiscounts,
     itemBasedDiscounts
-
 }) {
     const [selectedImage, setSelectedImage] = useState(0)
     const [quantity, setQuantity] = useState(1)
@@ -36,16 +38,14 @@ export default function ProductPopup({ isOpen, onClose, productId,
     const [cartItems, setCartItems] = useState([])
     const [error, setError] = useState(null)
     const [stockError, setStockError] = useState(null)
-    const [inCartItem, setInCartItem] = useState(null)
-    // const [wishListItems, setWishlistItems] = useState([])
-    // const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
-    // const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
+    const [loadingCart, setLoadingCart] = useState(false)
+    const [loadingWishlist, setLoadingWishlist] = useState(false)
 
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const currentCartItems = useCartStore((state) => state.currentItems);
     const currentUser = useUserStore((state) => state.user)
     const router = useRouter()
-
 
     // Calculate discounted price
     const calculateDiscountedPrice = () => {
@@ -64,12 +64,16 @@ export default function ProductPopup({ isOpen, onClose, productId,
         }
 
         // Check for pricing group discount
-        if (product.pricingGroup && product.pricingGroup._id) {
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
             const groupDiscount = customerGroupsDiscounts.find(
                 discount =>
+                    discount.customerId === currentUser?.customerId &&
                     discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser?.customerId
+                    discount.pricingGroup._id === productPricingGroupId
             );
 
             if (groupDiscount) {
@@ -83,24 +87,28 @@ export default function ProductPopup({ isOpen, onClose, productId,
 
     // Get discount percentage for display
     const getDiscountPercentage = () => {
-        if (!currentUser || !currentUser.customerId) {
+        if (!currentUser || !currentUser.customerId || !product) {
             return null;
         }
 
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product?.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
 
         if (itemDiscount) {
             return itemDiscount.percentage;
         }
 
-        if (product?.pricingGroup && product.pricingGroup._id) {
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
             const groupDiscount = customerGroupsDiscounts.find(
                 discount =>
+                    discount.customerId === currentUser.customerId &&
                     discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser.customerId
+                    discount.pricingGroup._id === productPricingGroupId
             );
 
             if (groupDiscount) {
@@ -133,25 +141,33 @@ export default function ProductPopup({ isOpen, onClose, productId,
     }
 
     // Calculate total quantity based on pack quantity and units
-    const calculateTotalQuantity = () => {
+    const calculateTotalQuantity = (qty = quantity, unitId = selectedUnitId) => {
         if (!product) return 0;
 
-        const selectedPack = product.typesOfPacks?.find(pack => pack._id === selectedUnitId);
+        const selectedPack = product.typesOfPacks?.find(pack => pack._id === unitId);
         const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
-        return packQuantity * quantity;
+        return packQuantity * qty;
+    };
+
+    // Check if product is in cart
+    const isProductInCart = () => {
+        return cartItems.some(item => item.product?._id === product?._id);
+    };
+
+    // Get cart item for product
+    const getCartItem = () => {
+        return cartItems.find(item => item.product?._id === product?._id);
     };
 
     // Check stock level
     const checkStock = (qty = quantity, unitId = selectedUnitId) => {
         if (!product) return { isValid: true };
 
-        const selectedPack = product.typesOfPacks?.find(pack => pack._id === unitId);
-        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
-        const totalRequestedQuantity = packQuantity * qty;
-
+        const totalRequestedQuantity = calculateTotalQuantity(qty, unitId);
         const cartItem = getCartItem();
         const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0;
 
+        // If product is already in cart, we're updating it, not adding new quantity
         const newTotalQuantity = isProductInCart()
             ? totalRequestedQuantity
             : totalRequestedQuantity + currentCartQuantity;
@@ -177,21 +193,12 @@ export default function ProductPopup({ isOpen, onClose, productId,
         checkStock(quantity, unitId);
     };
 
-    const getCartItem = () => {
-        return cartItems.find(item => item.product?._id === product?._id);
-    };
-
-    const isProductInCart = () => {
-        return cartItems.some(item => item.product?._id === product?._id);
-    };
-
     // Fetch product details
     const fetchProductDetail = async (productId) => {
         try {
             setLoading(true)
             const response = await axiosInstance(`products/get-product/${productId}`)
 
-            console.log("product details", response)
             if (response.data.statusCode === 200) {
                 const productData = response.data.data
                 setProduct(productData)
@@ -223,47 +230,11 @@ export default function ProductPopup({ isOpen, onClose, productId,
         }
     }
 
-    // Fetch groups discount
-    const fetchCustomersGroupsDiscounts = async () => {
-        try {
-            if (!currentUser || !currentUser.customerId) return;
-
-            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`);
-
-            console.log("Customer groups discounts:", response.data.data);
-
-            if (response.data.statusCode === 200) {
-                setCustomerGroupsDiscounts(response.data.data || []);
-            }
-        } catch (error) {
-            console.error('Error fetching customer groups discounts:', error);
-        }
-    };
-
-    // Fetch item based discounts 
-    const fetchItemBasedDiscounts = async () => {
-        try {
-            if (!currentUser || !currentUser.customerId) return;
-
-            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
-
-            console.log("customers item based discounts:", response.data.data);
-
-            if (response.data.statusCode === 200) {
-                setItemBasedDiscounts(response.data.data || []);
-            }
-        } catch (error) {
-            console.error('Error fetching item based discounts:', error);
-        }
-    };
-
     const fetchCustomersWishList = async () => {
         try {
             if (!currentUser || !currentUser._id) return
-            console.log("fetchj wishl;iast", currentUser._id)
             const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
 
-            console.log("Customer wishlist hqsbqhsbjqs:", response)
             if (response.data.statusCode === 200) {
                 setWishlistItems(response.data.data || [])
             } else {
@@ -285,32 +256,33 @@ export default function ProductPopup({ isOpen, onClose, productId,
         if (isOpen && currentUser?._id) {
             fetchCustomersCart()
             fetchCustomersWishList()
-            if (currentUser.customerId) {
-                fetchItemBasedDiscounts()
-                fetchCustomersGroupsDiscounts()
-            }
         }
-    }, [isOpen, currentUser])
+    }, [isOpen, currentUser, currentCartItems])
 
-    // Check if product is already in cart
+    // Reset quantity when product changes or when cart items update
     useEffect(() => {
-        if (product && cartItems.length > 0) {
-            const existing = cartItems.find(ci => ci.product._id === product._id)
-            setInCartItem(existing || null)
-            if (existing) {
-                setQuantity(existing.unitsQuantity)
-                const pack = product.typesOfPacks?.find(p => p._id === existing.packType)
+        if (product && cartItems.length >= 0) {
+            const cartItem = getCartItem();
+            if (cartItem) {
+                // Product is in cart - set quantity from cart
+                setQuantity(cartItem.unitsQuantity);
+                const pack = product.typesOfPacks?.find(p => p.name === cartItem.packType);
                 if (pack) {
-                    setSelectedUnitId(pack._id)
+                    setSelectedUnitId(pack._id);
+                }
+            } else {
+                // Product not in cart - reset to default
+                setQuantity(1);
+                if (product.typesOfPacks && product.typesOfPacks.length > 0) {
+                    setSelectedUnitId(product.typesOfPacks[0]._id);
                 }
             }
-        } else {
-            setInCartItem(null)
+            // Clear stock error when product/cart changes
+            setStockError(null);
         }
     }, [product, cartItems])
 
-    // --- Handlers ---
-
+    // Add to cart function
     const handleAddToCart = async () => {
         if (!currentUser?._id) {
             setError("Please login to add to cart")
@@ -318,19 +290,24 @@ export default function ProductPopup({ isOpen, onClose, productId,
         }
         if (!product) return;
 
-        setLoading(true);
+        // Final stock check before adding to cart
+        const stockCheck = checkStock();
+        if (!stockCheck.isValid) {
+            setError(stockCheck.message);
+            return;
+        }
+
+        setLoadingCart(true);
         try {
             const selectedPack = product.typesOfPacks?.find(p => p._id === selectedUnitId)
-            console.log("selected pack", selectedPack)
             const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
             const totalQuantity = packQuantity * quantity
 
-            const stockCheck = checkStock();
-            if (!stockCheck.isValid) {
-                setError(stockCheck.message);
-                setLoading(false);
-                return;
-            }
+            // Calculate the discounted price for this product
+            const currentDiscountedPrice = calculateDiscountedPrice();
+
+            // Calculate total amount using the discounted price
+            const totalAmount = totalQuantity * currentDiscountedPrice
 
             const res = await axiosInstance.post("cart/add-to-cart", {
                 customerId: currentUser._id,
@@ -338,7 +315,8 @@ export default function ProductPopup({ isOpen, onClose, productId,
                 packQuentity: packQuantity,
                 unitsQuantity: quantity,
                 totalQuantity: totalQuantity,
-                packType: selectedPack ? selectedPack.name : 'Each'
+                packType: selectedPack ? selectedPack.name : 'Each',
+                amount: totalAmount
             })
 
             if (res.data.statusCode === 200) {
@@ -351,13 +329,8 @@ export default function ProductPopup({ isOpen, onClose, productId,
             console.error(err)
             setError("Error adding to cart")
         } finally {
-            setLoading(false)
+            setLoadingCart(false)
         }
-    }
-
-    const handleUpdateCart = async () => {
-        if (!inCartItem || !product) return
-        await handleAddToCart() // same API call, overwrites
     }
 
     const handleAddToWishlist = async () => {
@@ -367,46 +340,35 @@ export default function ProductPopup({ isOpen, onClose, productId,
         }
         if (!product) return;
 
+        setLoadingWishlist(true);
         try {
-            const alreadyInWishlist = isInWishlist();
-
-            let res;
-            if (alreadyInWishlist) {
-                // Remove from wishlist
-                res = await axiosInstance.delete(
-                    `wishlist/remove-from-wishlist/${currentUser._id}/${product._id}`
-                );
-            } else {
-                // Add to wishlist
-                res = await axiosInstance.post("wishlist/add-to-wishlist", {
-                    customerId: currentUser._id,
-                    productId: product._id,
-                });
-            }
+            const res = await axiosInstance.post("wishlist/add-to-wishlist", {
+                customerId: currentUser._id,
+                productId: product._id,
+            });
 
             if (res.data.statusCode === 200) {
                 await fetchCustomersWishList();
-                setWishlistItemsCount(res.data.data?.length || 0);
+                setWishlistItemsCount(res.data.data?.wishlistItems?.length || res.data.data?.length || 0);
             }
         } catch (err) {
             console.error(err);
             setError("Error updating wishlist");
+        } finally {
+            setLoadingWishlist(false);
         }
     };
 
-
     const isInWishlist = () => {
         return wishListItems.some(
-            (item) => item.productId === product?._id || item.product?._id === product?._id
+            (item) => item.product?._id === product?._id
         );
     };
 
-    useEffect(() => {
-        isInWishlist();
-    }, [wishListItems]);
-
     const isOutOfStock = product?.stockLevel <= 0;
     const totalRequestedQuantity = calculateTotalQuantity();
+    const isInCart = isProductInCart();
+    const cartItem = getCartItem();
 
     const handleViewProductDetails = () => {
         setFilters({
@@ -417,15 +379,16 @@ export default function ProductPopup({ isOpen, onClose, productId,
             productID: product._id
         })
         const productSlug = product.ProductName.replace(/\s+/g, '-').toLowerCase();
-        router.push(`/product-details/${productSlug}`);
+        router.push(`/${productSlug}`);
+        onClose();
     }
 
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-[#000000]/10 bg-opacity-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
-                <div className="flex justify-between items-center p-4">
+                <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-medium font-spartan">{product?.ProductName}</h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
@@ -493,12 +456,12 @@ export default function ProductPopup({ isOpen, onClose, productId,
                                     </p>
 
                                     {/* Stock Status */}
-                                    <div className={`flex items-center space-x-2 px-2 ${!isOutOfStock ? 'bg-[#E7FAEF]' : 'bg-red-100'}`}>
+                                    <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
                                         <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
-                                        <span className={` ${!isOutOfStock ? 'text-[14px]' : 'text-[12px]'} font-semibold font-spartan py-1 rounded ${!isOutOfStock ? 'text-black' : 'text-red-600'}`}>
-                                            {!isOutOfStock ? 'IN STOCK' : 'OUT OF STOCK'}
+                                        <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                                            {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                                         </span>
                                     </div>
                                 </div>
@@ -513,7 +476,6 @@ export default function ProductPopup({ isOpen, onClose, productId,
                                             ${product.eachPrice.toFixed(2)}
                                         </span>
                                     )}
-
                                 </div>
 
                                 {/* Stock Error Message */}
@@ -531,15 +493,15 @@ export default function ProductPopup({ isOpen, onClose, productId,
                                             <button
                                                 onClick={decrementQuantity}
                                                 disabled={quantity <= 1 || isOutOfStock}
-                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400"
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                                             >
                                                 <Minus className="w-4 h-4" />
                                             </button>
                                             <span className="px-4">{quantity}</span>
                                             <button
                                                 onClick={incrementQuantity}
-                                                disabled={isOutOfStock || totalRequestedQuantity >= product.stockLevel}
-                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400"
+                                                disabled={isOutOfStock}
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </button>
@@ -552,7 +514,7 @@ export default function ProductPopup({ isOpen, onClose, productId,
                                             value={selectedUnitId}
                                             onChange={(e) => handleUnitChange(e.target.value)}
                                             disabled={isOutOfStock}
-                                            className="w-full border rounded-md p-2 disabled:bg-gray-100"
+                                            className="w-full border rounded-md p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                         >
                                             {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
                                                 product.typesOfPacks.map((pack) => (
@@ -568,68 +530,95 @@ export default function ProductPopup({ isOpen, onClose, productId,
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex items-center space-x-3">
-
-                                    <>
+                                <div className="space-y-2">
+                                    {/* Add to Cart and Wishlist Row */}
+                                    <div className="flex items-center space-x-3">
                                         <button
                                             onClick={handleAddToCart}
-                                            disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
-                                            className="flex-1 bg-[#46BCF9] border border-black text-white py-2 rounded-lg disabled:bg-gray-400"
+                                            disabled={isOutOfStock || loadingCart || !!stockError}
+                                            className={`flex-1 flex items-center justify-center gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 ${isOutOfStock || loadingCart || stockError
+                                                ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                                }`}
                                         >
-                                            {loading ? (
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
+                                            {loadingCart ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                             ) : (
-                                                "Add to Cart"
+                                                <svg
+                                                    className="w-5 h-5 transition-colors duration-300"
+                                                    viewBox="0 0 21 21"
+                                                    fill="currentColor"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                                </svg>
+                                            )}
+                                            {loadingCart ? 'Adding...' : 'Add to Cart'}
+                                        </button>
+
+                                        <button
+                                            onClick={handleAddToWishlist}
+                                            disabled={loadingWishlist}
+                                            className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full cursor-pointer hover:bg-[#E799A9]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {loadingWishlist ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E799A9]"></div>
+                                            ) : (
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill={isInWishlist() ? "#E799A9" : "none"}
+                                                    stroke="#E799A9"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
+                                                        2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 
+                                                        4.5 2.09C13.09 3.81 14.76 3 16.5 3 
+                                                        19.58 3 22 5.42 22 8.5c0 
+                                                        3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                                </svg>
                                             )}
                                         </button>
-                                        <div
-                                            onClick={handleAddToWishlist}
-                                            className="h-10 w-10 border border-[#E799A9] flex items-center justify-center rounded-full cursor-pointer"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 24 24"
-                                                fill={isInWishlist() ? "#E799A9" : "none"}
-                                                stroke="#E799A9"
-                                                strokeWidth="2"
-                                            >
-                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 
-                                                    2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 
-                                                    4.5 2.09C13.09 3.81 14.76 3 16.5 3 
-                                                    19.58 3 22 5.42 22 8.5c0 
-                                                    3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                                            </svg>
-
-
-                                        </div>
-                                    </>
-
-
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-3 w-full">
-                                    <button className="flex-1 bg-[#2D2C70] border border-black text-white py-2 rounded-lg">
-                                        Added <Check className="inline-block ml-2 h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={handleUpdateCart}
-                                        disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
-                                        className="flex-1 bg-[#E799A9] border border-black text-white py-2 rounded-lg disabled:bg-gray-400"
-                                    >
-                                        {loading ? 'Updating...' : 'Update'}
-                                    </button>
-
-                                </div>
-
-                                {/* Cart Quantity */}
-                                {inCartItem && (
-                                    <div className="text-sm text-black">
-                                        In Cart Quantity: {inCartItem.unitsQuantity} ({inCartItem.packType})
                                     </div>
-                                )}
 
-                                <button onClick={handleViewProductDetails} className="text-sm underline flex items-center">
+                                    {/* Added and Update Row - Only show when product is in cart */}
+                                    {isInCart && (
+                                        <div className="flex space-x-2">
+                                            <button
+                                                className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                disabled
+                                            >
+                                                <span>Added</span>
+                                                <Check className="w-5 h-5" />
+                                            </button>
+                                            <div className="w-px bg-black h-[20px] mt-2"></div>
+                                            <button
+                                                onClick={handleAddToCart}
+                                                disabled={isOutOfStock || loadingCart || !!stockError}
+                                                className={`flex-1 border-1 border border-black rounded-lg py-2 px-3 text-sm font-medium transition-colors ${isOutOfStock || loadingCart || stockError
+                                                    ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                                    }`}
+                                            >
+                                                {loadingCart ? 'Updating...' : 'Update'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Cart Quantity Info */}
+                                    {isInCart && cartItem && (
+                                        <div className="text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
+                                            In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button 
+                                    onClick={handleViewProductDetails} 
+                                    className="text-sm underline flex items-center hover:text-[#E9098D] transition-colors"
+                                >
                                     View product details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>
                             </div>

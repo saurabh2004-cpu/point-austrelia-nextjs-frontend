@@ -598,7 +598,7 @@ const ShoppingCart = () => {
 
                                                                 {/* Price */}
                                                                 <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
-                                                                    ${item.product.eachPrice.toFixed(2)}
+                                                                    ${item?.amount?.toFixed(2)}
                                                                 </div>
 
                                                                 {/* Quantity and Actions */}

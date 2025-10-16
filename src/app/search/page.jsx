@@ -10,7 +10,7 @@ import useCartStore from "@/zustand/cartPopup"
 
 
 const SearchPage = () => {
-    const [sortBy, setSortBy] = useState("Best Seller")
+    const [sortBy, setSortBy] = useState("Newest")
     const [viewMode, setViewMode] = useState("grid")
     const [products, setProducts] = useState([])
     const [error, setError] = useState(null)
@@ -29,7 +29,11 @@ const SearchPage = () => {
     const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
     const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
     const [wishListItems, setWishlistItems] = useState([])
+
     const [loadingProducts, setLoadingProducts] = useState({})
+    const [loadingWishlist, setLoadingWishlist] = useState({})
+    const [loadingCart, setLoadingCart] = useState({})
+
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems)
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems)
     const currentCartItems = useCartStore((state) => state.currentItems)
@@ -233,6 +237,7 @@ const SearchPage = () => {
     }
 
     // FIXED: Add to cart with proper stock validation
+    // FIXED: Add to cart with proper stock validation
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
@@ -250,17 +255,22 @@ const SearchPage = () => {
             return
         }
 
-        setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+        setLoadingCart(prev => ({ ...prev, [productId]: true }))
 
         try {
             const product = products.find(p => p._id === productId)
             if (!product) return
 
-            const packTypes = getPackTypes(product);
-            const selectedPack = packTypes.find(pack => pack._id === selectedUnits[productId])
+            const selectedPack = product.typesOfPacks?.find(pack => pack._id === selectedUnits[productId])
             const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
             const unitsQuantity = productQuantities[productId] || 1
             const totalQuantity = packQuantity * unitsQuantity
+
+            // Calculate the discounted price for this product
+            const discountedPrice = calculateDiscountedPrice(product)
+
+            // Calculate total amount using the discounted price
+            const totalAmount = totalQuantity * discountedPrice
 
             const cartData = {
                 customerId: currentUser._id,
@@ -268,16 +278,17 @@ const SearchPage = () => {
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
-                packType: selectedPack ? selectedPack.name : 'Each'
+                packType: selectedPack ? selectedPack.name : 'Each',
+                amount: totalAmount // Store the discounted total amount
             }
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData)
 
             if (response.data.statusCode === 200) {
                 await fetchCustomersCart()
-                setCartItemsCount(response.data.data.cartItems?.length || 0);
+                setCartItemsCount(response.data.data.cartItems.length);
                 setError(null)
-                // Clear stock error after successful add
+                // Clear any stock errors after successful add
                 setStockErrors(prev => ({
                     ...prev,
                     [productId]: null
@@ -285,9 +296,8 @@ const SearchPage = () => {
             }
         } catch (error) {
             console.error('Error adding to cart:', error)
-            setError('Error adding product to cart')
         } finally {
-            setLoadingProducts(prev => ({ ...prev, [productId]: false }))
+            setLoadingCart(prev => ({ ...prev, [productId]: false }))
         }
     }
 
@@ -416,6 +426,7 @@ const SearchPage = () => {
     }
 
     // Add/Remove product from wishlist
+    // Add/Remove product from wishlist
     const handleAddToWishList = async (productId) => {
         try {
             if (!currentUser || !currentUser._id) {
@@ -423,7 +434,7 @@ const SearchPage = () => {
                 return
             }
 
-            setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+            setLoadingWishlist(prev => ({ ...prev, [productId]: true }))
 
             const response = await axiosInstance.post('wishlist/add-to-wishlist', {
                 customerId: currentUser._id,
@@ -440,10 +451,10 @@ const SearchPage = () => {
             console.error('Error managing product in wishlist:', error)
             setError('Error managing wishlist')
         } finally {
-            setLoadingProducts(prev => {
-                const updatedLoadingProducts = { ...prev }
-                updatedLoadingProducts[productId] = false
-                return updatedLoadingProducts
+            setLoadingWishlist(prev => {
+                const updatedLoadingWishlist = { ...prev }
+                updatedLoadingWishlist[productId] = false
+                return updatedLoadingWishlist
             })
         }
     }
@@ -705,7 +716,6 @@ const SearchPage = () => {
                                                             focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                             appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
                                                 >
-                                                    <option value="Best Seller" className="text-sm sm:text-[15px] font-medium">Best Seller</option>
                                                     <option value="Price Low to High" className="text-sm sm:text-[15px] font-medium">Price Low to High</option>
                                                     <option value="Price High to Low" className="text-sm sm:text-[15px] font-medium">Price High to Low</option>
                                                     <option value="Newest" className="text-sm sm:text-[15px] font-medium">Newest</option>
@@ -816,6 +826,8 @@ const SearchPage = () => {
                                         const isOutOfStock = product.stockLevel <= 0
                                         const stockError = stockErrors[product._id]
                                         const isLoading = loadingProducts[product._id]
+                                        const isWishlistLoading = loadingWishlist[product._id]
+                                        const isCartLoading = loadingCart[product._id]
 
                                         const discountedPrice = calculateDiscountedPrice(product)
                                         const discountPercentage = getDiscountPercentage(product)
@@ -834,12 +846,11 @@ const SearchPage = () => {
                                                     <button
                                                         className="rounded-full transition-colors"
                                                         onClick={() => handleAddToWishList(product._id)}
-                                                        disabled={isLoading}
+                                                        disabled={isWishlistLoading}
                                                     >
                                                         <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
-                                                            {isLoading ? (
+                                                            {isWishlistLoading ? (
                                                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
-
                                                             ) : (
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
                                                             )}
@@ -1002,13 +1013,13 @@ const SearchPage = () => {
                                                                 }`}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (!isOutOfStock && !isLoading && !stockError) {
+                                                                if (!isOutOfStock && !isCartLoading && !stockError) {
                                                                     handleAddToCart(product._id);
                                                                 }
                                                             }}
-                                                            disabled={isOutOfStock || isLoading || !!stockError}
+                                                            disabled={isOutOfStock || isCartLoading || !!stockError}
                                                         >
-                                                            {isLoading ? (
+                                                            {isCartLoading ? (
                                                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                                             ) : (
                                                                 <svg
@@ -1020,7 +1031,7 @@ const SearchPage = () => {
                                                                     <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
                                                                 </svg>
                                                             )}
-                                                            {isLoading ? 'Adding...' : 'Add to Cart'}
+                                                            {isCartLoading ? 'Adding...' : 'Add to Cart'}
                                                         </button>
                                                     </div>
 
@@ -1039,19 +1050,19 @@ const SearchPage = () => {
                                                             </button>
                                                             <div className="w-px bg-black h-[20px] mt-2"></div>
                                                             <button
-                                                                className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isLoading || stockError
+                                                                className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
                                                                     ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                                     : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
                                                                     }`}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    if (!isOutOfStock && !isLoading && !stockError) {
+                                                                    if (!isOutOfStock && !isCartLoading && !stockError) {
                                                                         handleAddToCart(product._id);
                                                                     }
                                                                 }}
-                                                                disabled={isOutOfStock || isLoading || !!stockError}
+                                                                disabled={isOutOfStock || isCartLoading || !!stockError}
                                                             >
-                                                                {isLoading ? 'Updating...' : 'Update'}
+                                                                {isCartLoading ? 'Updating...' : 'Update'}
                                                             </button>
                                                         </div>
                                                     )}

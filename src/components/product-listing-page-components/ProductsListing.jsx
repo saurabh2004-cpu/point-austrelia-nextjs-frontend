@@ -13,7 +13,7 @@ import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import ProductDetail from '@/components/product-details-components/ProductDetails'
 
 const ProductListing = () => {
-    const [sortBy, setSortBy] = useState("Best Seller")
+    const [sortBy, setSortBy] = useState("Newest")
     const [viewMode, setViewMode] = useState("grid")
     const [selectedProduct, setSelectedProduct] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
@@ -36,7 +36,11 @@ const ProductListing = () => {
     const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
     const [toggleWishlistIcon, setToggleWishlistIcon] = useState('')
     const [wishListItems, setWishlistItems] = useState([])
+
     const [loadingProducts, setLoadingProducts] = useState({})
+    const [loadingWishlist, setLoadingWishlist] = useState({})
+    const [loadingCart, setLoadingCart] = useState({})
+
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const currentCartItems = useCartStore((state) => state.currentItems);
@@ -88,28 +92,35 @@ const ProductListing = () => {
     // Calculate discounted price for a product
     const calculateDiscountedPrice = (product) => {
         if (!currentUser || !currentUser.customerId) {
-            return product.eachPrice;
+            return product.eachPrice || 0;
         }
 
         const originalPrice = product.eachPrice || 0;
 
-        // Check for item-based discount first (higher priority)
+        // Check for item-based discount first (highest priority)
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
 
+        // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
             return originalPrice - discountAmount;
         }
 
-        // Check for pricing group discount
-        if (product.pricingGroup && product.pricingGroup._id) {
+        // If no item-based discount, check for pricing group discount
+        // Check if product has a pricing group assigned
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
+            // Find matching pricing group discount for this customer
             const groupDiscount = customerGroupsDiscounts.find(
                 discount =>
+                    discount.customerId === currentUser.customerId &&
                     discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser.customerId
+                    discount.pricingGroup._id === productPricingGroupId
             );
 
             if (groupDiscount) {
@@ -118,8 +129,10 @@ const ProductListing = () => {
             }
         }
 
+        // If no discounts apply, return original price
         return originalPrice;
     };
+
 
     // Get discount percentage for display
     const getDiscountPercentage = (product) => {
@@ -127,6 +140,7 @@ const ProductListing = () => {
             return null;
         }
 
+        // Check item-based discount first
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
@@ -135,12 +149,17 @@ const ProductListing = () => {
             return itemDiscount.percentage;
         }
 
-        if (product.pricingGroup && product.pricingGroup._id) {
+        // Then check pricing group discount
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
             const groupDiscount = customerGroupsDiscounts.find(
                 discount =>
+                    discount.customerId === currentUser.customerId &&
                     discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser.customerId
+                    discount.pricingGroup._id === productPricingGroupId
             );
 
             if (groupDiscount) {
@@ -284,6 +303,8 @@ const ProductListing = () => {
     }
 
     // Add to cart function
+    // Add to cart function
+    // Add to cart function
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
@@ -301,7 +322,7 @@ const ProductListing = () => {
             return
         }
 
-        setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+        setLoadingCart(prev => ({ ...prev, [productId]: true }))
 
         try {
             const product = products.find(p => p._id === productId)
@@ -312,13 +333,20 @@ const ProductListing = () => {
             const unitsQuantity = productQuantities[productId] || 1
             const totalQuantity = packQuantity * unitsQuantity
 
+            // Calculate the discounted price for this product
+            const discountedPrice = calculateDiscountedPrice(product)
+
+            // Calculate total amount using the discounted price
+            const totalAmount = totalQuantity * discountedPrice
+
             const cartData = {
                 customerId: currentUser._id,
                 productId: productId,
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
-                packType: selectedPack ? selectedPack.name : 'Each'
+                packType: selectedPack ? selectedPack.name : 'Each',
+                amount: totalAmount // Store the discounted total amount
             }
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData)
@@ -336,7 +364,7 @@ const ProductListing = () => {
         } catch (error) {
             console.error('Error adding to cart:', error)
         } finally {
-            setLoadingProducts(prev => ({ ...prev, [productId]: false }))
+            setLoadingCart(prev => ({ ...prev, [productId]: false }))
         }
     }
 
@@ -466,6 +494,8 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`)
 
+            console.log("pricing groups discounts", response)
+
             if (response.data.statusCode === 200) {
                 setCustomerGroupsDiscounts(response.data.data || [])
             }
@@ -481,6 +511,9 @@ const ProductListing = () => {
             if (!currentUser || !currentUser.customerId) return
 
             const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`)
+
+            console.log("item based discounts", response)
+
             if (response.data.statusCode === 200) {
                 setItemBasedDiscounts(response.data.data || [])
             }
@@ -491,6 +524,7 @@ const ProductListing = () => {
     }
 
     // Add/Remove product from wishlist
+    // Add/Remove product from wishlist
     const handleAddToWishList = async (productId) => {
         try {
             if (!currentUser || !currentUser._id) {
@@ -498,7 +532,7 @@ const ProductListing = () => {
                 return
             }
 
-            setLoadingProducts(prev => ({ ...prev, [productId]: true }))
+            setLoadingWishlist(prev => ({ ...prev, [productId]: true }))
 
             const response = await axiosInstance.post('wishlist/add-to-wishlist', {
                 customerId: currentUser._id,
@@ -516,10 +550,10 @@ const ProductListing = () => {
             console.error('Error managing product in wishlist:', error)
             setError('Error managing wishlist')
         } finally {
-            setLoadingProducts(prev => {
-                const updatedLoadingProducts = { ...prev }
-                updatedLoadingProducts[productId] = false
-                return updatedLoadingProducts
+            setLoadingWishlist(prev => {
+                const updatedLoadingWishlist = { ...prev }
+                updatedLoadingWishlist[productId] = false
+                return updatedLoadingWishlist
             })
         }
     }
@@ -845,28 +879,6 @@ const ProductListing = () => {
         setExpandedCategory(categoryId);
     }
 
-    const fetchCustomerSpecificAmountGroups = async () => {
-        try {
-            const res = await axiosInstance.get('customer-secific-amounts/get-customer-specific-amount')
-
-            console.log("customer specific amouint grouyps ", res)
-
-            if (res.data.statusCode === 200) {
-                setCustomerSpecificAmountGroups(res.data.data)
-            } else {
-                console.error('Error fetching customer specific amount groups:', res.data.message)
-                setCustomerSpecificAmountGroups([])
-            }
-
-        } catch (error) {
-            console.error('Error fetching customer specific amount groups:', error)
-        }
-    }
-
-    useEffect(() => {
-        fetchCustomerSpecificAmountGroups()
-    }, [currentUser])
-
 
     const sortProductsBySequenceAndDate = (products) => {
         // Separate products into two groups
@@ -928,110 +940,113 @@ const ProductListing = () => {
 
                         {/* // Sidebar Filter */}
                         {brandId && (
-                            <div
-                                className={`w-full lg:w-64 flex-shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}
-                            >
-                                <div className="bg-white xl:min-h-screen border-r-0 lg:border-r-1 border-black rounded-lg lg:rounded-none">
-                                    <div>
-                                        <h4 className="text-lg sm:text-xl lg:text-[1.3rem] text-black font-[400] px-2 pb-2 lg:pb-4 lg:pt-2 font-spartan">
-                                            {brandSlug?.split('-').join(' ').toUpperCase()}
-                                        </h4>
-                                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
-                                            {loadingCategories ? (
-                                                <div className="py-2 text-sm text-gray-500">Loading categories...</div>
-                                            ) : categories.length > 0 ? (
-                                                categories.map((category) => (
-                                                    <div
-                                                        key={category._id}
-                                                        className="border-b border-dashed border-b-1 border-black"
-                                                    >
-                                                        {/* Main Category */}
-                                                        <div
-                                                            onMouseEnter={() => {
-                                                                // Toggle subcategories visibility
-                                                                if (hoveredCategory === category._id) {
-                                                                    setHoveredCategory(null);
-                                                                } else {
-                                                                    setHoveredCategory(category._id);
-                                                                    fetchSubCategoriesForCategory(category._id);
-                                                                }
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleMinCategoryClick(category.slug, category._id);
-                                                            }}
-                                                            className={`flex justify-between items-center py-1 px-2 hover:text-[#e9098d]/70 cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                            <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
+                                {loadingCategories ? (
+                                    <div className="py-2 text-sm text-gray-500">Loading categories...</div>
+                                ) : categories.length > 0 ? (
+                                    categories.map((category) => {
+                                        // Check if category has subcategories (either already fetched or we need to fetch them)
+                                        const hasSubcategories = subCategoriesByCategory[category._id]?.length > 0;
+
+                                        return (
+                                            <div
+                                                key={category._id}
+                                                className="border-b border-dashed border-b-1 border-black"
+                                            >
+                                                {/* Main Category */}
+                                                <div
+                                                    onMouseEnter={() => {
+                                                        // Only fetch subcategories if they haven't been fetched yet
+                                                        if (!subCategoriesByCategory[category._id]) {
+                                                            fetchSubCategoriesForCategory(category._id);
+                                                        }
+                                                        setHoveredCategory(category._id);
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMinCategoryClick(category.slug, category._id);
+                                                    }}
+                                                    className={`flex justify-between items-center py-1 px-2 hover:text-[#e9098d]/70 cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                                >
+                                                    <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}`}>
+                                                        {category.name}
+                                                    </span>
+                                                    {/* Show arrow only if category has subcategories */}
+                                                    {hasSubcategories && (
+                                                        <svg
+                                                            className={`w-4 h-4 transition-transform ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
                                                         >
-                                                            <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}`}>
-                                                                {category.name}
-                                                            </span>
-                                                            {/* Arrow indicator */}
-                                                            <svg
-                                                                className={`w-4 h-4 transition-transform ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                        </div>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    )}
+                                                </div>
 
-                                                        {/* Subcategories - Displayed as nested list */}
-                                                        {hoveredCategory === category._id && subCategoriesByCategory[category._id] && (
-                                                            <div className="ml-4 mt-1 space-y-1 pb-2">
-                                                                {subCategoriesByCategory[category._id].map((subCategory) => (
+                                                {/* Subcategories - Displayed as nested list */}
+                                                {hoveredCategory === category._id && hasSubcategories && (
+                                                    <div className="ml-4 mt-1 space-y-1 pb-2">
+                                                        {subCategoriesByCategory[category._id].map((subCategory) => {
+                                                            // Check if subcategory has subcategories two
+                                                            const hasSubcategoriesTwo = subCategoriesTwoBySubCategory[subCategory._id]?.length > 0;
+
+                                                            return (
+                                                                <div
+                                                                    key={subCategory._id}
+                                                                    className="relative"
+                                                                >
                                                                     <div
-                                                                        key={subCategory._id}
-                                                                        className="relative"
-                                                                    >
-                                                                        <div
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleSubCategoryClick(subCategory.slug, subCategory._id);
-                                                                            }}
-                                                                            onMouseEnter={() => {
-                                                                                setHoveredSubCategory(subCategory._id);
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleSubCategoryClick(subCategory.slug, subCategory._id);
+                                                                        }}
+                                                                        onMouseEnter={() => {
+                                                                            // Only fetch subcategories two if they haven't been fetched yet
+                                                                            if (!subCategoriesTwoBySubCategory[subCategory._id]) {
                                                                                 fetchSubCategoriesTwoForSubCategory(subCategory._id);
-                                                                            }}
-                                                                            className={`flex justify-between items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
-                                                                        >
-                                                                            <span className="text-base">{subCategory.name}</span>
-                                                                            {subCategoriesTwoBySubCategory[subCategory._id] && subCategoriesTwoBySubCategory[subCategory._id].length > 0 && (
-                                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-                                                                                </svg>
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* Subcategories Two - Displayed as nested list */}
-                                                                        {hoveredSubCategory === subCategory._id && subCategoriesTwoBySubCategory[subCategory._id] && (
-                                                                            <div className="ml-4 mt-1 space-y-1">
-                                                                                {subCategoriesTwoBySubCategory[subCategory._id].map((subCategoryTwo) => (
-                                                                                    <div
-                                                                                        key={subCategoryTwo._id}
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id);
-                                                                                        }}
-                                                                                        className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
-                                                                                    >
-                                                                                        {subCategoryTwo.name}
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
+                                                                            }
+                                                                            setHoveredSubCategory(subCategory._id);
+                                                                        }}
+                                                                        className={`flex justify-between items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                                    >
+                                                                        <span className="text-base">{subCategory.name}</span>
+                                                                        {/* Show arrow only if subcategory has subcategories two */}
+                                                                        {hasSubcategoriesTwo && (
+                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                                                                            </svg>
                                                                         )}
                                                                     </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
+
+                                                                    {/* Subcategories Two - Displayed as nested list */}
+                                                                    {hoveredSubCategory === subCategory._id && hasSubcategoriesTwo && (
+                                                                        <div className="ml-4 mt-1 space-y-1">
+                                                                            {subCategoriesTwoBySubCategory[subCategory._id].map((subCategoryTwo) => (
+                                                                                <div
+                                                                                    key={subCategoryTwo._id}
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id);
+                                                                                    }}
+                                                                                    className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                                                                                >
+                                                                                    {subCategoryTwo.name}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div className="py-2 text-sm text-gray-500">No categories available</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="py-2 text-sm text-gray-500">No categories available</div>
+                                )}
                             </div>
                         )}
 
@@ -1090,7 +1105,7 @@ const ProductListing = () => {
                                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                                 appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
                                                     >
-                                                        <option value="Best Seller" className="text-sm sm:text-[15px] font-medium">Best Seller</option>
+                                                        {/* <option value="Best Seller" className="text-sm sm:text-[15px] font-medium">Best Seller</option> */}
                                                         <option value="Price Low to High" className="text-sm sm:text-[15px] font-medium">Price Low to High</option>
                                                         <option value="Price High to Low" className="text-sm sm:text-[15px] font-medium">Price High to Low</option>
                                                         <option value="Newest" className="text-sm sm:text-[15px] font-medium">Newest</option>
@@ -1181,7 +1196,8 @@ const ProductListing = () => {
                                                     const isInWishlist = isProductInWishlist(product._id)
                                                     const isOutOfStock = product.stockLevel <= 0
                                                     const stockError = stockErrors[product._id]
-                                                    const isLoading = loadingProducts[product._id]
+                                                    const isWishlistLoading = loadingWishlist[product._id]
+                                                    const isCartLoading = loadingCart[product._id]
 
                                                     const discountedPrice = calculateDiscountedPrice(product)
                                                     const discountPercentage = getDiscountPercentage(product)
@@ -1198,12 +1214,11 @@ const ProductListing = () => {
                                                                 <button
                                                                     className="rounded-full transition-colors"
                                                                     onClick={() => handleAddToWishList(product._id)}
-                                                                    disabled={isLoading}
+                                                                    disabled={isWishlistLoading}
                                                                 >
                                                                     <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
-                                                                        {isLoading ? (
+                                                                        {isWishlistLoading ? (
                                                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
-
                                                                         ) : (
                                                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
                                                                         )}
@@ -1361,19 +1376,19 @@ const ProductListing = () => {
                                                                 {/* Add to Cart Button */}
                                                                 <div className="flex items-center space-x-3">
                                                                     <button
-                                                                        className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isLoading || stockError
+                                                                        className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
                                                                             ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                                             : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
                                                                             }`}
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            if (!isOutOfStock && !isLoading && !stockError) {
+                                                                            if (!isOutOfStock && !isCartLoading && !stockError) {
                                                                                 handleAddToCart(product._id);
                                                                             }
                                                                         }}
-                                                                        disabled={isOutOfStock || isLoading || !!stockError}
+                                                                        disabled={isOutOfStock || isCartLoading || !!stockError}
                                                                     >
-                                                                        {isLoading ? (
+                                                                        {isCartLoading ? (
                                                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                                                                         ) : (
                                                                             <svg
@@ -1385,7 +1400,7 @@ const ProductListing = () => {
                                                                                 <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
                                                                             </svg>
                                                                         )}
-                                                                        {isLoading ? 'Adding...' : 'Add to Cart'}
+                                                                        {isCartLoading ? 'Adding...' : 'Add to Cart'}
                                                                     </button>
                                                                 </div>
 
@@ -1404,19 +1419,19 @@ const ProductListing = () => {
                                                                         </button>
                                                                         <div className="w-px bg-black h-[20px] mt-2"></div>
                                                                         <button
-                                                                            className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isLoading || stockError
+                                                                            className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
                                                                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                                                 : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
                                                                                 }`}
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                if (!isOutOfStock && !isLoading && !stockError) {
+                                                                                if (!isOutOfStock && !isCartLoading && !stockError) {
                                                                                     handleAddToCart(product._id);
                                                                                 }
                                                                             }}
-                                                                            disabled={isOutOfStock || isLoading || !!stockError}
+                                                                            disabled={isOutOfStock || isCartLoading || !!stockError}
                                                                         >
-                                                                            {isLoading ? 'Updating...' : 'Update'}
+                                                                            {isCartLoading ? 'Updating...' : 'Update'}
                                                                         </button>
                                                                     </div>
                                                                 )}

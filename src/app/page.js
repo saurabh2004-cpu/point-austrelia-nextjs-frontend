@@ -1,61 +1,43 @@
 'use client'
 
-import axiosInstance from "@/axios/axiosInstance";
-import { Footer } from "@/components/Footer";
 import BrandCards from "@/components/Home-components/BrandCards";
 import Carousel from "@/components/Home-components/Carousel";
-import BrandsGrid from "@/components/metador-page-components/BrandsGrid";
-import TrustedByCarousel from "@/components/metador-page-components/Carousel";
-import CategoriesGrid from "@/components/metador-page-components/CategoriesGrid";
-import HeroSection from "@/components/metador-page-components/Hero";
-import useNavStateStore from "@/zustand/navigations";
 import useUserStore from "@/zustand/user";
-import { useEffect } from "react";
-
+import MetaTags from "../components/metaTags/metaTags";
+import { useMetaData } from "@/hooks/useMetaData";
 
 export default function Home() {
-  const currentIndex = useNavStateStore((state) => state.currentIndex);
-  console.log("current index:", currentIndex)
   const currentUser = useUserStore((state) => state.user);
   console.log("current user:", currentUser);
-  // const setUser = useUserStore((state) => state.setUser);
+  const { metaData, loading } = useMetaData('home');
 
-
-  // const fetchCurentUser = async () => {
-  //   try {
-  //     const response = await axiosInstance.get('user/get-current-user');
-
-  //     if (response.data.statusCode === 200) {
-  //       setUser(response.data.data);
-  //     }
-
-  //   } catch (error) {
-  //     console.error("Error fetching current user:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchCurentUser();
-  // }, []);
+  // Add loading state handling
+  if (loading) {
+    return (
+      <>
+        {/* Basic meta tags while loading */}
+        <MetaTags
+          title="Loading..."
+          description="Please wait while we load the page"
+        />
+        <div className="min-h-screen flex items-center justify-center">
+          <div>Loading...</div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
-      {/* {currentIndex === 0 && */}
-      <>
-        <BrandCards />
-        <Carousel />
-      </>
-      {/* } */}
+      <MetaTags
+        title={metaData?.title || "Default Home Title"}
+        description={metaData?.description || "Default home description"}
+        keywords={metaData?.keywords || "default, keywords"}
+        ogImage={metaData?.ogImage}
+      />
 
-      {/* {(currentIndex === 1 || currentIndex === 2 || currentIndex === 3) && currentUser === null &&
-        <>
-          <HeroSection />
-          <CategoriesGrid />
-          <BrandsGrid />
-          <TrustedByCarousel />
-        </>} */}
-
-
+      <BrandCards />
+      <Carousel />
     </>
   );
 }

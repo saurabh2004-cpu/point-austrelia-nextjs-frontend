@@ -389,14 +389,17 @@ const CheckoutComponent = () => {
             const res = await axiosInstance.get('sales-order/get-latest-document-number')
 
             console.log("latest document number", res);
-            if (res.data.statusCode === 200) {
+            if (res.data.statusCode === 200 && res.data.data && res.data.data.documentNumber) {
                 setLatestSalesOrderDocumentNumber(res.data.data.documentNumber);
             } else {
-                console.error('Failed to fetch latest document number:', res.data.message);
+                // If no document number exists, set to null to trigger default
+                setLatestSalesOrderDocumentNumber(null);
+                console.log('No existing document number found, will use default SO00001');
             }
         } catch (error) {
             console.error('Error fetching latest document number:', error);
-
+            // On error, set to null to trigger default
+            setLatestSalesOrderDocumentNumber(null);
         }
     }
 
@@ -424,9 +427,9 @@ const CheckoutComponent = () => {
     }, [selectedShippingAddress, selectedBillingAddress, currentUser]);
 
     // Update submitForm with cart items
+    // Update submitForm with cart items
     useEffect(() => {
-
-        console.log("ccheckout cart items:", cartItems);
+        console.log("checkout cart items:", cartItems);
         if (cartItems.length > 0) {
             const formattedItems = cartItems.map(item => ({
                 itemSku: item.product.sku,
@@ -434,8 +437,8 @@ const CheckoutComponent = () => {
                 unitsQuantity: item.unitsQuantity,
                 packQuantity: item.packQuentity,
                 totalQuantity: item.totalQuantity,
-                eachPrice: item.product.eachPrice,
-                amount: (item.totalQuantity * item.product.eachPrice) + (item.product.taxable ? (item.totalQuantity * item.product.eachPrice * (item.product.taxPercentages || 0) / 100) : 0),
+                eachPrice: item.amount / item.totalQuantity, // Calculate unit price
+                amount: item.amount, // Use stored amount directly
                 taxable: item.product.taxable,
                 taxPercentage: item.product.taxPercentages || 0,
                 packType: item.packType
@@ -449,16 +452,18 @@ const CheckoutComponent = () => {
     }, [cartItems]);
 
     // Calculate totals from cart items
+    // Calculate totals from cart items
     const calculateTotals = () => {
         let subtotalAmount = 0;
         let gstAmount = 0;
 
         cartItems.forEach(item => {
-            const itemTotal = item.totalQuantity * item.product.eachPrice;
-            subtotalAmount += itemTotal;
+            // Use the stored amount directly (it's already the total for this item)
+            subtotalAmount += item.amount;
 
+            // Calculate tax based on the stored amount
             if (item.product.taxable && item.product.taxPercentages) {
-                gstAmount += (itemTotal * item.product.taxPercentages) / 100;
+                gstAmount += (item.amount * item.product.taxPercentages) / 100;
             }
         });
 
@@ -478,10 +483,14 @@ const CheckoutComponent = () => {
 
     useEffect(() => {
         if (latestSalesOrderDocumentNumber) {
+            // If we have an existing document number, increment it
             const prefix = latestSalesOrderDocumentNumber.match(/[A-Za-z]+/)[0]; // "SO"
             const number = parseInt(latestSalesOrderDocumentNumber.match(/\d+/)[0], 10); // 19082
-            const documentNumber = `${prefix}${String(number + 1).padStart(6, '0')}`;
-            setDocumentNumber(documentNumber);
+            const nextDocumentNumber = `${prefix}${String(number + 1).padStart(5, '0')}`;
+            setDocumentNumber(nextDocumentNumber);
+        } else if (latestSalesOrderDocumentNumber === null) {
+            // If no existing document number, start with SO00001
+            setDocumentNumber('SO00001');
         }
     }, [latestSalesOrderDocumentNumber]);
 
@@ -825,7 +834,8 @@ const CheckoutComponent = () => {
                                 <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg">
                                     <div className='space-y-4 mt-4 p-3 sm:p-4'>
                                         {cartItems.map((item) => {
-                                            const itemAmount = item.totalQuantity * item.product.eachPrice;
+                                            // The amount is already the total, no need to multiply again
+                                            const itemAmount = item.amount; // Use the stored amount directly
                                             const packName = item.product.typesOfPacks?.find(pack => parseInt(pack.quantity) === item.packQuentity)?.name || 'Each';
 
                                             return (
@@ -843,8 +853,9 @@ const CheckoutComponent = () => {
                                                         <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
                                                             {item.product.ProductName}
                                                         </h3>
+                                                        {/* Calculate unit price for display */}
                                                         <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
-                                                            ${item.product.eachPrice.toFixed(2)}
+                                                            ${(item.amount / item.totalQuantity).toFixed(2)}
                                                         </p>
                                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
                                                             <p className="mb-1">{item.product.sku}</p>
@@ -854,11 +865,11 @@ const CheckoutComponent = () => {
                                                                 IN STOCK
                                                             </div>
                                                             <div className="space-y-1 text-xs">
-                                                                <div>Unit price ${item.product.eachPrice.toFixed(2)}</div>
+                                                                <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div>
                                                                 <div>Quantity {item.totalQuantity}</div>
-                                                                <div>Amount ${itemAmount.toFixed(2)}</div>
+                                                                <div>Amount ${item.amount.toFixed(2)}</div> {/* Use stored amount directly */}
                                                                 {item.product.taxable && (
-                                                                    <div>Tax ({item.product.taxPercentages}%): ${((itemAmount * item.product.taxPercentages) / 100).toFixed(2)}</div>
+                                                                    <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>
                                                                 )}
                                                             </div>
                                                         </div>

@@ -1,8 +1,16 @@
-import React from 'react';
+'use client'
+import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import Image from 'next/image';
+import useBrandStore from '@/zustand/BrandPAge';
+import axiosInstance from '@/axios/axiosInstance';
+import { useParams } from 'next/navigation';
 
 const BrandsGrid = () => {
+    const params = useParams();
+    const slug = params.slug
+
+
     const brands = [
         {
             id: 1,
@@ -44,6 +52,26 @@ const BrandsGrid = () => {
         "Supplying petrol stations, discount variety stores, gift shops, and independent retailers nationwide."
     ];
 
+    const [brandPage, setBrandPage] = useState(null);
+
+    const fetchBrandPageBySlug = async (slug) => {
+        try {
+            const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
+
+            if (response.data.statusCode === 200) {
+                setBrandPage(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching brand page:", error);
+        }
+    }
+
+    useEffect(() => {
+        if (slug) {
+            fetchBrandPageBySlug(slug);
+        }
+    }, [slug]);
+
     return (
         <div className="w-full bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8  ">
             <div className="max-w-8xl mx-auto">
@@ -59,7 +87,7 @@ const BrandsGrid = () => {
                         </h2>
 
                         {/* Right decorative line */}
-                         <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
+                        <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
                     </div>
                 </div>
 
@@ -116,11 +144,11 @@ const BrandsGrid = () => {
                 {/* Why Choose Matador Wholesale Section */}
                 <div className="bg-[#2D2C70] w-full h-full  lg:h-[295px] flex flex-col mx-auto w-full  sm:p-8  lg:py-12 text-white">
                     <h3 className="text-[20px] font-semibold mb-6 sm:mb-8 p-4 lg:p-0 lg:px-58">
-                        Why Choose Matador Wholesale?
+                        {brandPage?.Question}?
                     </h3>
 
                     <div className="space-y-4 sm:space-y-6 p-4">
-                        {features.map((feature, index) => (
+                        {brandPage?.answers && brandPage.answers.map((feature, index) => (
                             <div key={index} className="flex items-start space-x-2  xl:px-54">
                                 <div className='flex'>
                                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1" />

@@ -73,6 +73,10 @@ export function Navbar() {
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
   const getCurrentIndex = useNavStateStore((state) => state.getCurrentIndex)
   const setUser = useUserStore((state) => state.setUser);
+  const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
+  const desktopSearchRef = useClickOutside(() => {
+    setIsDesktopSearchOpen(false);
+  });
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("")
@@ -80,6 +84,8 @@ export function Navbar() {
   const fetchCurentUser = async () => {
     try {
       const response = await axiosInstance.get('user/get-current-user');
+
+      console.log("current user response", response)
 
       if (response.data.statusCode === 200) {
         setUser(response.data.data);
@@ -157,11 +163,11 @@ export function Navbar() {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
         router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        setSearchQuery("");
         setIsSearchOpen(false);
       }
     }
   }
+
   // Fetch all brands on component mount
   useEffect(() => {
     fetchBrands()
@@ -256,14 +262,7 @@ export function Navbar() {
       const categories = categoriesByBrand[brand._id] || []
 
       // FIXED: Consistent brand routes for non-logged in users
-      let brandRoute = '';
-      if (brand.name.toLowerCase().includes('point accessories')) {
-        brandRoute = '/point-accessories'; // FIXED: consistent route
-      } else if (brand.name.toLowerCase().includes('asra aromas')) {
-        brandRoute = '/asra-armos';
-      } else if (brand.name.toLowerCase().includes('matador wholesale')) {
-        brandRoute = '/metador-wholesale';
-      }
+      const brandRoute = `/brand/${brand.slug}`;
 
       // Organize categories by column (distribute evenly across 5 columns)
       const categoriesWithColumns = categories.map((cat, catIdx) => {
@@ -717,22 +716,40 @@ export function Navbar() {
                 <div className="hidden lg:flex lg:space-x-10 items-center">
 
                   {/* ADDED: Desktop Search Bar */}
-                  <div className="flex items-center relative w-64">
-                    <Input
-                      placeholder="Search products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyPress={handleSearch}
-                      className="pr-10 border-[#2d2c70] focus:border-[#E9098D]"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSearch}
-                      className="absolute right-0 h-full px-3 hover:bg-transparent"
-                    >
-                      <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
-                    </Button>
+                  {/* Desktop Search - Icon and Input */}
+                  <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
+                    {/* Search Icon */}
+                    {!isDesktopSearchOpen &&
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsDesktopSearchOpen(!isDesktopSearchOpen)}
+                        className="p-2 mr-2"
+                      >
+                        <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
+                      </Button>}
+
+                    {/* Search Input - Only show when isDesktopSearchOpen is true */}
+                    {isDesktopSearchOpen && currentUser && (
+                      <div className="flex items-center relative w-64">
+                        <Input
+                          placeholder="Search products..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyPress={handleSearch}
+                          className="pr-10 border-[#2d2c70] focus:border-[#E9098D]"
+                          autoFocus
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSearch}
+                          className="absolute right-0 h-full px-3 hover:bg-transparent"
+                        >
+                          <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
@@ -844,46 +861,33 @@ export function Navbar() {
                 </button>
 
                 {/* COMPANY Dropdown for Desktop */}
+                {/* // Update the COMPANY Dropdown for Desktop (around line 780)   */}
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
                   <div
                     className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     ref={companyDropdownRef}
                   >
                     <div className="py-1">
-                      <button
-                        onClick={() => {
-                          router.push('/metador-wholesale');
-                          setShowCompanyDropDown(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Metador Wholesale
-                      </button>
-                      {/* FIXED: Consistent Point Accessories route */}
-                      <button
-                        onClick={() => {
-                          router.push('/point-accessories');
-                          setShowCompanyDropDown(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Point Accessories
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push('/asra-armos');
-                          setShowCompanyDropDown(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Asra Armos
-                      </button>
+                      {/* Map through all brands */}
+                      {brands.map((brand) => (
+                        <button
+                          key={brand._id}
+                          onClick={() => {
+                            router.push(`/brand/${brand.slug}`);
+                            setShowCompanyDropDown(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
+                        >
+                          {brand.name}
+                        </button>
+                      ))}
+                      {/* Contact Us at the bottom */}
                       <button
                         onClick={() => {
                           router.push('/contact-us');
                           setShowCompanyDropDown(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
                       >
                         Contact Us
                       </button>
@@ -935,43 +939,29 @@ export function Navbar() {
                     )}
                   </button>
 
-                  {/* COMPANY Dropdown Menu - Only show if user is logged in */}
+                  {/* // Update the COMPANY Dropdown Menu for Mobile (around line 880) */}
                   {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
                     <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                      <button
-                        onClick={() => {
-                          router.push('/metador-wholesale');
-                          setIsMenuOpen(false);
-                        }}
-                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Metador Wholesale
-                      </button>
-                      {/* FIXED: Consistent Point Accessories route */}
-                      <button
-                        onClick={() => {
-                          router.push('/point-accessories');
-                          setIsMenuOpen(false);
-                        }}
-                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Point Accessories
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push('/asra-armos');
-                          setIsMenuOpen(false);
-                        }}
-                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        Asra Armos
-                      </button>
+                      {/* Map through all brands */}
+                      {brands.map((brand) => (
+                        <button
+                          key={brand._id}
+                          onClick={() => {
+                            router.push(`/brand/${brand.slug}`);
+                            setIsMenuOpen(false);
+                          }}
+                          className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                        >
+                          {brand.name}
+                        </button>
+                      ))}
+                      {/* Contact Us at the bottom */}
                       <button
                         onClick={() => {
                           router.push('/contact-us');
                           setIsMenuOpen(false);
                         }}
-                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
                       >
                         Contact Us
                       </button>

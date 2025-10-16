@@ -278,7 +278,7 @@ const ShoppingCartPopup = () => {
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item.product.eachPrice.toFixed(2)}</span>
+                          <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item?.amount?.toFixed(2)}</span>
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
                             <Check className="w-3 h-3 mr-1" />
                             {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}

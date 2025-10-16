@@ -223,7 +223,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             </thead>
             <tbody>
               {!showProducts && orders.map((order, index) => (
-                <tr key={order._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
                   <td
                     className="py-4 px-4 border-r hover:text-[#E9098D] cursor-pointer"

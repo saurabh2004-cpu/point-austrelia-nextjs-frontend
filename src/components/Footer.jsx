@@ -1,6 +1,39 @@
+
+'use client'
+import axiosInstance from "@/axios/axiosInstance";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export function Footer() {
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchBrands = async () => {
+    try {
+      const res = await axiosInstance.get('brand/get-brands-list')
+
+      console.log("brands response ", res.data.data)
+
+      if (res.data.statusCode === 200) {
+        setBrands(res.data.data)
+        setLoading(false)
+      } else {
+        setError(res.data.message)
+        setLoading(false)
+      }
+    } catch (error) {
+      setError(error.message)
+      console.error("Error fetching brands:", error)
+      setLoading(false)
+    }
+  }
+
+
+  useEffect(() => {
+    fetchBrands()
+  }, [])
+
   return (
     <footer className="bg-white border-t border-[#2d2c70] border-t-1 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -10,25 +43,26 @@ export function Footer() {
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">NAVIGATION</h3>
             <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[200px] lg:min-w-0 xl:min-w-[200px]">
               <li>
-                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
+                <a href="/" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Home
                 </a>
               </li>
-              <li>
-                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
-                  Matador Wholesale
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
-                  Asra Aromas
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-600 transition-colors hover:text-[#E9098D]">
-                  Point Accessories
-                </a>
-              </li>
+              {loading ? (
+                <li className="text-gray-400">Loading brands...</li>
+              ) : error ? (
+                <li className="text-red-500">Error loading brands</li>
+              ) : (
+                brands.map((brand) => (
+                  <li key={brand._id}>
+                    <a
+                      href={`/brand/${brand.slug}`}
+                      className="text-gray-600 transition-colors hover:text-[#E9098D]"
+                    >
+                      {brand.name}
+                    </a>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 
@@ -37,12 +71,12 @@ export function Footer() {
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
             <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
               <li>
-                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
+                <a href="/login" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Login
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
+                <a href="/sign-up" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Register for wholesale access
                 </a>
               </li>
@@ -52,7 +86,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
+                <a href="/contact-us" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Contact us
                 </a>
               </li>
@@ -130,14 +164,14 @@ export function Footer() {
 
               <div className="flex space-x-2 pt-6">
                 <Image
-                  src="/account-details/payment-images.png" 
+                  src="/account-details/payment-images.png"
                   alt="Matador Wholesale Logo"
                   width={60}
                   height={60}
                   className="object-contain"
                 />
                 <Image
-                  src="/account-details/visa-img-1.png" 
+                  src="/account-details/visa-img-1.png"
                   alt="Matador Wholesale Logo"
                   width={60}
                   height={60}

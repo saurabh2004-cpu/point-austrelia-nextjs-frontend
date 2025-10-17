@@ -1,9 +1,12 @@
 'use client'
-import React from 'react';
+import React, { useEffect } from 'react';
 import { CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation'
 import axiosInstance from '@/axios/axiosInstance';
+import useCartStore from '@/zustand/cartPopup';
+import { Navbar } from '@/components/Navbar';
+import useUserStore from '@/zustand/user';
 
 
 const OrderConfirmationUI = () => {
@@ -11,6 +14,10 @@ const OrderConfirmationUI = () => {
     const params = useParams()
     const documentNumber = params.documentNumber
     const router = useRouter();
+    const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const currentUser = useUserStore((state) => state.user);
+
+    console.log("current user in thank you", currentUser)
 
 
     const handlePurchaseHistoryClick = () => {
@@ -32,6 +39,29 @@ const OrderConfirmationUI = () => {
         }
     }
 
+
+    const ClearCartItems = async () => {
+        try {
+
+            const res = await axiosInstance.delete(`cart/clear-cart/${currentUser._id}`);
+
+            console.log("clear cart in thankl you page ", res)
+
+            if (res.data.statusCode === 200) {
+                setCartItemsCount(0);
+            }
+            else {
+                console.error('Error clearing cart items:', error);
+            }
+        } catch (error) {
+            console.error('Error fetching sales order by document number:', error);
+        }
+    }
+
+    useEffect(() => {
+        ClearCartItems();
+    }, []);
+
     React.useEffect(() => {
         if (documentNumber) {
             fetchSalesOrderByDocumentNumber();
@@ -51,112 +81,114 @@ const OrderConfirmationUI = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-spartan">
-            <div className="max-w-2xl mx-auto">
-                {/* Main Card */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="p-6 sm:p-8 ">
-                        {/* Header with Check Icon and Title */}
-                        <div className="text-center mb-6 ">
-                            <div className="flex justify-center  mb-4 flex items-center space-x-5 align-middle justify-start">
-                                <Image
-                                    src="/account-details/Check-img-1.png"
-                                    alt="Matador Wholesale Logo "
-                                    width={55}
-                                    height={55}
-                                    className="object-contain  h-8 w-8 xl:w-[55px] xl:h-[55px]"
-                                />
-                                <h1 className="md:text-[3rem]  text-[22px] sm:text-[2rem] font-semibold ">Thanks for shopping!</h1>
-                            </div>
-                        </div>
-
-                        {/* Order Reference */}
-                        <div className="mb-6">
-                            <p className="text-base font-semibold ">
-                                <span className="">Order Reference No: </span>
-                                <span className="">{orderData.documentNumber}</span>
-                            </p>
-                        </div>
-
-                        {/* Order Details */}
-                        <div className="space-y-3">
-                            {/* Shipping Address */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">Shipping Address</h2>
-                                <div className="text-[14px]  space-y-1 font-medium">
-                                    <p className="font-semibold text-gray-900">{orderData.customerName}</p>
-                                    <p >{orderData.shippingAddress}</p>
+        <>
+            <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-spartan">
+                <div className="max-w-2xl mx-auto">
+                    {/* Main Card */}
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="p-6 sm:p-8 ">
+                            {/* Header with Check Icon and Title */}
+                            <div className="text-center mb-6 ">
+                                <div className="flex justify-center  mb-4 flex items-center space-x-5 align-middle justify-start">
+                                    <Image
+                                        src="/account-details/Check-img-1.png"
+                                        alt="Matador Wholesale Logo "
+                                        width={55}
+                                        height={55}
+                                        className="object-contain  h-8 w-8 xl:w-[55px] xl:h-[55px]"
+                                    />
+                                    <h1 className="md:text-[3rem]  text-[22px] sm:text-[2rem] font-semibold ">Thanks for shopping!</h1>
                                 </div>
                             </div>
 
-                            {/* Billing Address */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Billing Address</h2>
-                                <div className="text-[14px]  space-y-1 font-medium">
-                                    <p className="font-semibold text-gray-900">{orderData.customerName}</p>
-                                    <p >{orderData.billingAddress}</p>
-                                </div>
-                            </div>
-
-                            {/* Payment Method */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Payment Method</h2>
-                                <p className="text-[14px] ">{orderData.salesChannel}</p>
-                            </div>
-
-                            {/* Delivery Method */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Delivery Method</h2>
-                                <p className="text-[14px] ">Standard Delivery</p>
-                            </div>
-
-                            {/* Order Comment */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">Order Comment</h2>
-                                <p className="text-[14px] ">{orderData.comments || "No comments provided"}</p>
-                            </div>
-
-                            {/* Order Summary */}
-                            <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Order Summary</h2>
-                                <div className="text-[14px] space-y-2">
-                                    <div className="flex justify-between">
-                                        <span>SKU:</span>
-                                        <span>{orderData.itemSku}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Pack Type:</span>
-                                        <span>{orderData.packType}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Pack Quantity:</span>
-                                        <span>{orderData.packQuantity}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>Units Quantity:</span>
-                                        <span>{orderData.unitsQuantity}</span>
-                                    </div>
-                                    <div className="flex justify-between font-semibold border-t pt-2">
-                                        <span>Total Amount:</span>
-                                        <span>${orderData.amount?.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Footer Message */}
-                            <div className="pt-4 border-t text-[14px] border-gray-100">
-                                <p className=" font-medium text-gray-600">
-                                    You want see your older details?
-                                    <button onClick={handlePurchaseHistoryClick} className="text-[#2D2C70] hover:underline cusror-pointer font-semibold ml-1 ">
-                                        Go back to purchase history
-                                    </button>
+                            {/* Order Reference */}
+                            <div className="mb-6">
+                                <p className="text-base font-semibold ">
+                                    <span className="">Order Reference No: </span>
+                                    <span className="">{orderData.documentNumber}</span>
                                 </p>
+                            </div>
+
+                            {/* Order Details */}
+                            <div className="space-y-3">
+                                {/* Shipping Address */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">Shipping Address</h2>
+                                    <div className="text-[14px]  space-y-1 font-medium">
+                                        <p className="font-semibold text-gray-900">{orderData.customerName}</p>
+                                        <p >{orderData.shippingAddress}</p>
+                                    </div>
+                                </div>
+
+                                {/* Billing Address */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Billing Address</h2>
+                                    <div className="text-[14px]  space-y-1 font-medium">
+                                        <p className="font-semibold text-gray-900">{orderData.customerName}</p>
+                                        <p >{orderData.billingAddress}</p>
+                                    </div>
+                                </div>
+
+                                {/* Payment Method */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Payment Method</h2>
+                                    <p className="text-[14px] ">{orderData.salesChannel}</p>
+                                </div>
+
+                                {/* Delivery Method */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Delivery Method</h2>
+                                    <p className="text-[14px] ">Standard Delivery</p>
+                                </div>
+
+                                {/* Order Comment */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">Order Comment</h2>
+                                    <p className="text-[14px] ">{orderData.comments || "No comments provided"}</p>
+                                </div>
+
+                                {/* Order Summary */}
+                                <div>
+                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">Order Summary</h2>
+                                    <div className="text-[14px] space-y-2">
+                                        <div className="flex justify-between">
+                                            <span>SKU:</span>
+                                            <span>{orderData.itemSku}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Pack Type:</span>
+                                            <span>{orderData.packType}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Pack Quantity:</span>
+                                            <span>{orderData.packQuantity}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Units Quantity:</span>
+                                            <span>{orderData.unitsQuantity}</span>
+                                        </div>
+                                        <div className="flex justify-between font-semibold border-t pt-2">
+                                            <span>Total Amount:</span>
+                                            <span>${orderData.amount?.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Footer Message */}
+                                <div className="pt-4 border-t text-[14px] border-gray-100">
+                                    <p className=" font-medium text-gray-600">
+                                        You want see your older details?
+                                        <button onClick={handlePurchaseHistoryClick} className="text-[#2D2C70] hover:underline cusror-pointer font-semibold ml-1 ">
+                                            Go back to purchase history
+                                        </button>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

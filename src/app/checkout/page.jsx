@@ -229,6 +229,7 @@ const CheckoutComponent = () => {
     const [latestSalesOrderDocumentNumber, setLatestSalesOrderDocumentNumber] = React.useState('');
     const [documentNumber, setDocumentNumber] = React.useState('');
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const [loadingCheckOut, setLoadingCheckOut] = useState(false);
 
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -427,7 +428,6 @@ const CheckoutComponent = () => {
     }, [selectedShippingAddress, selectedBillingAddress, currentUser]);
 
     // Update submitForm with cart items
-    // Update submitForm with cart items
     useEffect(() => {
         console.log("checkout cart items:", cartItems);
         if (cartItems.length > 0) {
@@ -451,7 +451,6 @@ const CheckoutComponent = () => {
         }
     }, [cartItems]);
 
-    // Calculate totals from cart items
     // Calculate totals from cart items
     const calculateTotals = () => {
         let subtotalAmount = 0;
@@ -495,6 +494,7 @@ const CheckoutComponent = () => {
     }, [latestSalesOrderDocumentNumber]);
 
     const handleCompleteCheckout = async () => {
+        setLoadingCheckOut(true);
         try {
             const orderPromises = submitForm.items.map((item, index) => {
                 const formdata = {
@@ -526,13 +526,9 @@ const CheckoutComponent = () => {
 
             if (allSucceeded) {
                 console.log("All orders placed successfully");
-                const res = await axiosInstance.delete(`cart/clear-cart/${currentUser._id}`);
+                setLoadingCheckOut(false);
+                setCartItemsCount(0);
 
-                if (res.data.statusCode === 200) {
-                    setError(null);
-                    setCartItemsCount(0);
-                    setCartItems([]);
-                }
                 router.push(`/thank-you/${documentNumber}`);
             } else {
                 const failedOrders = results.filter(res => res.data.statusCode !== 200);
@@ -543,6 +539,8 @@ const CheckoutComponent = () => {
         } catch (error) {
             console.error("Error placing orders: ", error);
             setError("An error occurred while placing your order. Please try again.");
+        }finally {
+            setLoadingCheckOut(false);
         }
     };
 
@@ -820,7 +818,7 @@ const CheckoutComponent = () => {
                                         className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black"
                                         onClick={handleCompleteCheckout}
                                     >
-                                        Complete Checkout
+                                        {loadingCheckOut ? 'Completing Checkout...' : "Complete Checkout"}
                                     </button>
                                 }
 
@@ -840,12 +838,12 @@ const CheckoutComponent = () => {
 
                                             return (
                                                 <div key={item._id} className="flex items-start space-x-3 p-2 justify-between">
-                                                    <div className="w-12 h-12 bg-gray-100 mt-14 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <div className="w-28 h-28  mt-14 rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
                                                             src={item.product.images}
                                                             alt={item.product.ProductName}
-                                                            width={48}
-                                                            height={48}
+                                                            width={98}
+                                                            height={98}
                                                             className="object-contain"
                                                         />
                                                     </div>

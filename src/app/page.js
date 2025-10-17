@@ -3,41 +3,43 @@
 import BrandCards from "@/components/Home-components/BrandCards";
 import Carousel from "@/components/Home-components/Carousel";
 import useUserStore from "@/zustand/user";
-import MetaTags from "../components/metaTags/metaTags";
-// import { useMetaData } from "@/hooks/useMetaData";
 import { Navbar } from "@/components/Navbar";
+import { useEffect } from "react";
+import ShoppingCartPopup from "@/components/CartPopup";
+import { useCartPopupStateStore } from "@/zustand/cartPopupState";
 
 export default function Home() {
   const currentUser = useUserStore((state) => state.user);
-  console.log("current user:", currentUser);
-  // const { metaData, loading } = useMetaData('home');
+  const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
 
-  // Add loading state handling
-  // if (loading) {
-  //   return (
-  //     <>
-  //       {/* Basic meta tags while loading */}
-  //       <MetaTags
-  //         title="Loading..."
-  //         description="Please wait while we load the page"
-  //       />
-  //       <div className="min-h-screen flex items-center justify-center">
-  //         <div>Loading...</div>
-  //       </div>
-  //     </>
-  //   );
-  // }
+  // Global click outside handler for cart popup
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const cartPopup = document.querySelector('[data-cart-popup]');
+      const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
+
+      if (showCartPopup &&
+        cartPopup &&
+        !cartPopup.contains(event.target) &&
+        (!navbarCartButton || !navbarCartButton.contains(event.target))) {
+        setShowCartPopup(false);
+      }
+    };
+
+    if (showCartPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showCartPopup, setShowCartPopup]);
 
   return (
     <>
-      {/* <MetaTags
-        title={metaData?.title || "Default Home Title"}
-        description={metaData?.description || "Default home description"}
-        keywords={metaData?.keywords || "default, keywords"}
-        ogImage={metaData?.ogImage}
-      /> */}
-
-      <Navbar />
+      {/* <Navbar /> */}
       <BrandCards />
       <Carousel />
     </>

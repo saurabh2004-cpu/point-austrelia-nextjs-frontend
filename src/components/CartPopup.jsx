@@ -122,7 +122,8 @@ const ShoppingCartPopup = () => {
         packQuentity: packQuantity,
         unitsQuantity: unitsQuantity,
         totalQuantity: totalQuantity,
-        packType: selectedPack ? selectedPack.name : 'Each'
+        packType: selectedPack ? selectedPack.name : 'Each',
+        amount: item.amount
       });
 
       if (response.data.statusCode === 200) {

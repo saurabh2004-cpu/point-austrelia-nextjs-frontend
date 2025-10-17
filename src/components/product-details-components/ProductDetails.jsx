@@ -9,6 +9,7 @@ import { div } from "framer-motion/client"
 import { sub } from "framer-motion/m"
 import { Heart, ChevronLeft, ChevronRight, Minus, Plus, Check } from "lucide-react"
 import Image from "next/image"
+import { set } from "nprogress"
 import { useEffect, useState } from "react"
 
 export default function ProductDetail() {
@@ -43,6 +44,22 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(false)
   const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
   const [wishListItems, setWishlistItems] = useState([])
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+
+
+  window.addEventListener("popstate", function (event) {
+    setFilters({
+      categoryId,
+      subCategoryId,
+      subCategoryTwoId,
+      brandId,
+      categorySlug,
+      subCategorySlug,
+      subCategoryTwoSlug,
+      brandSlug,
+      productID: null
+    });
+  });
 
 
   const relatedProducts = [
@@ -171,8 +188,8 @@ export default function ProductDetail() {
 
   const getPageTitle = () => {
     if (subCategoryTwoSlug) return subCategoryTwoSlug?.split('-').join(' ').toUpperCase();
-    if (subCategorySlug) return subCategorySlug?.split('-').join(' ').toUpperCase();
-    if (categorySlug) return categorySlug?.split('-').join(' ').toUpperCase();
+    if (subCategorySlug) return `${subCategorySlug?.split('-').join(' ').toUpperCase()}/${product.ProductName}`;
+    if (categorySlug) return `${brandSlug?.split('-').join(' ').toUpperCase()}/${product.ProductName}`;
     if (brandSlug) return brandSlug?.split('-').join(' ').toUpperCase();
     return "ALL PRODUCTS";
   };
@@ -464,6 +481,7 @@ export default function ProductDetail() {
         return
       }
 
+      setWishlistLoading(true) // Start loading
 
       const response = await axiosInstance.post('wishlist/add-to-wishlist', {
         customerId: currentUser._id,
@@ -480,6 +498,8 @@ export default function ProductDetail() {
     } catch (error) {
       console.error('Error managing product in wishlist:', error)
       setError('Error managing wishlist')
+    } finally {
+      setWishlistLoading(false) // End loading regardless of success/error
     }
   }
 
@@ -502,9 +522,12 @@ export default function ProductDetail() {
     }
   }
 
+
   const isInWishlist = (productId) => {
     return wishListItems.some(item => item.productId === productId);
   };
+
+
 
   return (
     <>
@@ -523,9 +546,10 @@ export default function ProductDetail() {
       <div className="bg-white justify-items-center">
         <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 justify-items-center">
           <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5">
-            {categorySlug.split("/")[1].toUpperCase() ||
+            {/* {categorySlug.split("/")[1].toUpperCase() ||
               subCategorySlug.split("/")[2].toUpperCase() ||
-              subCategoryTwoSlug.split("/")[3].toUpperCase()}
+              subCategoryTwoSlug.split("/")[3].toUpperCase()} */}
+            {product?.ProductName}
           </h1>
         </div>
       </div>
@@ -716,12 +740,14 @@ export default function ProductDetail() {
             </div>
 
             {/* Action Buttons - Row 1 */}
-            <div className="flex items-center space-x-7">
-              <div className="flex space-x-5 w-full">
+            <div className="space-y-[17px]">
+              {/* Add to Cart and Wishlist Row - Only show when NOT in cart */}
+
+              <div className="flex items-center space-x-5">
                 <button
                   className="flex items-center border border-black text-white bg-[#46BCF9] xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 group disabled:bg-gray-400 disabled:border-gray-400"
                   onClick={handleAddToCart}
-                  disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
+                  disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading || !!stockError}
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -740,28 +766,54 @@ export default function ProductDetail() {
                   )}
                 </button>
 
-                <button onClick={() => handleAddToWishList(product._id)} className=" flex items-center justify-center rounded-full ">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill={isInWishlist ? "red" : "#46BCF9"}>
-                    <path d="M10 6.56837L11.6352 4.24626C12.2721 3.34193 13.3179 2.75781 14.5 2.75781C16.433 2.75781 18 4.32481 18 6.25781C18 9.13661 16.0407 11.8793 13.643 14.0936C12.4877 15.1605 11.3237 16.0181 10.4451 16.6099C10.2861 16.717 10.1371 16.8149 9.9999 16.9034C9.8627 16.8149 9.7137 16.717 9.5547 16.6099C8.6761 16.0182 7.51216 15.1606 6.35685 14.0936C3.95926 11.8794 2 9.13661 2 6.25781C2 4.32481 3.567 2.75781 5.5 2.75781C6.68209 2.75781 7.72794 3.34193 8.3648 4.24626L10 6.56837ZM8.5557 1.68407C7.68172 1.09901 6.63071 0.757812 5.5 0.757812C2.46243 0.757812 0 3.22024 0 6.25781C0 13.7578 9.9999 19.243 9.9999 19.243C9.9999 19.243 20 13.7578 20 6.25781C20 3.22024 17.5376 0.757812 14.5 0.757812C13.3693 0.757812 12.3183 1.09901 11.4443 1.68407C10.8805 2.06151 10.3903 2.54044 10 3.09473C9.6097 2.54044 9.1195 2.06151 8.5557 1.68407Z" fill="#E799A9" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            {isInCart &&
-              <div className="flex space-x-2 w-full">
-                <button className="flex-1 text-xs sm:text-sm border border-black font-semibold text-white  bg-[#2D2C70]  rounded-lg text-white py-2 flex justify-center items-center">
-                  Added <Check className="ml-2 h-4 w-4" />
-                </button>
                 <button
-                  className="flex-1 border border-black text-xs sm:text-sm bg-[#E799A9] font-semibold  rounded-lg text-white py-2 flex justify-center disabled:bg-gray-400"
-                  onClick={handleUpdateCart}
-                  disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading}
+                  onClick={() => handleAddToWishList(product._id)}
+                  className="flex items-center justify-center rounded-full"
+                  disabled={wishlistLoading}
                 >
-                  {loading ? 'Updating...' : 'Update'}
+                  <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
+                    {wishlistLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
+                    ) : wishListItems.some(item => item.product?._id === product._id) ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#E9098D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart">
+                        <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#D9D9D9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart">
+                        <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" />
+                      </svg>
+                    )}
+                  </div>
                 </button>
               </div>
-            }
+
+              {/* Added and Update Row - Only show when product is in cart */}
+              {isInCart && (
+                <div className="flex space-x-2 w-full">
+                  <button
+                    className="flex-1 text-xs sm:text-sm border disabled:bg-gray-400 bborder-[#2D2C70] text-white bg-[#2D2C70] font-semibold text-white  rounded-lg py-2 flex justify-center items-center"
+                    disabled
+                  >
+
+                    Added <Check className="ml-2 h-4 w-4" />
+                  </button>
+                  <button
+                    className="flex-1 border border-black text-xs sm:text-sm bg-[#E799A9] font-semibold rounded-lg text-white py-2 flex justify-center disabled:bg-gray-400"
+                    onClick={handleUpdateCart}
+                    disabled={isOutOfStock || totalRequestedQuantity > product.stockLevel || loading || !!stockError}
+                  >
+                    {loading ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+              )}
+
+              {/* Cart Info */}
+              {isInCart && cartItem && (
+                <div className="text-sm sm:text-base font-medium text-black hover:text-[#E9098D]">
+                  In Cart Quantity: {cartItem.unitsQuantity} ({cartItem.packType})
+                </div>
+              )}
+            </div>
 
             {/* Cart Info */}
             {isInCart && cartItem && (
@@ -801,12 +853,14 @@ export default function ProductDetail() {
             {relatedProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-lg p-4">
                 <div className="relative flex justify-center py-6 mb-4 border border-gray-200 rounded-xl">
-                  <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600">
-                    <button onClick={() => handleAddToCart(product)} className=" flex items-center justify-center rounded-full ">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20" fill={isInWishlist(product.id) ? 'red' : 'none'}>
-                        <path d="M10 6.56837L11.6352 4.24626C12.2721 3.34193 13.3179 2.75781 14.5 2.75781C16.433 2.75781 18 4.32481 18 6.25781C18 9.13661 16.0407 11.8793 13.643 14.0936C12.4877 15.1605 11.3237 16.0181 10.4451 16.6099C10.2861 16.717 10.1371 16.8149 9.9999 16.9034C9.8627 16.8149 9.7137 16.717 9.5547 16.6099C8.6761 16.0182 7.51216 15.1606 6.35685 14.0936C3.95926 11.8794 2 9.13661 2 6.25781C2 4.32481 3.567 2.75781 5.5 2.75781C6.68209 2.75781 7.72794 3.34193 8.3648 4.24626L10 6.56837ZM8.5557 1.68407C7.68172 1.09901 6.63071 0.757812 5.5 0.757812C2.46243 0.757812 0 3.22024 0 6.25781C0 13.7578 9.9999 19.243 9.9999 19.243C9.9999 19.243 20 13.7578 20 6.25781C20 3.22024 17.5376 0.757812 14.5 0.757812C13.3693 0.757812 12.3183 1.09901 11.4443 1.68407C10.8805 2.06151 10.3903 2.54044 10 3.09473C9.6097 2.54044 9.1195 2.06151 8.5557 1.68407Z" fill="#E799A9" />
-                      </svg>
-                    </button>
+                  <button
+                    onClick={() => handleAddToWishList(product.id)}
+                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                    disabled={wishlistLoading}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 20 20" fill={wishListItems.some(item => item.product?._id === product.id) ? '#E9098D' : 'none'}>
+                      <path d="M10 6.56837L11.6352 4.24626C12.2721 3.34193 13.3179 2.75781 14.5 2.75781C16.433 2.75781 18 4.32481 18 6.25781C18 9.13661 16.0407 11.8793 13.643 14.0936C12.4877 15.1605 11.3237 16.0181 10.4451 16.6099C10.2861 16.717 10.1371 16.8149 9.9999 16.9034C9.8627 16.8149 9.7137 16.717 9.5547 16.6099C8.6761 16.0182 7.51216 15.1606 6.35685 14.0936C3.95926 11.8794 2 9.13661 2 6.25781C2 4.32481 3.567 2.75781 5.5 2.75781C6.68209 2.75781 7.72794 3.34193 8.3648 4.24626L10 6.56837ZM8.5557 1.68407C7.68172 1.09901 6.63071 0.757812 5.5 0.757812C2.46243 0.757812 0 3.22024 0 6.25781C0 13.7578 9.9999 19.243 9.9999 19.243C9.9999 19.243 20 13.7578 20 6.25781C20 3.22024 17.5376 0.757812 14.5 0.757812C13.3693 0.757812 12.3183 1.09901 11.4443 1.68407C10.8805 2.06151 10.3903 2.54044 10 3.09473C9.6097 2.54044 9.1195 2.06151 8.5557 1.68407Z" fill="#E799A9" />
+                    </svg>
                   </button>
                   <img
                     src="/product-listing-images/product-detail-1.png"

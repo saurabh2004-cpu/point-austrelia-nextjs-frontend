@@ -369,6 +369,8 @@ export default function MyAccount() {
         newPassword: passwordForm.newPassword,
       });
 
+      console.log("change password response", response)
+
       if (response.data.statusCode === 200) {
         console.log("Password changed successfully")
         setError('')
@@ -1107,7 +1109,7 @@ export default function MyAccount() {
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent transition-colors"
-                    placeholder="Enter phone number"
+                    placeholder="Enter New Password"
                   />
                 </div>
 

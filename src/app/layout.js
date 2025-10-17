@@ -37,7 +37,7 @@ export default function RootLayout({ children }) {
         className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Suspense fallback={<div>Loading...</div>}>
-          {/* <Navbar /> */}
+          <Navbar />
           <LoadingBar />
           {children}
           <Footer />

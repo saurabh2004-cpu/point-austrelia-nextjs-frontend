@@ -33,7 +33,7 @@ const page = () => {
 
     return (
         <>
-            <Navbar />
+            {/* <Navbar /> */}
             <HeroSection />
             <CategoriesGrid />
             <BrandsGrid />

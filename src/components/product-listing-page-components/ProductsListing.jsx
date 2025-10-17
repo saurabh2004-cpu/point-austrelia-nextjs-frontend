@@ -11,6 +11,7 @@ import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import ProductDetail from '@/components/product-details-components/ProductDetails'
+import { sub } from "framer-motion/client"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Newest")
@@ -224,12 +225,17 @@ const ProductListing = () => {
     }
 
     const handleProductClick = (productName, productID) => {
+
+
         setFilters({
-            categorySlug: categorySlug || null,
+            categorySlug: categorySlug,
             subCategorySlug: subCategorySlug || null,
             subCategoryTwoSlug: subCategoryTwoSlug || null,
             brandSlug: brandSlug || null,
-
+            brandId: brandId || null,
+            categoryId: categoryId || null,
+            subCategoryId: subCategoryId || null,
+            subCategoryTwoId: subCategoryTwoId || null,
             productID: productID
         })
         const productSlug = productName.replace(/\s+/g, '-').toLowerCase();
@@ -451,6 +457,9 @@ const ProductListing = () => {
         }
     }
 
+
+
+
     // Fetch categories for sidebar
     const fetchCategoriesForBrand = async () => {
         if (!brandId) return
@@ -624,7 +633,7 @@ const ProductListing = () => {
     // Get page title based on current filter
     const getPageTitle = () => {
         if (subCategoryTwoSlug) return `${brandSlug}/${subCategoryTwoSlug?.split('/')[2]}`;
-        if (subCategorySlug) return `${brandSlug}/${subCategorySlug?.split('/')[1]}`;
+        if (subCategorySlug) return `${subCategorySlug}`;
         if (categorySlug) return categorySlug?.split('-').join(' ').toUpperCase();
         return "ALL PRODUCTS";
     };
@@ -904,6 +913,12 @@ const ProductListing = () => {
 
     const sortedProducts = sortProductsBySequenceAndDate(products);
 
+    // useEffect(() => {
+    //     if (productID) {
+    //         setFilters({ productID: null });
+    //     }
+    // }, [productID]);
+
     if (!productID) {
         return (
             <div className="min-h-screen">
@@ -915,7 +930,14 @@ const ProductListing = () => {
                         </nav>
 
                     </div>
-                    <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-3 sm:pb-5 tracking-widest">{brandSlug?.split('-').join(' ').toUpperCase()}</h1>
+                    <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-3 sm:pb-5 tracking-widest">
+                        {
+                            subCategoryTwoSlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                            subCategorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                            categorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                            brandSlug?.split('-').join(' ').toUpperCase()
+                        }
+                    </h1>
                 </div>
 
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
@@ -941,6 +963,7 @@ const ProductListing = () => {
                         {/* // Sidebar Filter */}
                         {brandId && (
                             <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
+                                <h1 className="px-2 text-lg font-bold ">{categorySlug?.split('/').pop().split('-').join(' ').toUpperCase()}</h1>
                                 {loadingCategories ? (
                                     <div className="py-2 text-sm text-gray-500">Loading categories...</div>
                                 ) : categories.length > 0 ? (

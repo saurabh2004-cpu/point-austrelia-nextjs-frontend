@@ -23,6 +23,7 @@ const ShoppingCart = () => {
     const currentUser = useUserStore((state) => state.user);
     const router = useRouter();
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+    const cartItemsCount = useCartStore((state) => state.currentItems);
     const [isTaxShippingOpen, setIsTaxShippingOpen] = useState(false);
     const [totals, setTotals] = useState({
         subtotal: 0,
@@ -40,8 +41,45 @@ const ShoppingCart = () => {
         totalItems: 0
     });
 
-    // Confirmation popup state
+    // Confirmation popup states
     const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
+    const [showRemoveItemConfirm, setShowRemoveItemConfirm] = useState(false);
+    const [itemToRemove, setItemToRemove] = useState(null);
+
+    const checkAuth = useUserStore((state) => state.checkAuth);
+
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            setLoading(true);
+
+            // If we have a user, allow access
+            if (currentUser) {
+                setLoading(false);
+                return;
+            }
+
+            // If no user in store, check if user is actually authenticated
+            try {
+                const isAuthenticated = await checkAuth();
+                if (isAuthenticated) {
+                    setLoading(false);
+                    return;
+                } else {
+                    // If not authenticated, redirect to login
+                    router.push('/login');
+                    return;
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                // If auth check fails, redirect to login
+                router.push('/login');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        checkAuthentication();
+    }, [currentUser, checkAuth, router]);
 
     // Calculate out of stock items
     const outOfStockItems = cartItems.filter(item => item.product.stockLevel <= 0);
@@ -64,46 +102,6 @@ const ShoppingCart = () => {
     // Get items that exceed stock level
     const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
     const exceedingStockCount = itemsExceedingStock.length;
-
-    // Calculate total quantity for display
-    // const calculateTotalQuantity = (item) => {
-    //     return item.packQuentity * item.unitsQuantity;
-    // };
-
-    // // Calculate tax for an item using display quantities
-    // const calculateItemTax = (item) => {
-    //     if (!item.product.taxable || !item.product.taxPercentages) {
-    //         return 0;
-    //     }
-    //     const itemPrice = item.product.eachPrice || 0;
-    //     const totalQuantity = calculateDisplayTotalQuantity(item);
-    //     const subtotal = itemPrice * totalQuantity;
-    //     return (subtotal * item.product.taxPercentages) / 100;
-    // };
-
-    // // Calculate subtotal (without tax) using display quantities
-    // const subtotal = cartItems.reduce((sum, item) => {
-    //     const itemPrice = item.product.eachPrice || 0;
-    //     const totalQuantity = calculateDisplayTotalQuantity(item);
-    //     return sum + (itemPrice * totalQuantity);
-    // }, 0);
-
-    // // Calculate total tax using display quantities
-    // const totalTax = cartItems.reduce((sum, item) => {
-    //     if (!item.product.taxable || !item.product.taxPercentages) {
-    //         return sum;
-    //     }
-    //     const itemPrice = item.product.eachPrice || 0;
-    //     const totalQuantity = calculateDisplayTotalQuantity(item);
-    //     const subtotal = itemPrice * totalQuantity;
-    //     return sum + ((subtotal * item.product.taxPercentages) / 100);
-    // }, 0);
-
-    // // Calculate total (subtotal + tax)
-    // const total = subtotal + totalTax;
-
-    // // Calculate total items count using display quantities
-    // const totalItems = cartItems.reduce((sum, item) => sum + calculateDisplayTotalQuantity(item), 0);
 
     const handleCheckoutclick = () => {
         router.push('/checkout');
@@ -283,7 +281,8 @@ const ShoppingCart = () => {
                 packQuentity: packQuantity,
                 unitsQuantity: newQty,
                 totalQuantity: packQuantity * newQty,
-                packType: selectedPack ? selectedPack.name : 'Each'
+                packType: selectedPack ? selectedPack.name : 'Each',
+                amount: item.amount
             });
 
             console.log("update cart item", response)
@@ -320,21 +319,27 @@ const ShoppingCart = () => {
         }
     };
 
-    // Remove item from cart
-    const removeCartItem = async (customerId, productId) => {
-        if (!currentUser || !currentUser._id) {
+    // Show confirmation for removing single item
+    const handleRemoveItemClick = (item) => {
+        setItemToRemove(item);
+        setShowRemoveItemConfirm(true);
+    };
+
+    // Remove item from cart (after confirmation)
+    const removeCartItem = async () => {
+        if (!currentUser || !currentUser._id || !itemToRemove) {
             setError("Please login to remove cart items");
             return;
         }
 
-        setUpdatingItems(prev => ({ ...prev, [productId]: true }));
+        setUpdatingItems(prev => ({ ...prev, [itemToRemove.product._id]: true }));
 
         try {
-            const response = await axiosInstance.put(`cart/remove-from-cart/${customerId}/${productId}`);
+            const response = await axiosInstance.put(`cart/remove-from-cart/${currentUser._id}/${itemToRemove.product._id}`);
 
             console.log("remove cart item", response)
             if (response.data.statusCode === 200) {
-                setCartItems(prevItems => prevItems.filter(item => item.product._id !== productId));
+                setCartItems(prevItems => prevItems.filter(item => item.product._id !== itemToRemove.product._id));
                 setCartItemsCount(response.data.data.cartItems.length);
                 setError(null);
             } else {
@@ -344,8 +349,16 @@ const ShoppingCart = () => {
             console.error('Error removing cart item:', error);
             setError('An error occurred while removing cart item');
         } finally {
-            setUpdatingItems(prev => ({ ...prev, [productId]: false }));
+            setUpdatingItems(prev => ({ ...prev, [itemToRemove.product._id]: false }));
+            setShowRemoveItemConfirm(false);
+            setItemToRemove(null);
         }
+    };
+
+    // Close remove item confirmation
+    const handleCancelRemoveItem = () => {
+        setShowRemoveItemConfirm(false);
+        setItemToRemove(null);
     };
 
     // Move to wishlist
@@ -368,10 +381,7 @@ const ShoppingCart = () => {
 
             if (wishlistResponse.data.statusCode === 200) {
                 // Remove from cart after successfully adding to wishlist
-                const cartResponse = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
-                if (cartResponse.data.statusCode === 200 && cartResponse.data.data._id) {
-                    await removeCartItem(cartResponse.data.data._id, item.product._id);
-                }
+                handleRemoveItemClick(item);
                 setError(null);
             } else {
                 setError(wishlistResponse.data.message || "Failed to move to wishlist");
@@ -398,6 +408,13 @@ const ShoppingCart = () => {
                 setError(null);
                 setCartItemsCount(0);
                 setCartItems([]);
+                setTotals({
+                    subtotal: 0,
+                    tax: 0,
+                    grandTotal: 0,
+                    totalQuantity: 0,
+                    totalItems: 0
+                });
                 setShowClearCartConfirm(false); // Close confirmation popup
             } else {
                 setError(res.data.message)
@@ -427,9 +444,17 @@ const ShoppingCart = () => {
         fetchCustomersCart(1, false);
     }, [currentUser]);
 
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <div>Loading...</div>
+            </div>
+        );
+    }
+
     return (
         <>
-            <Navbar />
+            {/* <Navbar /> */}
             <div className="bg-white justify-items-center pt-6 font-spartan">
                 <div className="max-w-8xl mx-auto px-2  lg:px-6 xl:px-8 ">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
@@ -444,7 +469,7 @@ const ShoppingCart = () => {
             <div className="px-6 md:px-0  md:max-w-7xl mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
-                    <span className="text-[#2D2C70] ml-2">({cartItems.length} Products, {totals.totalItems} Items)</span>
+                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {cartItemsCount} Items)</span>
                 </h1>
             </div>
 
@@ -695,12 +720,7 @@ const ShoppingCart = () => {
                                                                         </button>
 
                                                                         <button
-                                                                            onClick={async () => {
-                                                                                const cartResponse = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
-                                                                                if (cartResponse.data.statusCode === 200 && cartResponse.data.data._id) {
-                                                                                    removeCartItem(cartResponse.data.data._id, item.product._id);
-                                                                                }
-                                                                            }}
+                                                                            onClick={() => handleRemoveItemClick(item)}
                                                                             disabled={isLoading}
                                                                             className='xl:hidden flex h-8 w-9 border border-[#E9098D] rounded-full items-center justify-center disabled:opacity-50'
                                                                         >
@@ -711,7 +731,7 @@ const ShoppingCart = () => {
                                                                     </div>
 
                                                                     <button
-                                                                        onClick={() => removeCartItem(currentUser._id, item.product._id)}
+                                                                        onClick={() => handleRemoveItemClick(item)}
                                                                         disabled={isLoading}
                                                                         className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50"
                                                                     >
@@ -786,12 +806,27 @@ const ShoppingCart = () => {
                                             </div>
                                         </div>
 
-                                        {cartItems.map((item) => (
-                                            <div key={item._id} className="flex justify-between text-sm">
-                                                <span className="text-[14px] text-[500] text-[#000000]/80">{item.product.commerceCategoriesOne?.name || 'N/A'}</span>
-                                                <span className="text-[14px] font-medium">${(item.product.eachPrice * calculateDisplayTotalQuantity(item)).toFixed(2)}</span>
-                                            </div>
-                                        ))}
+                                        {(() => {
+                                            // Group items by brand
+                                            const brandTotals = {};
+                                            cartItems.forEach(item => {
+                                                const brandName = item.product.commerceCategoriesOne?.name || 'No Brand';
+                                                const itemTotal = item.product.eachPrice * calculateDisplayTotalQuantity(item);
+
+                                                if (!brandTotals[brandName]) {
+                                                    brandTotals[brandName] = 0;
+                                                }
+                                                brandTotals[brandName] += itemTotal;
+                                            });
+
+                                            // Convert to array and render
+                                            return Object.entries(brandTotals).map(([brandName, total]) => (
+                                                <div key={brandName} className="flex justify-between text-sm">
+                                                    <span className="text-[14px] text-[500] text-[#000000]/80">{brandName}</span>
+                                                    <span className="text-[14px] font-medium">${total.toFixed(2)}</span>
+                                                </div>
+                                            ));
+                                        })()}
 
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">
@@ -800,8 +835,6 @@ const ShoppingCart = () => {
                                                 <span className="text-[#2D2C70]">${totals.grandTotal.toFixed(2)}</span>
                                             </div>
                                         </div>
-
-
 
                                         {/* Stock Issues Warning in Summary */}
                                         {(exceedingStockCount > 0 || outOfStockCount > 0) && (
@@ -933,6 +966,39 @@ const ShoppingCart = () => {
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                             >
                                 Clear Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Remove Item Confirmation Popup */}
+            {showRemoveItemConfirm && itemToRemove && (
+                <div className="fixed inset-0 bg-[#000000]/10 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+                        <div className="flex items-center mb-4">
+                            <div className="flex-shrink-0">
+                                <AlertTriangle className="h-6 w-6 text-yellow-500" />
+                            </div>
+                            <h3 className="text-lg font-semibold ml-3">Remove Item</h3>
+                        </div>
+
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to remove "<span className="font-semibold">{itemToRemove.product.ProductName}</span>" from your cart?
+                        </p>
+
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={handleCancelRemoveItem}
+                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={removeCartItem}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Remove Item
                             </button>
                         </div>
                     </div>

@@ -7,8 +7,9 @@ import axiosInstance from '@/axios/axiosInstance';
 import useUserStore from '@/zustand/user';
 import useWishlistStore from '@/zustand/wishList';
 import { Navbar } from '@/components/Navbar';
+import { useRouter } from 'next/navigation';
 
-// Move ProductCard outside the main component to prevent re-creation on every render
+
 const ProductCard = ({
     item,
     productQuantities,
@@ -19,11 +20,92 @@ const ProductCard = ({
     onUpdateUnit,
     onAddToCart,
     onUpdateWishlist,
-    onRemoveFromWishlist
+    onRemoveFromWishlist,
+    customerGroupsDiscounts,
+    itemBasedDiscounts
 }) => {
     const product = item.product;
     const productId = product._id;
     const isLoading = loadingProducts[productId];
+
+    // Discount calculation functions
+    const calculateDiscountedPrice = (product) => {
+        if (!currentUser || !currentUser.customerId) {
+            return product.eachPrice || 0;
+        }
+
+        const originalPrice = product.eachPrice || 0;
+
+        // Check for item-based discount first
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+            return originalPrice - discountAmount;
+        }
+
+        // Check for pricing group discount
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.customerId === currentUser.customerId &&
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === productPricingGroupId
+            );
+
+            if (groupDiscount) {
+                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
+                return originalPrice - discountAmount;
+            }
+        }
+
+        return originalPrice;
+    };
+
+    // Get discount percentage for display
+    const getDiscountPercentage = (product) => {
+        if (!currentUser || !currentUser.customerId) {
+            return null;
+        }
+
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            return itemDiscount.percentage;
+        }
+
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
+            const groupDiscount = customerGroupsDiscounts.find(
+                discount =>
+                    discount.customerId === currentUser.customerId &&
+                    discount.pricingGroup &&
+                    discount.pricingGroup._id === productPricingGroupId
+            );
+
+            if (groupDiscount) {
+                return groupDiscount.percentage;
+            }
+        }
+
+        return null;
+    };
+
+    // Check if product has any discount
+    const hasDiscount = (product) => {
+        return getDiscountPercentage(product) !== null;
+    };
 
     // Get pack quantity from selected unit
     const getPackQuantity = (selectedUnitId) => {
@@ -33,11 +115,48 @@ const ProductCard = ({
             (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
         );
 
+        if (!selectedPack) return 1;
+
         if (typeof selectedPack === 'string') {
             return parseInt(selectedPack) || 1;
         }
-        return selectedPack?.quantity || 1;
+
+        const quantity = selectedPack.quantity;
+        if (typeof quantity === 'string') {
+            return parseInt(quantity) || 1;
+        }
+        return quantity || 1;
     };
+
+    // Get pack type name from selected unit
+    const getPackTypeName = (selectedUnitId) => {
+        if (!product.typesOfPacks || product.typesOfPacks.length === 0) return "Each";
+
+        const selectedPack = product.typesOfPacks.find(pack =>
+            (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
+        );
+
+        if (!selectedPack) return "Each";
+
+        if (typeof selectedPack === 'string') {
+            return `Pack of ${selectedPack}`;
+        }
+        return selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
+    };
+
+    // Calculate total quantity (pack quantity * units quantity)
+    const calculateTotalQuantity = (productId) => {
+        const unitsQuantity = productQuantities[productId] || 1;
+        const selectedUnitId = selectedUnits[productId];
+        const packQuantity = getPackQuantity(selectedUnitId);
+        return packQuantity * unitsQuantity;
+    };
+
+    // Check if product is out of stock or exceeds stock level
+    const totalQuantity = calculateTotalQuantity(productId);
+    const isOutOfStock = product.stockLevel <= 0;
+    const exceedsStock = totalQuantity > product.stockLevel;
+    const isAvailable = !isOutOfStock && !exceedsStock;
 
     // Calculate amount based on selected pack and quantity
     const calculateAmount = (product, productId) => {
@@ -46,8 +165,14 @@ const ProductCard = ({
         const packQuantity = getPackQuantity(selectedUnitId);
         const totalQuantity = packQuantity * unitsQuantity;
 
-        return (product.eachPrice * totalQuantity).toFixed(2);
+        const discountedPrice = calculateDiscountedPrice(product);
+        return (discountedPrice * totalQuantity).toFixed(2);
     };
+
+    // Get discounted price and discount info
+    const discountedPrice = calculateDiscountedPrice(product);
+    const discountPercentage = getDiscountPercentage(product);
+    const hasProductDiscount = hasDiscount(product);
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 font-spartan xl:h-full xl:w-[622px]">
@@ -59,7 +184,7 @@ const ProductCard = ({
                             src={product.images || '/product-listing-images/product-1.avif'}
                             alt={product.ProductName}
                             className="object-contain h-[156px] w-[156px]"
-                            key={productId} // Stable key to prevent re-renders
+                            key={productId}
                         />
                     </div>
                 </div>
@@ -73,7 +198,7 @@ const ProductCard = ({
                         <span className="font-medium text-[13px]">
                             SKU: {product.sku}
                         </span>
-                        {product.stockLevel > 0 ? (
+                        {isAvailable ? (
                             <div className="flex items-center text-[14px] font-medium text-black p-1 font-semibold text-[11px] bg-[#E7FAEF]">
                                 <Check strokeWidth={2} className="w-4 h-4 mr-1" />
                                 IN STOCK
@@ -81,15 +206,51 @@ const ProductCard = ({
                         ) : (
                             <div className="flex items-center text-[14px] font-medium text-black p-1 font-semibold text-[11px] bg-[#FFEAEA]">
                                 <Check strokeWidth={2} className="w-4 h-4 mr-1" />
-                                OUT OF STOCK
+                                {isOutOfStock ? 'OUT OF STOCK' : 'EXCEEDS STOCK'}
                             </div>
                         )}
                     </div>
 
-                    <div>
+                    {/* Available Stock Display */}
+                    {/* {!isOutOfStock && (
+                        <p className="text-[12px] text-gray-600 mb-1">
+                            Available: {product.stockLevel} units
+                        </p>
+                    )} */}
+
+                    {/* Out of Stock Warning */}
+                    {isOutOfStock && (
+                        <div className="bg-red-50 border border-red-200 rounded-md p-2 mb-2">
+                            <p className="text-red-600 text-[12px] font-medium">
+                                This product is currently out of stock and cannot be added to cart.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Exceeds Stock Warning */}
+                    {exceedsStock && (
+                        <div className="bg-orange-50 border border-orange-200 rounded-md p-2 mb-2">
+                            <p className="text-orange-600 text-[12px] font-medium">
+                                Requested quantity ({totalQuantity}) exceeds available stock ({product.stockLevel}). Please reduce quantity.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Price with Discount */}
+                    <div className="flex items-center space-x-2">
                         <span className="text-[#2D2C70] font-semibold text-[24px]">
-                            ${product.eachPrice.toFixed(2)}
+                            ${discountedPrice.toFixed(2)}
                         </span>
+                        {hasProductDiscount && (
+                            <span className="text-sm text-gray-500 line-through">
+                                ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
+                            </span>
+                        )}
+                        {discountPercentage && (
+                            <span className="text-sm text-green-600 font-semibold">
+                                {discountPercentage}% OFF
+                            </span>
+                        )}
                     </div>
 
                     <div className='flex items-center justify-between'>
@@ -99,10 +260,10 @@ const ProductCard = ({
                                 <select
                                     value={selectedUnits[productId] || ''}
                                     onChange={(e) => onUpdateUnit(productId, e.target.value)}
-                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
+                                    className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                               appearance-none"
-                                    disabled={isLoading}
+                                               appearance-none ${!isAvailable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                    disabled={isLoading || !isAvailable}
                                 >
                                     {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
                                         product.typesOfPacks.map((pack) => (
@@ -139,7 +300,7 @@ const ProductCard = ({
                                 <button
                                     onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) - 1)}
                                     className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50"
-                                    disabled={(productQuantities[productId] || 1) <= 1 || isLoading}
+                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1}
                                 >
                                     <Minus className="w-3 h-3 text-white" />
                                 </button>
@@ -149,7 +310,8 @@ const ProductCard = ({
                                 <button
                                     onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) + 1)}
                                     className="p-1 bg-black rounded-md py-[5px] px-2 transition-colors disabled:opacity-50"
-                                    disabled={isLoading}
+                                    disabled={isLoading || !isAvailable || exceedsStock}
+                                    title={exceedsStock ? 'Stock level exceeded' : !isAvailable ? 'Out of stock' : ''}
                                 >
                                     <Plus className="w-3 h-3 text-white" />
                                 </button>
@@ -172,15 +334,19 @@ const ProductCard = ({
                                 productQuantities[productId],
                                 selectedUnits[productId]
                             )}
-                            className="text-[13px] font-semibold bg-[#E799A9] border border-black text-white rounded-2xl py-1 px-15 disabled:opacity-50"
-                            disabled={isLoading}
+                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-15 disabled:opacity-50 ${isAvailable ? 'bg-[#E799A9] hover:bg-[#d68999]' : 'bg-gray-400 cursor-not-allowed'
+                                }`}
+                            disabled={isLoading || !isAvailable}
+                            title={!isAvailable ? (isOutOfStock ? "Product is out of stock" : "Requested quantity exceeds available stock") : ""}
                         >
                             {isLoading ? 'Updating...' : 'Update'}
                         </button>
                         <button
                             onClick={() => onAddToCart(productId)}
-                            className="flex py-2 gap-2 text-[13px] text-[#2D2C70] bg-[#46BCF9] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50"
-                            disabled={isLoading}
+                            className={`flex py-2 gap-2 text-[13px] text-[#2D2C70] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50 ${isAvailable ? 'bg-[#46BCF9] hover:bg-[#3aa8e0]' : 'bg-gray-400 cursor-not-allowed'
+                                }`}
+                            disabled={isLoading || !isAvailable}
+                            title={!isAvailable ? (isOutOfStock ? "Product is out of stock" : "Requested quantity exceeds available stock") : ""}
                         >
                             <svg
                                 className="w-5 h-5 transition-colors duration-300"
@@ -190,12 +356,13 @@ const ProductCard = ({
                             >
                                 <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
                             </svg>
-                            Add to Cart
+                            {!isAvailable ? (isOutOfStock ? 'Out of Stock' : 'Exceeds Stock') : 'Add to Cart'}
                         </button>
 
                         <button
                             onClick={() => onRemoveFromWishlist(productId)}
-                            className='h-9 w-9 border border-[#E799A9] rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50'
+                            className={`h-9 w-9 border rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
+                                }`}
                             disabled={isLoading}
                         >
                             <img src="/icons/dustbin-1.png" className='w-4 h-4' alt="" />
@@ -206,6 +373,7 @@ const ProductCard = ({
         </div>
     );
 };
+
 
 const Page = () => {
     const currentUser = useUserStore((state) => state.user);
@@ -220,8 +388,47 @@ const Page = () => {
     const [selectedUnits, setSelectedUnits] = useState({});
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
 
+    // Discount states (same as product listing)
+    const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([]);
+    const [itemBasedDiscounts, setItemBasedDiscounts] = useState([]);
+
     console.log("Wishlist Items:", wishListItems);
     console.log("Current User:", currentUser);
+
+    const router = useRouter();
+
+    // Fetch discount data (same as product listing)
+    const fetchCustomersGroupsDiscounts = async () => {
+        try {
+            if (!currentUser || !currentUser.customerId) return;
+
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`);
+
+            console.log("pricing groups discounts", response);
+
+            if (response.data.statusCode === 200) {
+                setCustomerGroupsDiscounts(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching customer groups discounts:', error);
+        }
+    };
+
+    const fetchItemBasedDiscounts = async () => {
+        try {
+            if (!currentUser || !currentUser.customerId) return;
+
+            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
+
+            console.log("item based discounts", response);
+
+            if (response.data.statusCode === 200) {
+                setItemBasedDiscounts(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching item based discounts:', error);
+        }
+    };
 
     // Fetch wishlist items
     const fetchCustomersWishList = async () => {
@@ -251,13 +458,15 @@ const Page = () => {
                             if (typeof pack === 'string') {
                                 return parseInt(pack) === item.packQuentity;
                             }
-                            return pack.quantity == item.packQuentity;
+                            return parseInt(pack.quantity) === item.packQuentity;
                         });
 
                         if (matchingPack) {
                             initialUnits[item.product._id] = typeof matchingPack === 'string' ? matchingPack : matchingPack._id;
                         } else {
-                            initialUnits[item.product._id] = item.product.typesOfPacks[0]._id || item.product.typesOfPacks[0];
+                            initialUnits[item.product._id] = typeof item.product.typesOfPacks[0] === 'string'
+                                ? item.product.typesOfPacks[0]
+                                : item.product.typesOfPacks[0]._id;
                         }
                     }
                 });
@@ -287,7 +496,7 @@ const Page = () => {
         if (typeof selectedPack === 'string') {
             return parseInt(selectedPack) || 1;
         }
-        return selectedPack?.quantity || 1;
+        return parseInt(selectedPack?.quantity) || 1;
     };
 
     // Update quantity for a product
@@ -308,7 +517,8 @@ const Page = () => {
         }));
     };
 
-    // Add to cart
+    // Add to cart function with discount calculation
+    // Add to cart function with discount calculation
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart");
@@ -327,13 +537,82 @@ const Page = () => {
             const unitsQuantity = productQuantities[productId] || 1;
             const totalQuantity = packQuantity * unitsQuantity;
 
+            // Get pack type name for cart schema
+            const getPackTypeName = (selectedUnitId) => {
+                if (!product.typesOfPacks || product.typesOfPacks.length === 0) return "Each";
+
+                const selectedPack = product.typesOfPacks.find(pack =>
+                    (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
+                );
+
+                if (!selectedPack) return "Each";
+
+                if (typeof selectedPack === 'string') {
+                    return `Pack of ${selectedPack}`;
+                }
+                return selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
+            };
+
+            const packType = getPackTypeName(selectedPackId);
+
+            // Check stock level before adding to cart
+            if (totalQuantity > product.stockLevel) {
+                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${product.stockLevel})`);
+                return;
+            }
+
+            // Calculate discounted price
+            const calculateDiscountedPrice = (product) => {
+                if (!currentUser || !currentUser.customerId) {
+                    return product.eachPrice || 0;
+                }
+
+                const originalPrice = product.eachPrice || 0;
+
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+                );
+
+                if (itemDiscount) {
+                    const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+                    return originalPrice - discountAmount;
+                }
+
+                if (product.pricingGroup) {
+                    const productPricingGroupId = typeof product.pricingGroup === 'object'
+                        ? product.pricingGroup._id
+                        : product.pricingGroup;
+
+                    const groupDiscount = customerGroupsDiscounts.find(
+                        discount =>
+                            discount.customerId === currentUser.customerId &&
+                            discount.pricingGroup &&
+                            discount.pricingGroup._id === productPricingGroupId
+                    );
+
+                    if (groupDiscount) {
+                        const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
+                        return originalPrice - discountAmount;
+                    }
+                }
+
+                return originalPrice;
+            };
+
+            const discountedPrice = calculateDiscountedPrice(product);
+            const totalAmount = totalQuantity * discountedPrice;
+
             const cartData = {
                 customerId: currentUser._id,
                 productId: productId,
+                packType: packType, // Send packType name instead of ID
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
-                totalQuantity: totalQuantity
+                totalQuantity: totalQuantity,
+                amount: totalAmount
             };
+
+            console.log("Sending cart data:", cartData);
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
@@ -388,13 +667,10 @@ const Page = () => {
         try {
             if (!currentUser || !currentUser._id) return;
 
-            // setLoadingProducts(prev => ({ ...prev, [productId]: true }));
-
             const res = await axiosInstance.put(`wishlist/remove-from-wishlist`,
                 {
                     customerId: currentUser._id,
                     productId: productId
-
                 }
             );
 
@@ -440,6 +716,13 @@ const Page = () => {
         }
     }, []);
 
+    useEffect(() => {
+        if (currentUser && currentUser.customerId) {
+            fetchItemBasedDiscounts();
+            fetchCustomersGroupsDiscounts();
+        }
+    }, [currentUser?.customerId]);
+
     if (loading) {
         return (
             <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan flex items-center justify-center">
@@ -453,7 +736,7 @@ const Page = () => {
 
     return (
         <>
-            <Navbar />
+            {/* <Navbar /> */}
             <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
@@ -499,6 +782,8 @@ const Page = () => {
                                             onAddToCart={handleAddToCart}
                                             onUpdateWishlist={handleUpdateWishlistItem}
                                             onRemoveFromWishlist={removeFromWishlist}
+                                            customerGroupsDiscounts={customerGroupsDiscounts}
+                                            itemBasedDiscounts={itemBasedDiscounts}
                                         />
                                     ))}
                                 </div>
@@ -518,6 +803,8 @@ const Page = () => {
                                                 onAddToCart={handleAddToCart}
                                                 onUpdateWishlist={handleUpdateWishlistItem}
                                                 onRemoveFromWishlist={removeFromWishlist}
+                                                customerGroupsDiscounts={customerGroupsDiscounts}
+                                                itemBasedDiscounts={itemBasedDiscounts}
                                             />
                                         </div>
                                     ))}

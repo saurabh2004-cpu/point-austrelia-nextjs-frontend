@@ -27,6 +27,7 @@ export default function SignUpComponent() {
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const setUser = useUserStore((state) => state.setUser);
+  const [successMessage, setSuccessMessage] = useState('')
 
   // Business type options
   const businessTypes = [
@@ -171,9 +172,13 @@ export default function SignUpComponent() {
 
       console.log("signup response:", res)
       if (res.data.statusCode === 200) {
-        setUser(res.data.data);
-        window.location.href = '/my-account-review'
-        setErrors({})
+        // setUser(res.data.data);
+        // window.location.href = '/my-account-review'
+        setSuccessMessage('Thank you for signing up! We are reviewing your account for approval.')
+        setFormData({});
+        setErrors({
+          success: 'Thank you for signing up! We are reviewing your account for approval.'
+        });
         console.log('Signup successful:', res.data)
       } else {
         setErrors({ submit: res.data.message })
@@ -246,6 +251,8 @@ export default function SignUpComponent() {
                 Required<span className="text-red-500 ml-1">*</span>
               </label>
             </motion.div>
+
+
 
             {/* Customer Name & Contact Name Row */}
             <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
@@ -721,6 +728,7 @@ export default function SignUpComponent() {
               )}
             </motion.button>
           </motion.div>
+          {successMessage && <div className="text-green-500 mb-4 w-full flex mx-auto justify-center">{successMessage}</div>}
         </motion.form >
       </motion.div >
     </div >

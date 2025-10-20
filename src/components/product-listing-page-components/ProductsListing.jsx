@@ -58,14 +58,11 @@ const ProductListing = () => {
     const searchParams = useSearchParams();
     const searchQuery = searchParams.get('q') || '';
 
-
     useEffect(() => {
         if (searchQuery !== '') {
             router.push(`/search?q=${searchQuery}`);
         }
     }, [searchParams])
-
-
 
     const {
         categoryId,
@@ -90,15 +87,21 @@ const ProductListing = () => {
         return wishListItems.some(item => item.product?._id === productId)
     }
 
-    // Calculate discounted price for a product
+    // NEW: Calculate discounted price for a product with comparePrice priority
     const calculateDiscountedPrice = (product) => {
-        if (!currentUser || !currentUser.customerId) {
-            return product.eachPrice || 0;
-        }
-
         const originalPrice = product.eachPrice || 0;
 
-        // Check for item-based discount first (highest priority)
+        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            return product.comparePrice;
+        }
+
+        // If no comparePrice or comparePrice is 0, check for discounts
+        if (!currentUser || !currentUser.customerId) {
+            return originalPrice;
+        }
+
+        // Priority 2: Check for item-based discount
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
@@ -109,24 +112,33 @@ const ProductListing = () => {
             return originalPrice - discountAmount;
         }
 
-        // If no item-based discount, check for pricing group discount
-        // Check if product has a pricing group assigned
+        // Priority 3: Check for pricing group discount
         if (product.pricingGroup) {
             const productPricingGroupId = typeof product.pricingGroup === 'object'
                 ? product.pricingGroup._id
                 : product.pricingGroup;
 
             // Find matching pricing group discount for this customer
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.customerId === currentUser.customerId &&
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === productPricingGroupId
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
             );
 
-            if (groupDiscount) {
-                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
-                return originalPrice - discountAmount;
+            if (groupDiscountDoc) {
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount) {
+                    const percentage = parseFloat(customerDiscount.percentage);
+                    // Handle both positive and negative percentages
+                    if (percentage > 0) {
+                        // Positive percentage means price increase
+                        return originalPrice + (originalPrice * percentage / 100);
+                    } else {
+                        // Negative percentage means price decrease
+                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                    }
+                }
             }
         }
 
@@ -134,14 +146,21 @@ const ProductListing = () => {
         return originalPrice;
     };
 
-
-    // Get discount percentage for display
+    // NEW: Get discount percentage for display
     const getDiscountPercentage = (product) => {
+        // If product has comparePrice, show comparePrice discount
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            const originalPrice = product.eachPrice || 0;
+            const discountAmount = originalPrice - product.comparePrice;
+            const discountPercentage = (discountAmount / originalPrice) * 100;
+            return Math.round(discountPercentage);
+        }
+
         if (!currentUser || !currentUser.customerId) {
             return null;
         }
 
-        // Check item-based discount first
+        // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
@@ -150,30 +169,34 @@ const ProductListing = () => {
             return itemDiscount.percentage;
         }
 
-        // Then check pricing group discount
+        // Check pricing group discount
         if (product.pricingGroup) {
             const productPricingGroupId = typeof product.pricingGroup === 'object'
                 ? product.pricingGroup._id
                 : product.pricingGroup;
 
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.customerId === currentUser.customerId &&
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === productPricingGroupId
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
             );
 
-            if (groupDiscount) {
-                return groupDiscount.percentage;
+            if (groupDiscountDoc) {
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount) {
+                    return parseFloat(customerDiscount.percentage);
+                }
             }
         }
 
         return null;
     };
 
-    // Check if product has any discount
+    // NEW: Check if product has any discount or comparePrice
     const hasDiscount = (product) => {
-        return getDiscountPercentage(product) !== null;
+        return (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) ||
+            getDiscountPercentage(product) !== null;
     };
 
     // Check if product is in cart
@@ -225,8 +248,6 @@ const ProductListing = () => {
     }
 
     const handleProductClick = (productName, productID) => {
-
-
         setFilters({
             categorySlug: categorySlug,
             subCategorySlug: subCategorySlug || null,
@@ -310,7 +331,6 @@ const ProductListing = () => {
 
     // Add to cart function
     // Add to cart function
-    // Add to cart function
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
@@ -345,6 +365,50 @@ const ProductListing = () => {
             // Calculate total amount using the discounted price
             const totalAmount = totalQuantity * discountedPrice
 
+            // Determine discount type and percentage
+            let discountType = "";
+            let discountPercentages = 0;
+
+            // Priority 1: Check if product has comparePrice
+            if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+                const originalPrice = product.eachPrice || 0;
+                const discountAmount = originalPrice - product.comparePrice;
+                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                discountType = "Compare Price";
+            }
+            // Priority 2: Check for item-based discount
+            else if (currentUser && currentUser.customerId) {
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+                );
+
+                if (itemDiscount) {
+                    discountPercentages = itemDiscount.percentage;
+                    discountType = "Item Based Discount";
+                }
+                // Priority 3: Check for pricing group discount
+                else if (product.pricingGroup) {
+                    const productPricingGroupId = typeof product.pricingGroup === 'object'
+                        ? product.pricingGroup._id
+                        : product.pricingGroup;
+
+                    const groupDiscountDoc = customerGroupsDiscounts.find(
+                        discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
+                    );
+
+                    if (groupDiscountDoc) {
+                        const customerDiscount = groupDiscountDoc.customers.find(
+                            customer => customer.user.customerId === currentUser.customerId
+                        );
+
+                        if (customerDiscount) {
+                            discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
+                            discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
+                        }
+                    }
+                }
+            }
+
             const cartData = {
                 customerId: currentUser._id,
                 productId: productId,
@@ -352,7 +416,9 @@ const ProductListing = () => {
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
                 packType: selectedPack ? selectedPack.name : 'Each',
-                amount: totalAmount // Store the discounted total amount
+                amount: totalAmount, // Store the discounted total amount
+                discountType: discountType,
+                discountPercentages: discountPercentages
             }
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData)
@@ -374,7 +440,7 @@ const ProductListing = () => {
         }
     }
 
-    // Map sort options to backend parameters
+    // CORRECTED: Map sort options to backend parameters
     const getSortParams = (sortOption) => {
         switch (sortOption) {
             case "Price Low to High":
@@ -385,11 +451,11 @@ const ProductListing = () => {
                 return { sortBy: "createdAt", sortOrder: "desc" }
             case "Best Seller":
             default:
-                return { sortBy: "bestSeller", sortOrder: "desc" }
+                return { sortBy: "createdAt", sortOrder: "desc" }
         }
     }
 
-    // Fetch products with filters
+    // CORRECTED: Fetch products with filters
     const fetchProducts = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
         try {
             setLoading(true)
@@ -409,19 +475,24 @@ const ProductListing = () => {
             if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId
             if (brandId) queryParams.brandId = brandId
 
+            console.log("Fetching products with params:", queryParams)
+
             const response = await axiosInstance.get('products/get-products-by-filters', {
                 params: queryParams
             })
 
-            console.log("Filtered products:", response)
+            console.log("all produscts response:", response.data)
 
             if (response.data.statusCode === 200) {
-                const productsData = response.data.data.products || []
+                let productsData = response.data.data.products || []
                 const paginationInfo = response.data.data.pagination || {
                     currentPage: 1,
                     totalPages: 1,
                     totalProducts: 0
                 }
+
+                // Apply client-side sorting as fallback
+                productsData = applyClientSideSorting(productsData, sortOption);
 
                 setProducts(productsData)
                 setCurrentPage(paginationInfo.currentPage)
@@ -457,8 +528,36 @@ const ProductListing = () => {
         }
     }
 
+    // NEW: Client-side sorting function
+    const applyClientSideSorting = (productsData, sortOption) => {
+        const sortedProducts = [...productsData];
 
+        switch (sortOption) {
+            case "Price Low to High":
+                return sortedProducts.sort((a, b) => {
+                    const priceA = calculateDiscountedPrice(a);
+                    const priceB = calculateDiscountedPrice(b);
+                    return priceA - priceB;
+                });
 
+            case "Price High to Low":
+                return sortedProducts.sort((a, b) => {
+                    const priceA = calculateDiscountedPrice(a);
+                    const priceB = calculateDiscountedPrice(b);
+                    return priceB - priceA;
+                });
+
+            case "Newest":
+                return sortedProducts.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || 0);
+                    const dateB = new Date(b.createdAt || 0);
+                    return dateB - dateA;
+                });
+
+            default:
+                return sortedProducts;
+        }
+    }
 
     // Fetch categories for sidebar
     const fetchCategoriesForBrand = async () => {
@@ -487,7 +586,7 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
-            console.log("Cart items:", response)
+            // console.log("Cart items:", response)
             if (response.data.statusCode === 200) {
                 setCartItems(response.data.data || [])
             }
@@ -501,9 +600,9 @@ const ProductListing = () => {
         try {
             if (!currentUser || !currentUser.customerId) return
 
-            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`)
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`)
 
-            console.log("pricing groups discounts", response)
+            console.log("pricing groups discounts bu userid ", response)
 
             if (response.data.statusCode === 200) {
                 setCustomerGroupsDiscounts(response.data.data || [])
@@ -532,7 +631,6 @@ const ProductListing = () => {
         }
     }
 
-    // Add/Remove product from wishlist
     // Add/Remove product from wishlist
     const handleAddToWishList = async (productId) => {
         try {
@@ -586,10 +684,11 @@ const ProductListing = () => {
         }
     }
 
-    // Handle sort change
+    // CORRECTED: Handle sort change
     const handleSortChange = (e) => {
         const newSortBy = e.target.value
         setSortBy(newSortBy)
+        setCurrentPage(1) // Reset to first page when sorting changes
         fetchProducts(1, perpageItems, newSortBy)
     }
 
@@ -597,6 +696,7 @@ const ProductListing = () => {
     const handleItemsPerPageChange = (e) => {
         const newPerPage = e.target.value
         setPerpageItems(newPerPage)
+        setCurrentPage(1) // Reset to first page when items per page changes
         fetchProducts(1, newPerPage, sortBy)
     }
 
@@ -888,7 +988,6 @@ const ProductListing = () => {
         setExpandedCategory(categoryId);
     }
 
-
     const sortProductsBySequenceAndDate = (products) => {
         // Separate products into two groups
         const productsWithSequence = products.filter(product =>
@@ -911,13 +1010,15 @@ const ProductListing = () => {
         return [...productsWithSequence, ...productsWithoutSequence];
     };
 
-    const sortedProducts = sortProductsBySequenceAndDate(products);
+    // CORRECTED: Apply both sequence sorting and current sort
+    const getSortedProducts = () => {
+        let sorted = sortProductsBySequenceAndDate(products);
 
-    // useEffect(() => {
-    //     if (productID) {
-    //         setFilters({ productID: null });
-    //     }
-    // }, [productID]);
+        // Apply current sort option on top of sequence sorting
+        return applyClientSideSorting(sorted, sortBy);
+    };
+
+    const sortedProducts = getSortedProducts();
 
     if (!productID) {
         return (
@@ -1128,7 +1229,6 @@ const ProductListing = () => {
                                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                                 appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
                                                     >
-                                                        {/* <option value="Best Seller" className="text-sm sm:text-[15px] font-medium">Best Seller</option> */}
                                                         <option value="Price Low to High" className="text-sm sm:text-[15px] font-medium">Price Low to High</option>
                                                         <option value="Price High to Low" className="text-sm sm:text-[15px] font-medium">Price High to Low</option>
                                                         <option value="Newest" className="text-sm sm:text-[15px] font-medium">Newest</option>
@@ -1147,46 +1247,6 @@ const ProductListing = () => {
                                                         </svg>
                                                     </div>
                                                 </div>
-                                            </div>
-
-                                            {/* View Mode Toggle */}
-                                            <div className="flex border border-gray-300 px-2 sm:px-3 rounded-md justify-between w-full sm:w-auto sm:min-w-[80px] md:min-w-[90px]">
-                                                <button
-                                                    onClick={() => setViewMode("grid")}
-                                                    className={`p-2 sm:p-1 lg:px-2 border-r border-r-[2px] flex items-center justify-center w-full sm:w-auto align-middle transition-colors duration-200 ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600 hover:text-[#2e2f7f]"}`}
-                                                >
-                                                    <svg
-                                                        className="w-5 h-5 sm:w-[18px] sm:h-[16px] md:w-[20px] md:h-[18px]"
-                                                        fill="#2E2F7F"
-                                                        viewBox="0 0 20 20"
-                                                    >
-                                                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                                    </svg>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => setViewMode("list")}
-                                                    className={`p-2 sm:p-1 lg:p-2 flex items-center justify-center w-full sm:w-auto transition-colors duration-200 ${viewMode === "list" ? "text-[#2e2f7f]/30" : "text-gray-600 hover:text-[#2e2f7f]"}`}
-                                                >
-                                                    <svg
-                                                        className="w-5 h-4 sm:w-[18px] sm:h-[12px] md:w-[20px] md:h-[13px]"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="100"
-                                                        height="100"
-                                                        viewBox="0 0 100 100"
-                                                        fill="#2E2F7F80"
-                                                    >
-                                                        <rect x="10" y="10" width="20" height="20" rx="3" />
-                                                        <rect x="40" y="10" width="20" height="20" rx="3" />
-                                                        <rect x="70" y="10" width="20" height="20" rx="3" />
-                                                        <rect x="10" y="40" width="20" height="20" rx="3" />
-                                                        <rect x="40" y="40" width="20" height="20" rx="3" />
-                                                        <rect x="70" y="40" width="20" height="20" rx="3" />
-                                                        <rect x="10" y="70" width="20" height="20" rx="3" />
-                                                        <rect x="40" y="70" width="20" height="20" rx="3" />
-                                                        <rect x="70" y="70" width="20" height="20" rx="3" />
-                                                    </svg>
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -1511,7 +1571,6 @@ const ProductListing = () => {
             </div>
         )
     }
-
 
     return (
         <ProductDetail />

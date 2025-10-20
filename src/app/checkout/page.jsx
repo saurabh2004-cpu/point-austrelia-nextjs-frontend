@@ -441,7 +441,9 @@ const CheckoutComponent = () => {
                 amount: item.amount, // Use stored amount directly
                 taxable: item.product.taxable,
                 taxPercentage: item.product.taxPercentages || 0,
-                packType: item.packType
+                packType: item.packType,
+                discountType: item.discountType,
+                discountPercentages: item.discountPercentages
             }));
 
             setSubmitForm(prev => ({
@@ -496,50 +498,35 @@ const CheckoutComponent = () => {
     const handleCompleteCheckout = async () => {
         setLoadingCheckOut(true);
         try {
-            const orderPromises = submitForm.items.map((item, index) => {
-                const formdata = {
-                    date: submitForm.date,
-                    documentNumber: documentNumber,
-                    customerName: currentUser.customerName || currentUser.contactName || '',
-                    salesChannel: submitForm.salesChannel,
-                    trackingNumber: submitForm.trackingNumber || '',
-                    shippingAddress: submitForm.shippingAddress,
-                    billingAddress: submitForm.billingAddress,
-                    customerPO: submitForm.customerPO || '',
-                    itemSku: item.itemSku,
-                    unitsQuantity: item.unitsQuantity,
-                    packQuantity: item.packQuantity,
-                    amount: item.amount,
-                    comments: submitForm.comments || '',
-                    packType: item.packType || 'Each'
-                };
+            const orderData = {
+                date: submitForm.date,
+                documentNumber: documentNumber,
+                customerName: currentUser.customerName || currentUser.contactName || '',
+                salesChannel: submitForm.salesChannel,
+                trackingNumber: submitForm.trackingNumber || '',
+                shippingAddress: submitForm.shippingAddress,
+                billingAddress: submitForm.billingAddress,
+                customerPO: submitForm.customerPO || '',
+                comments: submitForm.comments || '',
+                items: submitForm.items
+            };
 
-                return axiosInstance.post(`sales-order/create-sales-order`, formdata);
-            });
+            const response = await axiosInstance.post('sales-order/create-bulk-sales-order', orderData);
 
-            const results = await Promise.all(orderPromises);
-
-            const allSucceeded = results.every(res => {
-                console.log("Order response:", res.data);
-                return res.data.statusCode === 200;
-            });
-
-            if (allSucceeded) {
-                console.log("All orders placed successfully");
-                setLoadingCheckOut(false);
+            if (response.data.statusCode === 200) {
+                console.log("All orders placed successfully via bulk API");
                 setCartItemsCount(0);
 
+                // Navigate immediately to thank you page
                 router.push(`/thank-you/${documentNumber}`);
             } else {
-                const failedOrders = results.filter(res => res.data.statusCode !== 200);
-                console.error("Some orders failed:", failedOrders);
-                setError('Some orders failed to process. Please try again.');
+                setError(response.data.message || 'Failed to process order. Please try again.');
             }
 
         } catch (error) {
-            console.error("Error placing orders: ", error);
+            console.error("Error placing bulk orders: ", error);
             setError("An error occurred while placing your order. Please try again.");
-        }finally {
+        } finally {
             setLoadingCheckOut(false);
         }
     };
@@ -585,7 +572,7 @@ const CheckoutComponent = () => {
     }, [currentUser])
 
     return (
-        <div className="min-h-screen bg-gray-50 py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
+        <div className="min-h-screen  py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
             <div className="max-w-8xl px-4 sm:px-6 lg:px-8 mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
@@ -837,8 +824,8 @@ const CheckoutComponent = () => {
                                             const packName = item.product.typesOfPacks?.find(pack => parseInt(pack.quantity) === item.packQuentity)?.name || 'Each';
 
                                             return (
-                                                <div key={item._id} className="flex items-start space-x-3 p-2 justify-between">
-                                                    <div className="w-28 h-28  mt-14 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <div key={item._id} className="flex items-center space-x-3 p-2 justify-between">
+                                                    <div className="w-28 h-28   rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
                                                             src={item.product.images}
                                                             alt={item.product.ProductName}
@@ -852,23 +839,30 @@ const CheckoutComponent = () => {
                                                             {item.product.ProductName}
                                                         </h3>
                                                         {/* Calculate unit price for display */}
-                                                        <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
-                                                            ${(item.amount / item.totalQuantity).toFixed(2)}
-                                                        </p>
-                                                        <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
-                                                            <p className="mb-1">{item.product.sku}</p>
-                                                            <p className="mb-1">Units: {packName}</p>
+                                                        <div className='flex w-full justify-between'>
+                                                            <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
+                                                                ${(item.amount / item.totalQuantity).toFixed(2)}
+                                                            </p>
                                                             <div className="flex items-center text-[12px] font-[600] text-black py-1 px-2 w-[90px] bg-[#E7FAEF] mb-2">
                                                                 <Check className="w-3 h-3 mr-1" />
                                                                 IN STOCK
                                                             </div>
-                                                            <div className="space-y-1 text-xs">
-                                                                <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div>
+                                                        </div>
+                                                        <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
+                                                            <p className="mb-1">{item.product.sku}</p>
+                                                            <div className='flex w-full justify-between'>
+                                                                <p className="mb-1">Units: {packName}</p>
                                                                 <div>Quantity {item.totalQuantity}</div>
-                                                                <div>Amount ${item.amount.toFixed(2)}</div> {/* Use stored amount directly */}
-                                                                {item.product.taxable && (
-                                                                    <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>
-                                                                )}
+                                                            </div>
+
+                                                            <div className="space-y-1 text-xs">
+                                                                <div className='flex w-full justify-between'>
+                                                                    <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div>
+                                                                    <div>Amount ${item.amount.toFixed(2)}</div> {/* Use stored amount directly */}
+                                                                    {item.product.taxable && (
+                                                                        <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>

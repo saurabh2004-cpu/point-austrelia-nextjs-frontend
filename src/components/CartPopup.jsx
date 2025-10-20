@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { X, Minus, Plus, Check } from 'lucide-react';
+import { X, Minus, Plus, Check, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
+import Link from 'next/link';
 
 const ShoppingCartPopup = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -31,14 +32,14 @@ const ShoppingCartPopup = () => {
         const quantities = {};
         const packs = {};
         const packsInfo = {};
-        
+
         items.forEach(item => {
           quantities[item._id] = item.unitsQuantity;
-          
+
           // Store pack details for each item
           if (item.product.typesOfPacks && Array.isArray(item.product.typesOfPacks)) {
             packsInfo[item._id] = item.product.typesOfPacks;
-            
+
             // Find matching pack based on current packQuentity
             const matchingPack = item.product.typesOfPacks.find(
               pack => {
@@ -46,16 +47,16 @@ const ShoppingCartPopup = () => {
                 return packQty === item.packQuentity;
               }
             );
-            
+
             packs[item._id] = matchingPack?._id || item.product.typesOfPacks[0]?._id;
           }
         });
-        
+
         setLocalQuantities(quantities);
         setSelectedPacks(packs);
         setPackDetails(packsInfo);
       } else {
-        setError(response.data.message)
+        setError('Your Cart Is Empty');
       }
     } catch (error) {
       console.error('Error fetching customer cart:', error)
@@ -101,11 +102,24 @@ const ShoppingCartPopup = () => {
     setSelectedPacks(prev => ({ ...prev, [itemId]: packId }));
   };
 
+  // Check if requested quantity exceeds stock level
+  const exceedsStockLevel = (item) => {
+    const totalQuantity = calculateDisplayTotalQuantity(item);
+    return totalQuantity > item.product.stockLevel;
+  };
+
   const updateCartItem = async (item) => {
     if (!currentUser || !currentUser._id) {
       setError("Please login to update cart items");
       return;
     }
+
+    // Check stock level before updating
+    if (exceedsStockLevel(item)) {
+      setError(`Requested quantity exceeds available stock (${item.product.stockLevel})`);
+      return;
+    }
+
     setUpdatingItems(prev => ({ ...prev, [item._id]: true }));
     try {
       const selectedPackId = selectedPacks[item._id];
@@ -135,7 +149,7 @@ const ShoppingCartPopup = () => {
               const updatedItem = response.data.data.cartItems.find(
                 cartItem => cartItem.product._id === item.product._id
               );
-              
+
               if (updatedItem) {
                 // Preserve the full product object from previous state
                 return {
@@ -178,14 +192,14 @@ const ShoppingCartPopup = () => {
 
   const calculateItemTax = (item) => {
     if (!item.product.taxable || !item.product.taxPercentages) return 0;
-    const itemPrice = item.product.eachPrice || 0;
+    const itemPrice = item.amount || 0;
     const totalQuantity = calculateDisplayTotalQuantity(item);
     const subtotal = itemPrice * totalQuantity;
     return (subtotal * item.product.taxPercentages) / 100;
   };
 
   const subtotal = cartItems.reduce((sum, item) => {
-    const itemPrice = item.product.eachPrice || 0;
+    const itemPrice = item.amount || 0;
     const totalQuantity = calculateDisplayTotalQuantity(item);
     return sum + (itemPrice * totalQuantity);
   }, 0);
@@ -210,7 +224,12 @@ const ShoppingCartPopup = () => {
     return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.sku}_1.jpg`;
   };
 
-  
+  // Calculate items that exceed stock level
+  const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
+  const exceedingStockCount = itemsExceedingStock.length;
+
+  // Check if any item has stock issues
+  const hasStockIssues = cartItems.some(item => item.product.stockLevel <= 0 || exceedsStockLevel(item));
 
   useEffect(() => {
     fetchCustomersCart();
@@ -228,6 +247,34 @@ const ShoppingCartPopup = () => {
             </button>
           </div>
 
+          {/* Stock Level Exceeds Warning */}
+          {/* {exceedingStockCount > 0 && (
+            <div className="w-full mb-4">
+              <div className="bg-orange-50 border-l-4 border-orange-400 p-3 rounded-lg">
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-orange-800">
+                      Stock Level Exceeded
+                    </h3>
+                    <p className="text-sm text-orange-700 mt-1">
+                      {exceedingStockCount} {exceedingStockCount === 1 ? 'item exceeds' : 'items exceed'} available stock. Please reduce quantities before checkout.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )} */}
+
+          {/* Error Display */}
+          {error && (
+            <div className="w-full mb-4">
+              <div className=" border border-gray-400 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto hide-scrollbar max-h-110">
             {loading ? (
               <div className="text-center py-8">
@@ -242,16 +289,19 @@ const ShoppingCartPopup = () => {
                 const displayQuantity = getDisplayQuantity(item);
                 const hasModifications = isItemModified(item);
                 const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
+                const exceedsStock = exceedsStockLevel(item);
+                const totalQuantity = calculateDisplayTotalQuantity(item);
+                const stockLevel = item.product.stockLevel;
 
                 return (
                   <div key={item._id} className="px-4 border-b border-gray-100">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 mb-3">
                       <div className="flex-shrink-0 flex justify-center sm:justify-start mb-3 sm:mb-0">
-                        <img 
-                          src={getProductImage(item)} 
-                          alt={item.product.ProductName} 
-                          width={96} 
-                          height={96} 
+                        <img
+                          src={getProductImage(item)}
+                          alt={item.product.ProductName}
+                          width={96}
+                          height={96}
                           className="object-contain"
                           onError={(e) => {
                             e.target.src = '/product-listing-images/product-1.avif';
@@ -279,7 +329,7 @@ const ShoppingCartPopup = () => {
                             />
                           </button>
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item?.amount?.toFixed(2)}</span>
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
@@ -288,15 +338,43 @@ const ShoppingCartPopup = () => {
                           </div>
                         </div>
 
+                        {/* Available Stock Display */}
+                        {!isOutOfStock && (
+                          <p className="text-[12px] text-gray-600 mb-1">
+                            Available: {stockLevel} units
+                          </p>
+                        )}
+
+                        {/* Exceeds Stock Warning for Item */}
+                        {exceedsStock && !isOutOfStock && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-md p-2 mb-2">
+                            <div className="flex items-start">
+                              <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
+                              <p className="text-xs text-orange-700">
+                                Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                           <div>
                             <span className="block text-xs font-medium mb-1">Quantity</span>
                             <div className="flex items-center">
-                              <button onClick={() => handleQuantityChange(item._id, -1)} className="p-1 bg-black rounded-md px-2" disabled={displayQuantity <= 1 || isOutOfStock}>
+                              <button
+                                onClick={() => handleQuantityChange(item._id, -1)}
+                                className="p-1 bg-black rounded-md px-2"
+                                disabled={displayQuantity <= 1 || isOutOfStock}
+                              >
                                 <Minus className="w-3 h-3 text-white" />
                               </button>
                               <span className="px-3 py-1 min-w-[2rem] text-center text-xs font-medium">{displayQuantity}</span>
-                              <button onClick={() => handleQuantityChange(item._id, 1)} className="p-1 bg-black rounded-md px-2" disabled={isOutOfStock}>
+                              <button
+                                onClick={() => handleQuantityChange(item._id, 1)}
+                                className="p-1 bg-black rounded-md px-2"
+                                disabled={isOutOfStock || exceedsStock}
+                                title={exceedsStock ? 'Stock level exceeded' : ''}
+                              >
                                 <Plus className="w-3 h-3 text-white" />
                               </button>
                             </div>
@@ -305,10 +383,10 @@ const ShoppingCartPopup = () => {
                           <div className="w-full sm:w-auto">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
                             <div className="relative">
-                              <select 
-                                value={selectedPacks[item._id] || ''} 
-                                onChange={(e) => handlePackChange(item._id, e.target.value)} 
-                                disabled={isOutOfStock} 
+                              <select
+                                value={selectedPacks[item._id] || ''}
+                                onChange={(e) => handlePackChange(item._id, e.target.value)}
+                                disabled={isOutOfStock}
                                 className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed"
                               >
                                 {availablePacks && availablePacks.length > 0 ? (
@@ -329,7 +407,12 @@ const ShoppingCartPopup = () => {
                         </div>
 
                         {hasModifications && (
-                          <button onClick={() => updateCartItem(item)} disabled={isLoading} className="w-full bg-[#E799A9] hover:bg-[#d68999] text-white text-xs font-medium py-2 rounded-full mt-2 disabled:opacity-50">
+                          <button
+                            onClick={() => updateCartItem(item)}
+                            disabled={isLoading || exceedsStock}
+                            className={`w-full text-white text-xs font-medium py-2 rounded-full mt-2 disabled:opacity-50 ${exceedsStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E799A9] hover:bg-[#d68999]'}`}
+                            title={exceedsStock ? 'Cannot update: stock level exceeded' : ''}
+                          >
                             {isLoading ? 'Updating...' : 'Update'}
                           </button>
                         )}
@@ -349,12 +432,20 @@ const ShoppingCartPopup = () => {
           </div>
           <div className="bg-gray-200 h-[0.7px] w-full"></div>
           <div className="flex flex-col sm:flex-row gap-2 text-[15px] font-medium p-4">
-            <button onClick={() => { setIsOpen(false); router.push('/cart'); }} className="flex-1 bg-[#2D2C70] border border-black hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors">
+            <Link href="/cart"
+              onClick={() => { setIsOpen(false) }}
+              className="flex-1 bg-[#2D2C70] border text-center border-black hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors"
+            >
               View Cart
-            </button>
-            <button onClick={() => { setIsOpen(false); router.push('/checkout'); }} className="flex-1 border border-black bg-[#46BCF9] hover:bg-[#2D2C70] text-white py-2 rounded-full transition-colors">
-              Checkout
-            </button>
+            </Link>
+            <Link href="/checkout"
+              onClick={() => { router.push('/checkout'); }}
+              disabled={hasStockIssues || cartItems.length === 0}
+              className={`flex-1 border border-black text-white py-2  text-center rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${hasStockIssues ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#46BCF9] hover:bg-[#2D2C70]'}`}
+              title={hasStockIssues ? 'Please fix stock issues before checkout' : ''}
+            >
+              {hasStockIssues ? 'Fix Stock Issues' : 'Checkout'}
+            </Link>
           </div>
         </div>
       </div>

@@ -12,7 +12,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     const currentUser = useUserStore((state) => state.user);
     const [cardData, setCardData] = useState(null);
     const [loadingCard, setLoadingCard] = useState(true);
-    const [params] = useSearchParams();
+    const params = useSearchParams();
 
     const handlePaymentChange = (paymentType) => {
         setSelectedPayment(paymentType);
@@ -51,6 +51,8 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
         try {
             setLoadingCard(true);
             const response = await axiosInstance.get(`card/get-card-by-customer-id/${currentUser._id}`);
+
+            console.log("customers card", response)
 
             if (response.data.statusCode === 200) {
                 // Check if card data exists and is not empty
@@ -97,8 +99,8 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
         }
 
         try {
-            const response = await axiosInstance.delete(`card/delete-card/${cardData._id}`);
-            
+            const response = await axiosInstance.delete(`card/delete-card-by-customer-id/${cardData._id}`);
+
             if (response.data.statusCode === 200) {
                 setCardData(null);
                 alert('Card removed successfully');
@@ -109,26 +111,29 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
         }
     };
 
-    // useEffect(() => {
-    //     const accessCode = params.get("AccessCode");
-    //     if (accessCode) {
-    //         const fetchEwayResult = async () => {
-    //             try {
-    //                 const response = await axiosInstance.get(`card/eway-result?AccessCode=${accessCode}`);
-                    
-    //                 if (response.data.statusCode === 200) {
-    //                     console.log("eway response", response.data);
-    //                     // Refresh card details after successful verification
-    //                     await fetchCustomersCardDetails();
-    //                 }
-    //             } catch (error) {
-    //                 console.error("Error fetching eway result:", error);
-    //             }
-    //         };
-            
-    //         fetchEwayResult();
-    //     }
-    // }, [params]);
+    useEffect(() => {
+        const accessCode = params.get("AccessCode");
+        if (accessCode && !cardData) {
+            const fetchEwayResult = async () => {
+                try {
+                    const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
+                    console.log("eway response", response);
+
+                    if (response.data.statusCode === 200) {
+                        // Refresh card details after successful verification
+                        await fetchCustomersCardDetails();
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete("AccessCode");
+                        window.history.replaceState({}, document.title, url.toString());
+                    }
+                } catch (error) {
+                    console.error("Error fetching eway result:", error);
+                }
+            };
+
+            fetchEwayResult();
+        }
+    }, [params]);
 
     useEffect(() => {
         if (currentUser?._id) {
@@ -137,7 +142,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     }, [currentUser?._id]);
 
     return (
-        <div className="p-4 col-span-2 bg-gray-50 min-h-screen font-spartan mt-5">
+        <div className="p-4 col-span-2  min-h-screen font-spartan mt-5">
             <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4">Selected addresses</h2>
 
             <div>
@@ -248,13 +253,13 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                     </div>
                                 </div>
                                 <div className="flex justify-end gap-2 text-[14px] mt-4">
-                                    <button 
+                                    <button
                                         onClick={handleVerifyCard}
                                         className="text-[#2D2C70] font-medium hover:underline"
                                     >
                                         Edit
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={handleRemoveCard}
                                         className="text-[#46BCF9] font-medium hover:underline"
                                     >
@@ -263,7 +268,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 </div>
                             </div>
                         ) : (
-                            <div 
+                            <div
                                 onClick={handleVerifyCard}
                                 className="border h-full min-h-[212px] border-dashed border-gray-300 rounded-lg p-6 shadow-md flex flex-col justify-center items-center cursor-pointer hover:border-[#2D2C70] hover:bg-gray-50 transition-all"
                             >

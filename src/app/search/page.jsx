@@ -48,48 +48,84 @@ const SearchPage = () => {
         return wishListItems.some(item => item.product?._id === productId)
     }
 
-    // Calculate discounted price for a product
+    // UPDATED: Calculate discounted price for a product with comparePrice priority
     const calculateDiscountedPrice = (product) => {
-        if (!currentUser || !currentUser.customerId) {
-            return product.eachPrice || 0;
-        }
-
         const originalPrice = product.eachPrice || 0;
 
-        // Check for item-based discount first (higher priority)
+        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            return product.comparePrice;
+        }
+
+        // If no comparePrice or comparePrice is 0, check for discounts
+        if (!currentUser || !currentUser.customerId) {
+            return originalPrice;
+        }
+
+        // Priority 2: Check for item-based discount
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
 
+        // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
             return originalPrice - discountAmount;
         }
 
-        // Check for pricing group discount
-        if (product.pricingGroup && product.pricingGroup._id) {
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser.customerId
+        // Priority 3: Check for pricing group discount
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
+            // Find matching pricing group discount document
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
             );
 
-            if (groupDiscount) {
-                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
-                return originalPrice - discountAmount;
+            if (groupDiscountDoc && groupDiscountDoc.customers) {
+                // Find the specific customer discount within the pricing group
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount && customerDiscount.percentage) {
+                    const percentage = parseFloat(customerDiscount.percentage);
+                    // Handle both positive and negative percentages
+                    if (percentage > 0) {
+                        // Positive percentage means price increase
+                        return originalPrice + (originalPrice * percentage / 100);
+                    } else {
+                        // Negative percentage means price decrease
+                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                    }
+                }
             }
         }
 
+        // If no discounts apply, return original price
         return originalPrice;
     };
 
-    // Get discount percentage for display
+    // UPDATED: Get discount percentage for display
     const getDiscountPercentage = (product) => {
+        // If product has comparePrice, show comparePrice discount
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            const originalPrice = product.eachPrice || 0;
+            if (originalPrice > 0) {
+                const discountAmount = originalPrice - product.comparePrice;
+                const discountPercentage = (discountAmount / originalPrice) * 100;
+                return Math.round(discountPercentage);
+            }
+            return 0;
+        }
+
         if (!currentUser || !currentUser.customerId) {
             return null;
         }
 
+        // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
@@ -98,25 +134,34 @@ const SearchPage = () => {
             return itemDiscount.percentage;
         }
 
-        if (product.pricingGroup && product.pricingGroup._id) {
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === product.pricingGroup._id &&
-                    discount.customerId === currentUser.customerId
+        // Check pricing group discount
+        if (product.pricingGroup) {
+            const productPricingGroupId = typeof product.pricingGroup === 'object'
+                ? product.pricingGroup._id
+                : product.pricingGroup;
+
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
             );
 
-            if (groupDiscount) {
-                return groupDiscount.percentage;
+            if (groupDiscountDoc && groupDiscountDoc.customers) {
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount && customerDiscount.percentage) {
+                    return parseFloat(customerDiscount.percentage);
+                }
             }
         }
 
         return null;
     };
 
-    // Check if product has any discount
+    // UPDATED: Check if product has any discount or comparePrice
     const hasDiscount = (product) => {
-        return getDiscountPercentage(product) !== null;
+        return (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) ||
+            getDiscountPercentage(product) !== null;
     };
 
     // Check if product is in cart
@@ -237,7 +282,6 @@ const SearchPage = () => {
     }
 
     // FIXED: Add to cart with proper stock validation
-    // FIXED: Add to cart with proper stock validation
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
@@ -272,6 +316,52 @@ const SearchPage = () => {
             // Calculate total amount using the discounted price
             const totalAmount = totalQuantity * discountedPrice
 
+            // Determine discount type and percentage
+            let discountType = "";
+            let discountPercentages = 0;
+
+            // Priority 1: Check if product has comparePrice
+            if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+                const originalPrice = product.eachPrice || 0;
+                if (originalPrice > 0) {
+                    const discountAmount = originalPrice - product.comparePrice;
+                    discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                    discountType = "Compare Price";
+                }
+            }
+            // Priority 2: Check for item-based discount
+            else if (currentUser && currentUser.customerId) {
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+                );
+
+                if (itemDiscount) {
+                    discountPercentages = itemDiscount.percentage;
+                    discountType = "Item Based Discount";
+                }
+                // Priority 3: Check for pricing group discount
+                else if (product.pricingGroup) {
+                    const productPricingGroupId = typeof product.pricingGroup === 'object'
+                        ? product.pricingGroup._id
+                        : product.pricingGroup;
+
+                    const groupDiscountDoc = customerGroupsDiscounts.find(
+                        discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
+                    );
+
+                    if (groupDiscountDoc) {
+                        const customerDiscount = groupDiscountDoc.customers.find(
+                            customer => customer.user && customer.user.customerId === currentUser.customerId
+                        );
+
+                        if (customerDiscount && customerDiscount.percentage) {
+                            discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
+                            discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
+                        }
+                    }
+                }
+            }
+
             const cartData = {
                 customerId: currentUser._id,
                 productId: productId,
@@ -279,8 +369,12 @@ const SearchPage = () => {
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
                 packType: selectedPack ? selectedPack.name : 'Each',
-                amount: totalAmount // Store the discounted total amount
+                amount: totalAmount, // Store the discounted total amount
+                discountType: discountType,
+                discountPercentages: discountPercentages
             }
+
+            console.log("Sending cart data with discounts:", cartData);
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData)
 
@@ -399,9 +493,12 @@ const SearchPage = () => {
         try {
             if (!currentUser || !currentUser.customerId) return
 
-            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`)
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`)
+
+            console.log("pricing groups discounts by customer id =", response)
 
             if (response.data.statusCode === 200) {
+                // CORRECTED: Access the data from response.data.data
                 setCustomerGroupsDiscounts(response.data.data || [])
             }
         }
@@ -416,6 +513,9 @@ const SearchPage = () => {
             if (!currentUser || !currentUser.customerId) return
 
             const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`)
+
+            console.log("item based discounsts", response)
+
             if (response.data.statusCode === 200) {
                 setItemBasedDiscounts(response.data.data || [])
             }
@@ -425,7 +525,6 @@ const SearchPage = () => {
         }
     }
 
-    // Add/Remove product from wishlist
     // Add/Remove product from wishlist
     const handleAddToWishList = async (productId) => {
         try {

@@ -47,50 +47,93 @@ export default function ProductPopup({
     const currentUser = useUserStore((state) => state.user)
     const router = useRouter()
 
-    // Calculate discounted price
+    // UPDATED: Calculate discounted price with comparePrice priority
     const calculateDiscountedPrice = () => {
         if (!product || !product.eachPrice) return 0;
 
         const originalPrice = product.eachPrice;
 
-        // Check for item-based discount first (higher priority)
-        const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser?.customerId
-        );
-
-        if (itemDiscount) {
-            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-            return originalPrice - discountAmount;
+        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            return product.comparePrice;
         }
 
-        // Check for pricing group discount
-        if (product.pricingGroup) {
-            const productPricingGroupId = typeof product.pricingGroup === 'object'
-                ? product.pricingGroup._id
-                : product.pricingGroup;
+        // If no comparePrice or comparePrice is 0, check for discounts
+        if (!currentUser || !currentUser.customerId) {
+            return originalPrice;
+        }
 
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.customerId === currentUser?.customerId &&
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === productPricingGroupId
-            );
+        // Priority 2: Check for item-based discount
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
 
-            if (groupDiscount) {
-                const discountAmount = (originalPrice * groupDiscount.percentage) / 100;
-                return originalPrice - discountAmount;
+        // If item-based discount exists, apply it
+        if (itemDiscount) {
+            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+            return Math.max(0, originalPrice - discountAmount); // Ensure price doesn't go negative
+        }
+
+        // Priority 3: Check for pricing group discount
+        // Since products don't have pricingGroup field, we need to check if any pricing group discount exists for this customer
+        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+            console.log("Checking pricing group discounts for customer:", currentUser.customerId);
+            console.log("Available pricing group discounts:", customerGroupsDiscounts);
+
+            // Find any pricing group discount that applies to this customer
+            for (const groupDiscountDoc of customerGroupsDiscounts) {
+                if (groupDiscountDoc && groupDiscountDoc.customers) {
+                    // Find the specific customer discount within the pricing group
+                    const customerDiscount = groupDiscountDoc.customers.find(
+                        customer => customer.user && customer.user.customerId === currentUser.customerId
+                    );
+
+                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                        const percentage = parseFloat(customerDiscount.percentage);
+                        console.log("Applying pricing group discount:", percentage, "% to product:", product.ProductName);
+                        
+                        // Handle both positive and negative percentages
+                        if (percentage > 0) {
+                            // Positive percentage means price increase
+                            const finalPrice = originalPrice + (originalPrice * percentage / 100);
+                            console.log("Final price after increase:", finalPrice);
+                            return finalPrice;
+                        } else if (percentage < 0) {
+                            // Negative percentage means price decrease
+                            const finalPrice = originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                            console.log("Final price after decrease:", finalPrice);
+                            return Math.max(0, finalPrice); // Ensure price doesn't go negative
+                        }
+                        // If percentage is 0, continue to next discount
+                    }
+                }
             }
         }
 
+        // If no discounts apply, return original price
         return originalPrice;
     };
 
-    // Get discount percentage for display
+    // UPDATED: Get discount percentage for display
     const getDiscountPercentage = () => {
-        if (!currentUser || !currentUser.customerId || !product) {
+        if (!product) return null;
+
+        // If product has comparePrice, show comparePrice discount
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            const originalPrice = product.eachPrice || 0;
+            if (originalPrice > 0 && product.comparePrice < originalPrice) {
+                const discountAmount = originalPrice - product.comparePrice;
+                const discountPercentage = (discountAmount / originalPrice) * 100;
+                return Math.round(discountPercentage);
+            }
             return null;
         }
 
+        if (!currentUser || !currentUser.customerId) {
+            return null;
+        }
+
+        // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
             discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
         );
@@ -99,28 +142,38 @@ export default function ProductPopup({
             return itemDiscount.percentage;
         }
 
-        if (product.pricingGroup) {
-            const productPricingGroupId = typeof product.pricingGroup === 'object'
-                ? product.pricingGroup._id
-                : product.pricingGroup;
+        // Check pricing group discount
+        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+            // Find any pricing group discount that applies to this customer
+            for (const groupDiscountDoc of customerGroupsDiscounts) {
+                if (groupDiscountDoc && groupDiscountDoc.customers) {
+                    const customerDiscount = groupDiscountDoc.customers.find(
+                        customer => customer.user && customer.user.customerId === currentUser.customerId
+                    );
 
-            const groupDiscount = customerGroupsDiscounts.find(
-                discount =>
-                    discount.customerId === currentUser.customerId &&
-                    discount.pricingGroup &&
-                    discount.pricingGroup._id === productPricingGroupId
-            );
-
-            if (groupDiscount) {
-                return groupDiscount.percentage;
+                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                        return parseFloat(customerDiscount.percentage);
+                    }
+                }
             }
         }
 
         return null;
     };
 
-    // Check if product has any discount
+    // UPDATED: Check if product has any discount or comparePrice
     const hasDiscount = () => {
+        if (!product) return false;
+
+        // Check if product has comparePrice discount
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            const originalPrice = product.eachPrice || 0;
+            if (product.comparePrice < originalPrice) {
+                return true;
+            }
+        }
+
+        // Check if product has item-based or pricing group discount
         return getDiscountPercentage() !== null;
     };
 
@@ -283,55 +336,104 @@ export default function ProductPopup({
     }, [product, cartItems])
 
     // Add to cart function
-    const handleAddToCart = async () => {
-        if (!currentUser?._id) {
-            setError("Please login to add to cart")
-            return
-        }
-        if (!product) return;
-
-        // Final stock check before adding to cart
-        const stockCheck = checkStock();
-        if (!stockCheck.isValid) {
-            setError(stockCheck.message);
-            return;
-        }
-
-        setLoadingCart(true);
-        try {
-            const selectedPack = product.typesOfPacks?.find(p => p._id === selectedUnitId)
-            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
-            const totalQuantity = packQuantity * quantity
-
-            // Calculate the discounted price for this product
-            const currentDiscountedPrice = calculateDiscountedPrice();
-
-            // Calculate total amount using the discounted price
-            const totalAmount = totalQuantity * currentDiscountedPrice
-
-            const res = await axiosInstance.post("cart/add-to-cart", {
-                customerId: currentUser._id,
-                productId: product._id,
-                packQuentity: packQuantity,
-                unitsQuantity: quantity,
-                totalQuantity: totalQuantity,
-                packType: selectedPack ? selectedPack.name : 'Each',
-                amount: totalAmount
-            })
-
-            if (res.data.statusCode === 200) {
-                await fetchCustomersCart()
-                setCartItemsCount(res.data.data.cartItems?.length || 0);
-                setError(null)
-                setStockError(null)
-            }
-        } catch (err) {
-            console.error(err)
-            setError("Error adding to cart")
-        } finally {
-            setLoadingCart(false)
-        }
+    // UPDATED: Add to cart function with discount data
+const handleAddToCart = async () => {
+    if (!currentUser?._id) {
+        setError("Please login to add to cart")
+        return
     }
+    if (!product) return;
+
+    // Final stock check before adding to cart
+    const stockCheck = checkStock();
+    if (!stockCheck.isValid) {
+        setError(stockCheck.message);
+        return;
+    }
+
+    setLoadingCart(true);
+    try {
+        const selectedPack = product.typesOfPacks?.find(p => p._id === selectedUnitId)
+        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+        const totalQuantity = packQuantity * quantity
+
+        // Calculate the discounted price for this product
+        const currentDiscountedPrice = calculateDiscountedPrice();
+
+        // Calculate total amount using the discounted price
+        const totalAmount = totalQuantity * currentDiscountedPrice
+
+        // Determine discount type and percentage
+        let discountType = "";
+        let discountPercentages = 0;
+
+        // Priority 1: Check if product has comparePrice
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            const originalPrice = product.eachPrice || 0;
+            if (originalPrice > 0 && product.comparePrice < originalPrice) {
+                const discountAmount = originalPrice - product.comparePrice;
+                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                discountType = "Compare Price";
+            }
+        }
+        // Priority 2: Check for item-based discount
+        else if (currentUser && currentUser.customerId) {
+            const itemDiscount = itemBasedDiscounts.find(
+                discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            );
+
+            if (itemDiscount) {
+                discountPercentages = itemDiscount.percentage;
+                discountType = "Item Based Discount";
+            }
+            // Priority 3: Check for pricing group discount
+            else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+                // Find any pricing group discount that applies to this customer
+                for (const groupDiscountDoc of customerGroupsDiscounts) {
+                    if (groupDiscountDoc && groupDiscountDoc.customers) {
+                        const customerDiscount = groupDiscountDoc.customers.find(
+                            customer => customer.user && customer.user.customerId === currentUser.customerId
+                        );
+
+                        if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                            discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
+                            discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
+                            break; // Use the first matching discount found
+                        }
+                    }
+                }
+            }
+        }
+
+        const cartData = {
+            customerId: currentUser._id,
+            productId: product._id,
+            packQuentity: packQuantity,
+            unitsQuantity: quantity,
+            totalQuantity: totalQuantity,
+            packType: selectedPack ? selectedPack.name : 'Each',
+            amount: totalAmount, // Store the discounted total amount
+            discountType: discountType,
+            discountPercentages: discountPercentages
+        }
+
+        console.log("Sending cart data with discounts:", cartData);
+
+        const res = await axiosInstance.post("cart/add-to-cart", cartData)
+
+        if (res.data.statusCode === 200) {
+            await fetchCustomersCart()
+            setCartItemsCount(res.data.data.cartItems?.length || 0);
+            setError(null)
+            setStockError(null)
+        }
+    } catch (err) {
+        console.error(err)
+        setError("Error adding to cart")
+    } finally {
+        setLoadingCart(false)
+    }
+}
 
     const handleAddToWishlist = async () => {
         if (!currentUser?._id) {

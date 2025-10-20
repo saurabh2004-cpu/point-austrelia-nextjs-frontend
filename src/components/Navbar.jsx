@@ -15,6 +15,7 @@ import useCartStore from "@/zustand/cartPopup"
 import useWishlistStore from "@/zustand/wishList"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
+import Link from "next/link"
 
 // Custom hook for click outside detection
 const useClickOutside = (callback) => {
@@ -42,7 +43,6 @@ const useClickOutside = (callback) => {
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  // const [showCartPopup, setShowCartPopUp] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [hoveredCategory, setHoveredCategory] = useState(null)
   const [hoveredSubcategory, setHoveredSubcategory] = useState(null)
@@ -51,7 +51,6 @@ export function Navbar() {
   const currentUser = useUserStore((state) => state.user);
   const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
-  // const searchParams = useSearchParams()
 
   const currentCartItems = useCartStore((state) => state.currentItems);
   const setCartItems = useCartStore((state) => state.setCurrentItems);
@@ -69,7 +68,6 @@ export function Navbar() {
   const [brandId, setBrandId] = useState(null)
   const [brandSlug, setBrandSlug] = useState(null)
 
-
   const [showCompanyDropDown, setShowCompanyDropDown] = useState(false)
 
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
@@ -83,30 +81,25 @@ export function Navbar() {
 
   const isCheckoutPage = pathname === '/checkout';
 
-
-
   // Search state
   const [searchQuery, setSearchQuery] = useState("")
 
-  const fetchCurentUser = async () => {
-    try {
-      const response = await axiosInstance.get('user/get-current-user');
-
-      console.log("current user response", response)
-
-      if (response.data.statusCode === 200) {
-        setUser(response.data.data);
-      }
-
-    } catch (error) {
-      console.error("Error fetching current user:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchCurentUser();
-  }, []);
+    const fetchCurentUser = async () => {
+      try {
+        const response = await axiosInstance.get('user/get-current-user');
+        if (response.data.statusCode === 200) {
+          setUser(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
+    };
 
+    if (!currentUser) {
+      fetchCurentUser();
+    }
+  }, []);
 
   useEffect(() => {
     const handleStart = () => setIsLoading(true)
@@ -116,7 +109,7 @@ export function Navbar() {
 
     const timeout = setTimeout(() => {
       handleComplete()
-    }, 300)
+    }, 0)
 
     return () => {
       clearTimeout(timeout)
@@ -128,8 +121,6 @@ export function Navbar() {
   const userDropdownRef = useClickOutside(() => {
     setShowUserDropdown(false);
   });
-
-
 
   const mobileMenuRef = useClickOutside(() => {
     setIsMenuOpen(false);
@@ -159,7 +150,7 @@ export function Navbar() {
   const handleMobileMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
     setShowUserDropdown(false);
-    setShowCartPopup(false); // Use Zustand store method
+    setShowCartPopup(false);
     setActiveDropdown(null);
   }
 
@@ -180,14 +171,11 @@ export function Navbar() {
 
   // Fetch categories when a brand is hovered
   const fetchCategoriesForBrand = async (brandId) => {
-    if (categoriesByBrand[brandId]) return // Already fetched
+    if (categoriesByBrand[brandId]) return
 
     try {
       setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
-      console.log("brandId", brandId)
       const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
-
-      console.log("categories by brand = ", res.data.data)
 
       if (res.data.statusCode === 200) {
         setCategoriesByBrand(prev => ({
@@ -204,7 +192,7 @@ export function Navbar() {
 
   // Fetch subcategories when a category is hovered
   const fetchSubCategoriesForCategory = async (categoryId) => {
-    if (subCategoriesByCategory[categoryId]) return // Already fetched
+    if (subCategoriesByCategory[categoryId]) return
 
     try {
       const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
@@ -222,7 +210,7 @@ export function Navbar() {
 
   // Fetch subcategories two when a subcategory is hovered
   const fetchSubCategoriesTwoForSubCategory = async (subCategoryId) => {
-    if (subCategoriesTwoBySubCategory[subCategoryId]) return // Already fetched
+    if (subCategoriesTwoBySubCategory[subCategoryId]) return
 
     try {
       const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
@@ -265,13 +253,10 @@ export function Navbar() {
     // Add brands as navigation items with dropdowns
     brands.forEach((brand, idx) => {
       const categories = categoriesByBrand[brand._id] || []
-
-      // FIXED: Consistent brand routes for non-logged in users
       const brandRoute = `/brand/${brand.slug}`;
 
-      // Organize categories by column (distribute evenly across 5 columns)
+      // Organize categories by column
       const categoriesWithColumns = categories.map((cat, catIdx) => {
-        // Calculate items per column (ceiling division to distribute evenly)
         const itemsPerColumn = Math.ceil(categories.length / 5)
         const column = Math.floor(catIdx / itemsPerColumn) + 1
 
@@ -281,7 +266,7 @@ export function Navbar() {
           slug: cat.slug,
           brandId: brand._id,
           brandSlug: brand.slug,
-          link: `${cat.slug}`,
+          link: `/${cat.slug}`,
           column: column,
           subcategories: subCategoriesByCategory[cat._id]?.map(subCat => ({
             id: subCat._id,
@@ -289,14 +274,14 @@ export function Navbar() {
             slug: subCat.slug,
             brandId: brand._id,
             brandSlug: brand.slug,
-            link: `${subCat.slug}`,
+            link: `/${subCat.slug}`,
             subcategoriesTwo: subCategoriesTwoBySubCategory[subCat._id]?.map(subCatTwo => ({
               id: subCatTwo._id,
               label: subCatTwo.name,
               slug: subCatTwo.slug,
               brandId: brand._id,
               brandSlug: brand.slug,
-              link: `${subCatTwo.slug}`
+              link: `/${subCatTwo.slug}`
             }))
           }))
         }
@@ -307,7 +292,7 @@ export function Navbar() {
         index: idx + 1,
         brandId: brand._id,
         brandSlug: brand.slug,
-        brandRoute: brandRoute, // FIXED: Using consistent route
+        brandRoute: brandRoute,
         hasDropdown: true,
         categories: categoriesWithColumns
       })
@@ -324,14 +309,13 @@ export function Navbar() {
 
   const navigationItems = buildNavigationItems()
 
-
   const handleBrandClick = (brandId, brandSlug) => {
     setActiveDropdown(null);
     setHoveredCategory(null);
     setHoveredSubcategory(null);
     setIsMenuOpen(false);
     setShowUserDropdown(false);
-    setShowCartPopup(false); // Use Zustand store method
+    setShowCartPopup(false);
   }
 
   const handleNavigation = (item) => {
@@ -339,31 +323,22 @@ export function Navbar() {
       setCurrentIndex(item.index)
       setActiveDropdown(null)
       setIsMenuOpen(false)
-      if (item.link) {
-        router.push(item.link)
-      }
     } else {
-      // Handle COMPANY clicks
       if (item.label === "COMPANY" || item.label === "CONTACT US") {
         if (!currentUser) {
-          // If not logged in, navigate to contact-us
           router.push('/contact-us');
           setActiveDropdown(null);
           setIsMenuOpen(false);
         } else {
-          // If logged in, toggle company dropdown
           setShowCompanyDropDown(!showCompanyDropDown);
-          setActiveDropdown(null); // Close other dropdowns
+          setActiveDropdown(null);
         }
       } else {
-        // Handle brand clicks - if not logged in, navigate to brand route
         if (!currentUser && item.brandRoute) {
-          // FIXED: Use the brandRoute from the navigation item
           router.push(item.brandRoute);
           setActiveDropdown(null);
           setIsMenuOpen(false);
         } else if (currentUser && item.brandId) {
-          // If logged in, navigate to products-list with brand slug
           handleBrandClick(item.brandId, item.brandSlug);
           setActiveDropdown(null);
           setIsMenuOpen(false);
@@ -372,16 +347,11 @@ export function Navbar() {
     }
   }
 
-
   const companyDropdownRef = useClickOutside(() => {
     setShowCompanyDropDown(false);
   });
 
-
   const handleCategoryClick = (link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
-
-
-    router.replace(`/${link}`)
     setActiveDropdown(null)
     setHoveredCategory(null)
     setHoveredSubcategory(null)
@@ -401,14 +371,12 @@ export function Navbar() {
   }
 
   const handleBrandHover = (brandId, index, brandSlug) => {
-    // Only show dropdown on hover if user is logged in
     if (currentUser) {
       setActiveDropdown(index)
       fetchCategoriesForBrand(brandId)
       setBrandId(brandId)
       setBrandSlug(brandSlug)
     }
-    // If user is not logged in, do nothing on hover (no dropdown)
   }
 
   const handleCategoryHover = (categoryId) => {
@@ -425,10 +393,8 @@ export function Navbar() {
       setLoading(true);
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
-      console.log("Customer cart data:", response);
       if (response.data.statusCode === 200) {
         const cartData = response.data.data;
-
         setCartItems(cartData.length);
       } else {
         setError(response.data.message)
@@ -458,7 +424,6 @@ export function Navbar() {
   // Handle Logout
   const handleLogout = async () => {
     try {
-      // Clear user from store
       useUserStore.getState().clearUser();
       setWishlistItems(0);
       setCartItems(0);
@@ -466,7 +431,6 @@ export function Navbar() {
 
       try {
         const response = await axiosInstance.post('user/logout');
-
         if (response.data.statusCode === 200) {
           console.log('Logout successful');
           setCartItems(0);
@@ -478,7 +442,6 @@ export function Navbar() {
         setError('Failed to logout. Please try again.');
       }
 
-      // Redirect to home page
       router.push('/');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -492,9 +455,13 @@ export function Navbar() {
   }
 
   useEffect(() => {
-    fetchCustomersCart()
-    fetchCustomersWishList()
-  }, [currentUser])
+    if (currentUser?._id && currentCartItems === 0) {
+      fetchCustomersCart();
+    }
+    if (currentUser?._id && currentWishlistItems === 0) {
+      fetchCustomersWishList();
+    }
+  }, [currentUser?._id]);
 
   useEffect(() => {
     if (currentUser !== undefined) {
@@ -519,7 +486,6 @@ export function Navbar() {
 
   return (
     <>
-
       {/* Loading Bar */}
       {isLoading && (
         <div className="fixed top-0 left-0 w-full h-1 z-50">
@@ -567,22 +533,16 @@ export function Navbar() {
                       fill="currentColor"
                       className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
                     />
-                    <span
-                      onClick={() => router.push('/login')}
-                      className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">
+                    <Link href="/login" className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">
                       LOGIN
-                    </span>
+                    </Link>
                   </div>
 
                   {/* Divider */}
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
-
-                  {/* Sign Up */}
-                  <span
-                    onClick={() => router.push('/sign-up')}
-                    className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">
+                  <Link href="/sign-up" className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">
                     SIGN UP
-                  </span>
+                  </Link>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2 text-[1rem] font-medium ml-20 relative">
@@ -628,27 +588,22 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Image
-                  src="/logo/point-austrelia-logo.png"
-                  alt="Logo"
-                  width={219}
-                  height={100}
-                  className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer"
-                  onClick={() => {
-                    router.push('/');
-                    setShowUserDropdown(false);
-                    setShowCartPopup(false);
-                    setIsMenuOpen(false);
-                    setActiveDropdown(null);
-                  }}
-                />
+                <Link href="/">
+                  <Image
+                    src="/logo/point-austrelia-logo.png"
+                    alt="Logo"
+                    width={219}
+                    height={100}
+                    className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer"
+                  />
+                </Link>
               </div>
 
               {/* Right - Search, Cart, and Mobile Actions */}
               <div className="flex items-center space-x-2 lg:space-x-4">
 
                 {/* Mobile & Tablet: Search and Cart icons only */}
-                {currentUser && !isCheckoutPage && (  // Add !isCheckoutPage condition
+                {currentUser && !isCheckoutPage && (
                   <div className="flex lg:hidden items-center space-x-3">
                     <Button
                       variant="ghost"
@@ -660,10 +615,9 @@ export function Navbar() {
                     </Button>
 
                     {/* Mobile & Tablet Wishlist */}
-                    <button
+                    <Link href="/wishlist"
                       className="relative bg-white group p-1"
                       onClick={() => {
-                        router.push('/wishlist');
                         setIsMenuOpen(false);
                       }}
                     >
@@ -680,13 +634,12 @@ export function Navbar() {
                       <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">
                         {currentWishlistItems || 0}
                       </span>
-                    </button>
+                    </Link>
 
                     {/* Mobile & Tablet Cart */}
-                    <button
+                    <Link href="/cart"
                       className="relative bg-white group p-1"
                       onClick={() => {
-                        router.push('/cart');
                         setIsMenuOpen(false);
                       }}
                     >
@@ -703,30 +656,27 @@ export function Navbar() {
                       <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">
                         {currentCartItems || 0}
                       </Badge>
-                    </button>
+                    </Link>
                   </div>
                 )}
 
                 {/* Desktop: Full search, quick order, wishlist, cart */}
                 <div className="hidden lg:flex lg:space-x-10 items-center">
 
-                  {/* ADDED: Desktop Search Bar */}
                   {/* Desktop Search - Icon and Input */}
-                  {currentUser && !isCheckoutPage && (  // Add !isCheckoutPage condition
+                  {currentUser && !isCheckoutPage && (
                     <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
-                      {/* Search Icon */}
                       {!isDesktopSearchOpen &&
-                        <Button
+                        <button
                           variant="ghost"
                           size="sm"
                           onClick={() => setIsDesktopSearchOpen(!isDesktopSearchOpen)}
-                          className="p-2 mr-2"
+                          className="p-2 mr-2 flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70] hover:text-[#E9098D] cursor-pointer group"
                         >
+                          <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D] group-hover:text-[#E9098D]" />
                           Search
-                          <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
-                        </Button>}
+                        </button>}
 
-                      {/* Search Input - Only show when isDesktopSearchOpen is true */}
                       {isDesktopSearchOpen && currentUser && (
                         <div className="flex items-center relative w-64">
                           <Input
@@ -754,12 +704,10 @@ export function Navbar() {
                     {/* <span className="text-[1rem] font-semibold text-[#2d2c70] hover:text-[#E9098D] cursor-pointer">Quick Order</span> */}
                   </div>
 
-
                   {/* Desktop Wishlist */}
-                  {currentUser && !isCheckoutPage && (  // Add !isCheckoutPage condition
-                    <button
+                  {currentUser && !isCheckoutPage && (
+                    <Link href={'/wishlist'}
                       className="relative bg-white group"
-                      onClick={() => router.push('/wishlist')}
                       data-navbar-cart-button
                     >
                       <svg
@@ -775,11 +723,11 @@ export function Navbar() {
                       <span className="absolute -top-1 -right-2 h-4 w-4 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">
                         {currentWishlistItems || 0}
                       </span>
-                    </button>
+                    </Link>
                   )}
 
                   {/* Desktop Cart */}
-                  {currentUser && !isCheckoutPage && (  // Add !isCheckoutPage condition
+                  {currentUser && !isCheckoutPage && (
                     <button
                       className="relative bg-white group"
                       onClick={handleCartPopupToggle}
@@ -840,7 +788,6 @@ export function Navbar() {
                 key={item.index}
                 className="relative h-full flex items-center hover:border hover:border-1 border-black px-2"
                 onMouseEnter={() => {
-                  // Only show dropdown on hover if user is logged in AND item has dropdown
                   if (item.hasDropdown && currentUser) {
                     if (item.brandId) {
                       handleBrandHover(item.brandId, item.index, item.brandSlug);
@@ -858,44 +805,46 @@ export function Navbar() {
                   setShowCompanyDropDown(false)
                 }}
               >
-                <button
-                  onClick={() => handleNavigation(item)}
-                  className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
-                >
-                  {item.label}
-                </button>
+                {!item.hasDropdown ? (
+                  <Link
+                    href={item.link || '/'}
+                    className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleNavigation(item)}
+                    className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                  >
+                    {item.label}
+                  </button>
+                )}
 
                 {/* COMPANY Dropdown for Desktop */}
-                {/* // Update the COMPANY Dropdown for Desktop (around line 780)   */}
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
                   <div
                     className="absolute top-full left-0  w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     ref={companyDropdownRef}
                   >
                     <div className="py-1">
-                      {/* Map through all brands */}
                       {brands.map((brand) => (
-                        <button
+                        <Link
                           key={brand._id}
-                          onClick={() => {
-                            router.push(`/brand/${brand.slug}`);
-                            setShowCompanyDropDown(false);
-                          }}
+                          href={`/brand/${brand.slug}`}
+                          onClick={() => setShowCompanyDropDown(false)}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
-                        </button>
+                        </Link>
                       ))}
-                      {/* Contact Us at the bottom */}
-                      <button
-                        onClick={() => {
-                          router.push('/contact-us');
-                          setShowCompanyDropDown(false);
-                        }}
+                      <Link
+                        href="/contact-us"
+                        onClick={() => setShowCompanyDropDown(false)}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
                       >
                         Contact Us
-                      </button>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -908,68 +857,67 @@ export function Navbar() {
             <div className="space-y-2">
               {navigationItems.map((item) => (
                 <div key={item.index}>
-                  <button
-                    onClick={() => {
-                      if (item.hasDropdown) {
-                        // For COMPANY item
-                        if (item.label === "COMPANY") {
-                          if (!currentUser) {
-                            // If not logged in, navigate to contact-us
-                            router.push('/contact-us');
-                            setIsMenuOpen(false);
+                  {!item.hasDropdown ? (
+                    <Link
+                      href={item.link || '/'}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (item.hasDropdown) {
+                          if (item.label === "COMPANY") {
+                            if (!currentUser) {
+                              router.push('/contact-us');
+                              setIsMenuOpen(false);
+                            } else {
+                              setActiveDropdown(activeDropdown === item.index ? null : item.index)
+                            }
                           } else {
-                            // If logged in, toggle dropdown
-                            setActiveDropdown(activeDropdown === item.index ? null : item.index)
+                            if (currentUser && item.brandId) {
+                              handleBrandClick(item.brandId, item.brandSlug);
+                              setIsMenuOpen(false);
+                            } else if (!currentUser && item.brandRoute) {
+                              router.push(item.brandRoute);
+                              setIsMenuOpen(false);
+                            }
                           }
                         } else {
-                          // For brands: if user is logged in, navigate to products-list with brand slug
-                          if (currentUser && item.brandId) {
-                            handleBrandClick(item.brandId, item.brandSlug);
-                            setIsMenuOpen(false);
-                          } else if (!currentUser && item.brandRoute) {
-                            // If not logged in, navigate to brand route
-                            router.push(item.brandRoute);
-                            setIsMenuOpen(false);
-                          }
+                          handleNavigation(item)
                         }
-                      } else {
-                        handleNavigation(item)
-                      }
-                    }}
-                    className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
-                  >
-                    {item.label}
-                    {item.hasDropdown && currentUser && ( // Only show dropdown arrow if user is logged in
-                      <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
-                    )}
-                  </button>
+                      }}
+                      className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
+                    >
+                      {item.label}
+                      {item.hasDropdown && currentUser && (
+                        <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
+                      )}
+                    </button>
+                  )}
 
-                  {/* // Update the COMPANY Dropdown Menu for Mobile (around line 880) */}
+                  {/* COMPANY Dropdown Menu for Mobile */}
                   {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
                     <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                      {/* Map through all brands */}
                       {brands.map((brand) => (
-                        <button
+                        <Link
                           key={brand._id}
-                          onClick={() => {
-                            router.push(`/brand/${brand.slug}`);
-                            setIsMenuOpen(false);
-                          }}
+                          href={`/brand/${brand.slug}`}
+                          onClick={() => setIsMenuOpen(false)}
                           className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
-                        </button>
+                        </Link>
                       ))}
-                      {/* Contact Us at the bottom */}
-                      <button
-                        onClick={() => {
-                          router.push('/contact-us');
-                          setIsMenuOpen(false);
-                        }}
+                      <Link
+                        href="/contact-us"
+                        onClick={() => setIsMenuOpen(false)}
                         className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
                       >
                         Contact Us
-                      </button>
+                      </Link>
                     </div>
                   )}
 
@@ -979,7 +927,8 @@ export function Navbar() {
                       {item.categories.length > 0 ? (
                         item.categories.map((category, idx) => (
                           <div key={category.id || idx}>
-                            <button
+                            <Link
+                              href={`/${category.slug}`}
                               onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId)}
                               className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
                             >
@@ -987,19 +936,20 @@ export function Navbar() {
                               {category.subcategories && (
                                 <ChevronRight className={`w-4 h-4 transition-transform ${hoveredCategory === category.id ? 'rotate-90' : ''}`} />
                               )}
-                            </button>
+                            </Link>
 
                             {/* Mobile Subcategories */}
                             {category.subcategories && hoveredCategory === category.id && (
                               <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
                                 {category.subcategories.map((subcat) => (
-                                  <button
+                                  <Link
                                     key={subcat.id}
+                                    href={`/${subcat.slug}`}
                                     onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId)}
                                     className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
                                   >
                                     {subcat.label}
-                                  </button>
+                                  </Link>
                                 ))}
                               </div>
                             )}
@@ -1050,7 +1000,8 @@ export function Navbar() {
                             }}
                             onMouseLeave={() => setHoveredCategory(null)}
                           >
-                            <button
+                            <Link
+                              href={`/${category.slug}`}
                               onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null)}
                               className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
                                 ? "text-[#E9098D] font-bold"
@@ -1061,7 +1012,7 @@ export function Navbar() {
                               {(category.subcategories || subCategoriesByCategory[category.id]) && (
                                 <ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />
                               )}
-                            </button>
+                            </Link>
 
                             {/* Subcategory Popup */}
                             {(category.subcategories || subCategoriesByCategory[category.id]) && hoveredCategory === `${colIdx}-${catIdx}` && (
@@ -1082,7 +1033,8 @@ export function Navbar() {
                                       }}
                                       onMouseLeave={() => setHoveredSubcategory(null)}
                                     >
-                                      <button
+                                      <Link
+                                        href={`/${subcat.slug}`}
                                         onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null)}
                                         className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
                                       >
@@ -1090,7 +1042,7 @@ export function Navbar() {
                                         {subCategoriesTwoBySubCategory[subcat.id] && (
                                           <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         )}
-                                      </button>
+                                      </Link>
 
                                       {/* SubcategoryTwo Popup */}
                                       {subCategoriesTwoBySubCategory[subcat.id] && hoveredSubcategory === subcat.id && (
@@ -1099,13 +1051,14 @@ export function Navbar() {
                                         >
                                           <div className="p-4 space-y-2">
                                             {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
-                                              <button
+                                              <Link
                                                 key={subcatTwo.id}
+                                                href={`/${subcatTwo.slug}`}
                                                 onClick={() => handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug)}
                                                 className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 hover:border hover:border-2 p-1 border-black"
                                               >
                                                 {subcatTwo.label}
-                                              </button>
+                                              </Link>
                                             ))}
                                           </div>
                                         </div>
@@ -1135,7 +1088,7 @@ export function Navbar() {
       </nav>
 
       {showCartPopup && (
-        <div data-cart-popup> {/* Remove ref and add data attribute */}
+        <div data-cart-popup>
           <ShoppingCartPopup onClose={() => setShowCartPopup(false)} />
         </div>
       )}

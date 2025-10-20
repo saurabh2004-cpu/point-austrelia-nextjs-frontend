@@ -555,7 +555,7 @@ const ShoppingCart = () => {
                                                 const displayQuantity = getDisplayQuantity(item);
                                                 const selectedPack = getSelectedPack(item);
                                                 const totalQuantity = calculateDisplayTotalQuantity(item);
-                                                const itemSubtotal = (item.product.eachPrice * totalQuantity);
+                                                const itemSubtotal = (item.amount * totalQuantity);
                                                 const itemTax = totals.tax;
                                                 const itemTotal = itemSubtotal + itemTax;
                                                 const hasModifications = isItemModified(item);

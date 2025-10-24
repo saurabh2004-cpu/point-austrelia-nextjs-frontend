@@ -312,16 +312,16 @@ const ProductCard = ({
                         <span className="text-[#2D2C70] font-semibold text-[24px]">
                             ${discountedPrice.toFixed(2)}
                         </span>
-                        {hasProductDiscount && (
+                        {hasProductDiscount && !discountPercentage > product.eachPrice && (
                             <span className="text-sm text-gray-500 line-through">
                                 ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
                             </span>
                         )}
-                        {discountPercentage && (
+                        {/* {discountPercentage && (
                             <span className="text-sm text-green-600 font-semibold">
                                 {discountPercentage}% OFF
                             </span>
-                        )}
+                        )} */}
                     </div>
 
                     <div className='flex items-center justify-between'>
@@ -400,7 +400,7 @@ const ProductCard = ({
                     <div className='flex text-[13px] font-semibold justify-between w-full'>
                         {/* ✅ UPDATE BUTTON: Only enabled when product is in cart AND has modifications */}
                         <button
-                            onClick={() => onUpdateCart(productId)}
+                            onClick={() => onAddToCart(productId)}
                             className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-8 disabled:opacity-50 ${hasModifications && isAvailable && isProductInCart
                                 ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
@@ -489,7 +489,7 @@ const Page = () => {
         try {
             if (!currentUser || !currentUser.customerId) return;
 
-            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser.customerId}`);
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`);
 
             if (response.data.statusCode === 200) {
                 setCustomerGroupsDiscounts(response.data.data || []);

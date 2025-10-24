@@ -439,7 +439,7 @@ const ShoppingCartPopup = () => {
               View Cart
             </Link>
             <Link href="/checkout"
-              onClick={() => { router.push('/checkout'); }}
+              onClick={() => setIsOpen(false)}
               disabled={hasStockIssues || cartItems.length === 0}
               className={`flex-1 border border-black text-white py-2  text-center rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${hasStockIssues ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#46BCF9] hover:bg-[#2D2C70]'}`}
               title={hasStockIssues ? 'Please fix stock issues before checkout' : ''}

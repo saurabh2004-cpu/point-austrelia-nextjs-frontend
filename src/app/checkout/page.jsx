@@ -4,10 +4,11 @@ import { ChevronDown, Check, Plus, X } from 'lucide-react';
 import Image from 'next/image';
 import CheckoutFormUI from '@/components/checkout-components/CheckOutInformation';
 import Review from '@/components/checkout-components/Review';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
+import { p } from 'framer-motion/client';
 
 // Address Popup Component
 const AddressPopup = ({
@@ -230,6 +231,22 @@ const CheckoutComponent = () => {
     const [documentNumber, setDocumentNumber] = React.useState('');
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const [loadingCheckOut, setLoadingCheckOut] = useState(false);
+    const params = useSearchParams();
+    const [accessTokenProcessed, setAccessTokenProcessed] = useState(false);
+    const [isNavigating, setIsNavigating] = useState()
+    const [cardData, setCardData] = useState({})
+    const [ewayCardData, setEwayCardData] = useState(null);
+    const [isProcessingEway, setIsProcessingEway] = useState(false);
+
+    useEffect(() => {
+        // Prefetch thank you page immediately when checkout page loads
+        const timer = setTimeout(() => {
+            router.prefetch('/thank-you/SO00000');
+        }, 1000); // Small delay to let the checkout page load first
+
+        return () => clearTimeout(timer);
+    }, [router]);
+
 
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -495,8 +512,13 @@ const CheckoutComponent = () => {
         }
     }, [latestSalesOrderDocumentNumber]);
 
+    // UPDATED handleCompleteCheckout in your checkout component
+
+    // UPDATED handleCompleteCheckout in your checkout component
+
     const handleCompleteCheckout = async () => {
         setLoadingCheckOut(true);
+
         try {
             const orderData = {
                 date: submitForm.date,
@@ -511,22 +533,35 @@ const CheckoutComponent = () => {
                 items: submitForm.items
             };
 
-            const response = await axiosInstance.post('sales-order/create-bulk-sales-order', orderData);
+            const response = await axiosInstance.post(
+                'sales-order/create-bulk-sales-order',
+                orderData
+            );
 
             if (response.data.statusCode === 200) {
-                console.log("All orders placed successfully via bulk API");
-                setCartItemsCount(0);
+                const docNumber = response.data.data.documentNumber;
 
-                // Navigate immediately to thank you page
-                router.push(`/thank-you/${documentNumber}`);
+                // Update cart count
+                setCartItemsCount(0);
+                setIsNavigating(true);
+
+                // PASS ORDER DATA VIA ROUTER STATE - This is the key change!
+                setTimeout(() => {
+                    router.push(`/thank-you/${docNumber}`);
+                }, 0);
+
+                // Background cleanup
+                axiosInstance.delete(`cart/clear-cart/${currentUser._id}`)
+                    .catch(err => console.error('Error clearing cart:', err));
+
             } else {
-                setError(response.data.message || 'Failed to process order. Please try again.');
+                setError(response.data.message || 'Failed to process order.');
+                setLoadingCheckOut(false);
             }
 
         } catch (error) {
-            console.error("Error placing bulk orders: ", error);
-            setError("An error occurred while placing your order. Please try again.");
-        } finally {
+            console.error("Error placing order:", error);
+            setError("An error occurred. Please try again.");
             setLoadingCheckOut(false);
         }
     };
@@ -570,6 +605,52 @@ const CheckoutComponent = () => {
             fetchCustomersCart();
         }
     }, [currentUser])
+
+    useEffect(() => {
+        const accessCode = params.get("AccessCode");
+        if (accessCode && !accessTokenProcessed) {
+            setIsProcessingEway(true);
+
+            const fetchEwayResult = async () => {
+                try {
+                    const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
+                    console.log("eway response", response);
+
+                    if (response.data.statusCode === 200) {
+                        // Set step to 2 and mark as processed
+                        setAccessTokenProcessed(true);
+                        setCardData(response.data.data);
+                        setIsProcessingEway(false)
+
+                        setStep(2);
+
+                        // Clean up URL
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete("AccessCode");
+                        window.history.replaceState({}, document.title, url.toString());
+                    }
+                } catch (error) {
+                    console.error("Error fetching eway result:", error);
+                } finally {
+                    setIsProcessingEway(false)
+                }
+            };
+
+            fetchEwayResult();
+        }
+    }, [params, accessTokenProcessed, currentUser?._id]);
+
+    if (isProcessingEway) {
+        return (
+            <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#2D2C70] mb-4"></div>
+                    <h2 className="text-xl font-semibold text-[#2D2C70] mb-2">Verifying Your Card</h2>
+                    <p className="text-gray-600">Please wait while we process your payment...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen  py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
@@ -730,6 +811,7 @@ const CheckoutComponent = () => {
                             selectedShippingAddress={selectedShippingAddress}
                             submitForm={submitForm}
                             setSubmitForm={setSubmitForm}
+                            cardDetails={cardData}
                         />
                     }
 

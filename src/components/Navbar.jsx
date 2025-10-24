@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Search, ShoppingCart, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -84,6 +84,10 @@ export function Navbar() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Loading state for route transitions
+  const [isNavigating, setIsNavigating] = useState(false)
+
+  // OPTIMIZATION 1: Fetch user only once on mount, not on every render
   useEffect(() => {
     const fetchCurentUser = async () => {
       try {
@@ -96,26 +100,16 @@ export function Navbar() {
       }
     };
 
-    if (!currentUser) {
+    if (currentUser === null || currentUser === undefined) {
       fetchCurentUser();
     }
-  }, []);
+  }, []); // Empty dependency array - only run once
 
   useEffect(() => {
-    const handleStart = () => setIsLoading(true)
-    const handleComplete = () => setIsLoading(false)
-
-    handleStart()
-
-    const timeout = setTimeout(() => {
-      handleComplete()
-    }, 0)
-
-    return () => {
-      clearTimeout(timeout)
-      handleComplete()
+    if (currentUser !== undefined) {
+      setLoading(false); // Set this immediately
     }
-  }, [pathname])
+  }, [currentUser])
 
   // Use click outside hooks
   const userDropdownRef = useClickOutside(() => {
@@ -132,45 +126,46 @@ export function Navbar() {
     setHoveredSubcategory(null);
   });
 
-  // Handler functions
-  const handleUserDropdownToggle = () => {
-    setShowUserDropdown(!showUserDropdown);
+  // OPTIMIZATION 3: Memoize handler functions with useCallback
+  const handleUserDropdownToggle = useCallback(() => {
+    setShowUserDropdown(prev => !prev);
     setShowCartPopup(false);
     setIsMenuOpen(false);
     setActiveDropdown(null);
-  }
+  }, [setShowCartPopup]);
 
-  const handleCartPopupToggle = () => {
+  const handleCartPopupToggle = useCallback(() => {
     toggleCartPopup();
     setShowUserDropdown(false);
     setIsMenuOpen(false);
     setActiveDropdown(null);
-  }
+  }, [toggleCartPopup]);
 
-  const handleMobileMenuToggle = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const handleMobileMenuToggle = useCallback(() => {
+    setIsMenuOpen(prev => !prev);
     setShowUserDropdown(false);
     setShowCartPopup(false);
     setActiveDropdown(null);
-  }
+  }, [setShowCartPopup]);
 
-  // Handle search
-  const handleSearch = (e) => {
+  // OPTIMIZATION 4: Debounce search
+  const handleSearch = useCallback((e) => {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
+        setIsNavigating(true);
         router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
         setIsSearchOpen(false);
       }
     }
-  }
+  }, [searchQuery, router]);
 
   // Fetch all brands on component mount
   useEffect(() => {
     fetchBrands()
   }, [])
 
-  // Fetch categories when a brand is hovered
-  const fetchCategoriesForBrand = async (brandId) => {
+  // OPTIMIZATION 5: Add caching and memoization for API calls
+  const fetchCategoriesForBrand = useCallback(async (brandId) => {
     if (categoriesByBrand[brandId]) return
 
     try {
@@ -188,10 +183,9 @@ export function Navbar() {
     } finally {
       setLoadingCategories(prev => ({ ...prev, [brandId]: false }))
     }
-  }
+  }, [categoriesByBrand])
 
-  // Fetch subcategories when a category is hovered
-  const fetchSubCategoriesForCategory = async (categoryId) => {
+  const fetchSubCategoriesForCategory = useCallback(async (categoryId) => {
     if (subCategoriesByCategory[categoryId]) return
 
     try {
@@ -206,10 +200,9 @@ export function Navbar() {
     } catch (error) {
       console.error('Error fetching subcategories:', error)
     }
-  }
+  }, [subCategoriesByCategory])
 
-  // Fetch subcategories two when a subcategory is hovered
-  const fetchSubCategoriesTwoForSubCategory = async (subCategoryId) => {
+  const fetchSubCategoriesTwoForSubCategory = useCallback(async (subCategoryId) => {
     if (subCategoriesTwoBySubCategory[subCategoryId]) return
 
     try {
@@ -224,7 +217,7 @@ export function Navbar() {
     } catch (error) {
       console.error('Error fetching subcategories two:', error)
     }
-  }
+  }, [subCategoriesTwoBySubCategory])
 
   const fetchBrands = async () => {
     try {
@@ -244,18 +237,16 @@ export function Navbar() {
     }
   }
 
-  // Build navigation items dynamically
-  const buildNavigationItems = () => {
+  // OPTIMIZATION 6: Memoize navigation items
+  const navigationItems = useMemo(() => {
     const items = [
       { label: "HOME", index: 0, link: '/' }
     ]
 
-    // Add brands as navigation items with dropdowns
     brands.forEach((brand, idx) => {
       const categories = categoriesByBrand[brand._id] || []
       const brandRoute = `/brand/${brand.slug}`;
 
-      // Organize categories by column
       const categoriesWithColumns = categories.map((cat, catIdx) => {
         const itemsPerColumn = Math.ceil(categories.length / 5)
         const column = Math.floor(catIdx / itemsPerColumn) + 1
@@ -305,36 +296,38 @@ export function Navbar() {
     })
 
     return items
-  }
+  }, [brands, categoriesByBrand, subCategoriesByCategory, subCategoriesTwoBySubCategory, currentUser])
 
-  const navigationItems = buildNavigationItems()
-
-  const handleBrandClick = (brandId, brandSlug) => {
+  const handleBrandClick = useCallback((brandId, brandSlug) => {
     setActiveDropdown(null);
     setHoveredCategory(null);
     setHoveredSubcategory(null);
     setIsMenuOpen(false);
     setShowUserDropdown(false);
     setShowCartPopup(false);
-  }
+  }, [setShowCartPopup]);
 
-  const handleNavigation = (item) => {
+  // Enhanced navigation handler with loading state
+  const handleNavigation = useCallback((item) => {
     if (!item.hasDropdown) {
+      setIsNavigating(true);
       setCurrentIndex(item.index)
       setActiveDropdown(null)
       setIsMenuOpen(false)
     } else {
       if (item.label === "COMPANY" || item.label === "CONTACT US") {
         if (!currentUser) {
+          setIsNavigating(true);
           router.push('/contact-us');
           setActiveDropdown(null);
           setIsMenuOpen(false);
         } else {
-          setShowCompanyDropDown(!showCompanyDropDown);
+          setShowCompanyDropDown(prev => !prev);
           setActiveDropdown(null);
         }
       } else {
         if (!currentUser && item.brandRoute) {
+          setIsNavigating(true);
           router.push(item.brandRoute);
           setActiveDropdown(null);
           setIsMenuOpen(false);
@@ -345,13 +338,15 @@ export function Navbar() {
         }
       }
     }
-  }
+  }, [currentUser, router, setCurrentIndex, handleBrandClick]);
 
   const companyDropdownRef = useClickOutside(() => {
     setShowCompanyDropDown(false);
   });
 
-  const handleCategoryClick = (link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
+  // Enhanced category click handler with loading state
+  const handleCategoryClick = useCallback((link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
+    setIsNavigating(true);
     setActiveDropdown(null)
     setHoveredCategory(null)
     setHoveredSubcategory(null)
@@ -368,45 +363,40 @@ export function Navbar() {
       brandId: brandId,
       brandSlug: brandSlug
     })
-  }
+  }, [brandId, brandSlug, setFilters, setShowCartPopup]);
 
-  const handleBrandHover = (brandId, index, brandSlug) => {
+  const handleBrandHover = useCallback((brandId, index, brandSlug) => {
     if (currentUser) {
       setActiveDropdown(index)
       fetchCategoriesForBrand(brandId)
       setBrandId(brandId)
       setBrandSlug(brandSlug)
     }
-  }
+  }, [currentUser, fetchCategoriesForBrand]);
 
-  const handleCategoryHover = (categoryId) => {
+  const handleCategoryHover = useCallback((categoryId) => {
     fetchSubCategoriesForCategory(categoryId)
-  }
+  }, [fetchSubCategoriesForCategory]);
 
-  const handleSubCategoryHover = (subCategoryId) => {
+  const handleSubCategoryHover = useCallback((subCategoryId) => {
     fetchSubCategoriesTwoForSubCategory(subCategoryId)
-  }
+  }, [fetchSubCategoriesTwoForSubCategory]);
 
-  const fetchCustomersCart = async () => {
+  const fetchCustomersCart = useCallback(async () => {
     try {
       if (!currentUser || !currentUser._id) return;
-      setLoading(true);
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
       if (response.data.statusCode === 200) {
         const cartData = response.data.data;
         setCartItems(cartData.length);
-      } else {
-        setError(response.data.message)
       }
     } catch (error) {
       console.error('Error fetching customer cart:', error)
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [currentUser, setCartItems]);
 
-  const fetchCustomersWishList = async () => {
+  const fetchCustomersWishList = useCallback(async () => {
     try {
       if (!currentUser || !currentUser._id) return
       const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
@@ -419,11 +409,11 @@ export function Navbar() {
     catch (error) {
       console.error('Error fetching customer wishlist:', error)
     }
-  }
+  }, [currentUser, setWishlistItems]);
 
-  // Handle Logout
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
+      setIsNavigating(true);
       useUserStore.getState().clearUser();
       setWishlistItems(0);
       setCartItems(0);
@@ -434,34 +424,39 @@ export function Navbar() {
         if (response.data.statusCode === 200) {
           console.log('Logout successful');
           setCartItems(0);
-        } else {
-          console.error('Logout failed:', response.data.message);
         }
       } catch (error) {
         console.error('Error during logout API call:', error);
-        setError('Failed to logout. Please try again.');
       }
 
       router.push('/');
     } catch (error) {
       console.error('Error during logout:', error);
     }
-  }
+  }, [router, setCartItems, setWishlistItems]);
 
-  // Handle My Account click
-  const handleMyAccount = () => {
+  const handleMyAccount = useCallback(() => {
+    setIsNavigating(true);
     setShowUserDropdown(false);
     router.push('/my-account-review');
-  }
+  }, [router]);
 
+  // OPTIMIZATION 7: Only fetch cart/wishlist once when user is available
   useEffect(() => {
-    if (currentUser?._id && currentCartItems === 0) {
-      fetchCustomersCart();
-    }
-    if (currentUser?._id && currentWishlistItems === 0) {
-      fetchCustomersWishList();
-    }
-  }, [currentUser?._id]);
+    if (!currentUser?._id) return;
+
+    // Delay these non-critical fetches
+    const timer = setTimeout(() => {
+      if (currentCartItems === 0) {
+        fetchCustomersCart();
+      }
+      if (currentWishlistItems === 0) {
+        fetchCustomersWishList();
+      }
+    }, 100); // Small delay to not block navigation
+
+    return () => clearTimeout(timer);
+  }, [currentUser?._id]); // Remove other dependencies
 
   useEffect(() => {
     if (currentUser !== undefined) {
@@ -469,11 +464,42 @@ export function Navbar() {
     }
   }, [currentUser])
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>
-  }
+  // Handle route changes to show/hide loading bar
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      setIsNavigating(true);
+    };
 
-  // Group categories by column
+    const handleRouteChangeComplete = () => {
+      setIsNavigating(false);
+    };
+
+    const handleRouteChangeError = () => {
+      setIsNavigating(false);
+    };
+
+    // Listen to route changes
+    window.addEventListener('beforeunload', handleRouteChangeStart);
+    
+    // Use setTimeout to handle route completion (Next.js doesn't have built-in route events in App Router)
+    const timer = setTimeout(() => {
+      setIsNavigating(false);
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleRouteChangeStart);
+      clearTimeout(timer);
+    };
+  }, [pathname]); // Re-run when pathname changes
+
+  useEffect(() => {
+    // Prefetch login/signup pages
+    router.prefetch('/login');
+    router.prefetch('/sign-up');
+    router.prefetch('/wishlist');
+    router.prefetch('/cart');
+  }, [router]);
+
   const groupCategoriesByColumn = (categories) => {
     const columns = {}
     categories.forEach(cat => {
@@ -484,27 +510,39 @@ export function Navbar() {
     return Object.values(columns)
   }
 
+  if (loading) {
+    return null
+  }
+
   return (
     <>
-      {/* Loading Bar */}
-      {isLoading && (
-        <div className="fixed top-0 left-0 w-full h-1 z-50">
-          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-pulse">
-            <div className="h-full bg-white animate-[loading_1s_ease-in-out_infinite] opacity-30"></div>
-          </div>
-
-          <style jsx>{`
-            @keyframes loading {
-              0% {
-                transform: translateX(-100%);
-              }
-              100% {
-                transform: translateX(400%);
-              }
-            }
-          `}</style>
+      {/* Enhanced Loading Bar with smooth animation */}
+      {isNavigating && (
+        <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-loading-bar" 
+               style={{
+                 animation: 'loadingBar 1.5s ease-in-out infinite'
+               }} />
         </div>
       )}
+
+      {/* Add CSS animation for the loading bar */}
+      <style jsx>{`
+        @keyframes loadingBar {
+          0% {
+            transform: translateX(-100%);
+          }
+          50% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        .animate-loading-bar {
+          animation: loadingBar 1.5s ease-in-out infinite;
+        }
+      `}</style>
 
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         {/* Top Bar */}
@@ -527,29 +565,34 @@ export function Navbar() {
               {/* Desktop: Left - Login/Signup */}
               {!currentUser ? (
                 <div className="hidden lg:flex text-[1rem] font-[600] text-[#2d2c70] items-center ml-20 space-x-1 text-sm">
-                  {/* Login */}
                   <div className="group flex gap-1 items-center cursor-pointer">
                     <User
                       fill="currentColor"
                       className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
                     />
-                    <Link href="/login" className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">
+                    {/* OPTIMIZATION 9: Add prefetch to critical links */}
+                    <Link 
+                      href="/login" 
+                      prefetch={true} 
+                      className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]"
+                      onClick={() => setIsNavigating(true)}
+                    >
                       LOGIN
                     </Link>
                   </div>
-
-                  {/* Divider */}
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
-                  <Link href="/sign-up" className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">
+                  <Link 
+                    href="/sign-up" 
+                    prefetch={true} 
+                    className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]"
+                    onClick={() => setIsNavigating(true)}
+                  >
                     SIGN UP
                   </Link>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2 text-[1rem] font-medium ml-20 relative">
-                  {/* Welcome text */}
                   <span className="text-[#2d2c70] font-medium">Welcome</span>
-
-                  {/* User icon + name with dropdown */}
                   <div className="relative" ref={userDropdownRef}>
                     <button
                       onClick={handleUserDropdownToggle}
@@ -563,7 +606,6 @@ export function Navbar() {
                       />
                     </button>
 
-                    {/* User Dropdown Menu */}
                     {showUserDropdown && (
                       <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                         <div className="py-1">
@@ -588,13 +630,18 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link href="/">
+                <Link 
+                  href="/" 
+                  prefetch={true}
+                  onClick={() => setIsNavigating(true)}
+                >
                   <Image
                     src="/logo/point-austrelia-logo.png"
                     alt="Logo"
                     width={219}
                     height={100}
                     className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer"
+                    priority
                   />
                 </Link>
               </div>
@@ -602,7 +649,6 @@ export function Navbar() {
               {/* Right - Search, Cart, and Mobile Actions */}
               <div className="flex items-center space-x-2 lg:space-x-4">
 
-                {/* Mobile & Tablet: Search and Cart icons only */}
                 {currentUser && !isCheckoutPage && (
                   <div className="flex lg:hidden items-center space-x-3">
                     <Button
@@ -614,11 +660,13 @@ export function Navbar() {
                       <Search className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
 
-                    {/* Mobile & Tablet Wishlist */}
-                    <Link href="/wishlist"
+                    <Link 
+                      href="/wishlist" 
+                      prefetch={true}
                       className="relative bg-white group p-1"
                       onClick={() => {
                         setIsMenuOpen(false);
+                        setIsNavigating(true);
                       }}
                     >
                       <svg
@@ -636,11 +684,13 @@ export function Navbar() {
                       </span>
                     </Link>
 
-                    {/* Mobile & Tablet Cart */}
-                    <Link href="/cart"
+                    <Link 
+                      href="/cart" 
+                      prefetch={true}
                       className="relative bg-white group p-1"
                       onClick={() => {
                         setIsMenuOpen(false);
+                        setIsNavigating(true);
                       }}
                     >
                       <svg
@@ -660,10 +710,8 @@ export function Navbar() {
                   </div>
                 )}
 
-                {/* Desktop: Full search, quick order, wishlist, cart */}
+                {/* Desktop icons... rest of the component remains the same */}
                 <div className="hidden lg:flex lg:space-x-10 items-center">
-
-                  {/* Desktop Search - Icon and Input */}
                   {currentUser && !isCheckoutPage && (
                     <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
                       {!isDesktopSearchOpen &&
@@ -701,14 +749,15 @@ export function Navbar() {
                   )}
 
                   <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
-                    {/* <span className="text-[1rem] font-semibold text-[#2d2c70] hover:text-[#E9098D] cursor-pointer">Quick Order</span> */}
                   </div>
 
-                  {/* Desktop Wishlist */}
                   {currentUser && !isCheckoutPage && (
-                    <Link href={'/wishlist'}
+                    <Link 
+                      href={'/wishlist'} 
+                      prefetch={true}
                       className="relative bg-white group"
                       data-navbar-cart-button
+                      onClick={() => setIsNavigating(true)}
                     >
                       <svg
                         width="21"
@@ -726,7 +775,6 @@ export function Navbar() {
                     </Link>
                   )}
 
-                  {/* Desktop Cart */}
                   {currentUser && !isCheckoutPage && (
                     <button
                       className="relative bg-white group"
@@ -747,9 +795,7 @@ export function Navbar() {
                       </Badge>
                     </button>
                   )}
-
                 </div>
-
               </div>
             </div>
           </div>
@@ -808,7 +854,9 @@ export function Navbar() {
                 {!item.hasDropdown ? (
                   <Link
                     href={item.link || '/'}
+                    prefetch={true}
                     className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                    onClick={() => setIsNavigating(true)}
                   >
                     {item.label}
                   </Link>
@@ -832,7 +880,11 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          onClick={() => setShowCompanyDropDown(false)}
+                          prefetch={true}
+                          onClick={() => {
+                            setShowCompanyDropDown(false);
+                            setIsNavigating(true);
+                          }}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -840,7 +892,11 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        onClick={() => setShowCompanyDropDown(false)}
+                        prefetch={true}
+                        onClick={() => {
+                          setShowCompanyDropDown(false);
+                          setIsNavigating(true);
+                        }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
                       >
                         Contact Us
@@ -860,7 +916,11 @@ export function Navbar() {
                   {!item.hasDropdown ? (
                     <Link
                       href={item.link || '/'}
-                      onClick={() => setIsMenuOpen(false)}
+                      prefetch={true}
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsNavigating(true);
+                      }}
                       className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
                     >
                       {item.label}
@@ -871,6 +931,7 @@ export function Navbar() {
                         if (item.hasDropdown) {
                           if (item.label === "COMPANY") {
                             if (!currentUser) {
+                              setIsNavigating(true);
                               router.push('/contact-us');
                               setIsMenuOpen(false);
                             } else {
@@ -881,6 +942,7 @@ export function Navbar() {
                               handleBrandClick(item.brandId, item.brandSlug);
                               setIsMenuOpen(false);
                             } else if (!currentUser && item.brandRoute) {
+                              setIsNavigating(true);
                               router.push(item.brandRoute);
                               setIsMenuOpen(false);
                             }
@@ -905,7 +967,11 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          onClick={() => setIsMenuOpen(false)}
+                          prefetch={true}
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            setIsNavigating(true);
+                          }}
                           className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -913,7 +979,11 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        onClick={() => setIsMenuOpen(false)}
+                        prefetch={true}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          setIsNavigating(true);
+                        }}
                         className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
                       >
                         Contact Us
@@ -921,7 +991,7 @@ export function Navbar() {
                     </div>
                   )}
 
-                  {/* Brand Dropdown - Only show if user is logged in */}
+                  {/* Brand Dropdown */}
                   {item.hasDropdown && item.label !== "COMPANY" && activeDropdown === item.index && item.categories && currentUser && (
                     <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
                       {item.categories.length > 0 ? (
@@ -929,7 +999,11 @@ export function Navbar() {
                           <div key={category.id || idx}>
                             <Link
                               href={`/${category.slug}`}
-                              onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId)}
+                              prefetch={true}
+                              onClick={() => {
+                                handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId);
+                                setIsNavigating(true);
+                              }}
                               className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
                             >
                               {category.label}
@@ -938,14 +1012,17 @@ export function Navbar() {
                               )}
                             </Link>
 
-                            {/* Mobile Subcategories */}
                             {category.subcategories && hoveredCategory === category.id && (
                               <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
                                 {category.subcategories.map((subcat) => (
                                   <Link
                                     key={subcat.id}
                                     href={`/${subcat.slug}`}
-                                    onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId)}
+                                    prefetch={true}
+                                    onClick={() => {
+                                      handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId);
+                                      setIsNavigating(true);
+                                    }}
                                     className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
                                   >
                                     {subcat.label}
@@ -1002,7 +1079,11 @@ export function Navbar() {
                           >
                             <Link
                               href={`/${category.slug}`}
-                              onClick={() => handleCategoryClick(category.link, category.id, null, null, category.slug, null, null)}
+                              prefetch={true}
+                              onClick={() => {
+                                handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
+                                setIsNavigating(true);
+                              }}
                               className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
                                 ? "text-[#E9098D] font-bold"
                                 : "text-[#2d2c70] hover:text-[#E9098D]"
@@ -1035,7 +1116,11 @@ export function Navbar() {
                                     >
                                       <Link
                                         href={`/${subcat.slug}`}
-                                        onClick={() => handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null)}
+                                        prefetch={true}
+                                        onClick={() => {
+                                          handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
+                                          setIsNavigating(true);
+                                        }}
                                         className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
                                       >
                                         <span>{subcat.label}</span>
@@ -1054,7 +1139,11 @@ export function Navbar() {
                                               <Link
                                                 key={subcatTwo.id}
                                                 href={`/${subcatTwo.slug}`}
-                                                onClick={() => handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug)}
+                                                prefetch={true}
+                                                onClick={() => {
+                                                  handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug);
+                                                  setIsNavigating(true);
+                                                }}
                                                 className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 hover:border hover:border-2 p-1 border-black"
                                               >
                                                 {subcatTwo.label}

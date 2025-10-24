@@ -764,8 +764,10 @@ const ProductListing = () => {
     }, [currentUser, currentCartItems])
 
     useEffect(() => {
-        fetchProducts()
-        fetchCategoriesForBrand()
+        if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
+            fetchProducts()
+            fetchCategoriesForBrand()
+        }
     }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
 
     // Generate pagination buttons
@@ -1365,7 +1367,7 @@ const ProductListing = () => {
                                                                     <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
                                                                         ${discountedPrice.toFixed(2)}
                                                                     </span>
-                                                                    {hasProductDiscount && (
+                                                                    {hasProductDiscount && !discountPercentage > product.eachPrice && (
                                                                         <span className="text-sm text-gray-500 line-through">
                                                                             ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
                                                                         </span>

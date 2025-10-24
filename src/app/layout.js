@@ -1,10 +1,11 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
+
 import { League_Spartan } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { LoadingBar } from "@/components/LoadingBar";
 import { Suspense } from "react";
+import { Navbar } from "@/components/Navbar";
 
 
 

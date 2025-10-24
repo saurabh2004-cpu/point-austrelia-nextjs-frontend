@@ -1012,9 +1012,9 @@ const SearchPage = () => {
                                                         <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
                                                             ${discountedPrice.toFixed(2)}
                                                         </span>
-                                                        {hasProductDiscount && product.eachPrice && (
+                                                        {hasProductDiscount && !discountPercentage > product.eachPrice && (
                                                             <span className="text-sm text-gray-500 line-through">
-                                                                ${product.eachPrice.toFixed(2)}
+                                                                ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
                                                             </span>
                                                         )}
                                                     </div>

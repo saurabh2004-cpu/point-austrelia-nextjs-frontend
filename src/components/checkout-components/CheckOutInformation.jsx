@@ -5,7 +5,7 @@ import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import { useSearchParams } from 'next/navigation';
 
-const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submitForm, setSubmitForm }) => {
+const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submitForm, setSubmitForm, cardDetails }) => {
     const [orderComments, setOrderComments] = useState(submitForm.comments || '');
     const [purchaseOrderNumber, setPurchaseOrderNumber] = useState(submitForm.customerPO || '');
     const [selectedPayment, setSelectedPayment] = useState(submitForm.salesChannel || 'credit-card');
@@ -13,6 +13,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     const [cardData, setCardData] = useState(null);
     const [loadingCard, setLoadingCard] = useState(true);
     const params = useSearchParams();
+    const [addingCard, setAddingCard] = useState(false);
 
     const handlePaymentChange = (paymentType) => {
         setSelectedPayment(paymentType);
@@ -77,6 +78,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
 
     const handleVerifyCard = async () => {
         try {
+            setAddingCard(true); // Start loading
             const response = await axiosInstance.post("card/create-session", {
                 userName: currentUser.customerName,
                 email: currentUser.customerEmail,
@@ -90,6 +92,8 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
         } catch (error) {
             console.error("Error starting Eway verification:", error);
             alert("Failed to start verification.");
+        } finally {
+            setAddingCard(false); // Stop loading in case of error
         }
     };
 
@@ -112,34 +116,10 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     };
 
     useEffect(() => {
-        const accessCode = params.get("AccessCode");
-        if (accessCode && !cardData) {
-            const fetchEwayResult = async () => {
-                try {
-                    const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
-                    console.log("eway response", response);
-
-                    if (response.data.statusCode === 200) {
-                        // Refresh card details after successful verification
-                        await fetchCustomersCardDetails();
-                        const url = new URL(window.location.href);
-                        url.searchParams.delete("AccessCode");
-                        window.history.replaceState({}, document.title, url.toString());
-                    }
-                } catch (error) {
-                    console.error("Error fetching eway result:", error);
-                }
-            };
-
-            fetchEwayResult();
-        }
-    }, [params]);
-
-    useEffect(() => {
-        if (currentUser?._id) {
+        if (currentUser?._id ) {
             fetchCustomersCardDetails();
         }
-    }, [currentUser?._id]);
+    }, [currentUser?._id,]);
 
     return (
         <div className="p-4 col-span-2  min-h-screen font-spartan mt-5">
@@ -238,13 +218,13 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                             <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md relative flex flex-col justify-between">
                                 <div className="flex flex-row justify-between items-start">
                                     <div className="space-y-2 text-sm">
-                                        <p className="font-[600]">Ending in <span className="font-[400]">{cardData?.lastFourDigits || '****'}</span></p>
-                                        <p className="font-[600]">Expires in <span className="font-[400]">{cardData?.expirationMonth && cardData?.expirationYear ? `${cardData.expirationMonth}/${cardData.expirationYear}` : 'N/A'}</span></p>
-                                        <p className="font-[500]">{cardData?.userId?.name || currentUser?.customerName || 'N/A'}</p>
+                                        <p className="font-[600]">Ending in <span className="font-[400]">{cardData?.lastFourDigits || cardDetails?.lastFourDigits}</span></p>
+                                        <p className="font-[600]">Expires in <span className="font-[400]">{cardData?.expirationMonth && cardData?.expirationYear ? `${cardData.expirationMonth}/${cardData.expirationYear}` : `${cardDetails.expirationMonth}/${cardDetails.expirationYear}`}</span></p>
+                                        <p className="font-[500]">{cardData?.userId?.name || cardDetails?.userId?.name || 'N/A'}</p>
                                         <div className="flex-col space-y-2">
                                             <p className="font-[500]">Token ID</p>
                                             <div className="text-xs text-gray-600">
-                                                {cardData?.tokenCustomerId || 'N/A'}
+                                                {cardData?.tokenCustomerId || cardDetails?.tokenCustomerId || 'N/A'}
                                             </div>
                                         </div>
                                     </div>
@@ -255,9 +235,10 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 <div className="flex justify-end gap-2 text-[14px] mt-4">
                                     <button
                                         onClick={handleVerifyCard}
-                                        className="text-[#2D2C70] font-medium hover:underline"
+                                        disabled={addingCard}
+                                        className="text-[#2D2C70] font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Edit
+                                        {addingCard ? 'Processing...' : 'Edit'}
                                     </button>
                                     <button
                                         onClick={handleRemoveCard}
@@ -272,13 +253,21 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 onClick={handleVerifyCard}
                                 className="border h-full min-h-[212px] border-dashed border-gray-300 rounded-lg p-6 shadow-md flex flex-col justify-center items-center cursor-pointer hover:border-[#2D2C70] hover:bg-gray-50 transition-all"
                             >
-                                <div className="flex flex-col items-center space-y-4">
-                                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                                        <Plus size={32} className="text-gray-400" />
+                                {addingCard ? (
+                                    <div className="flex flex-col items-center space-y-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D2C70]"></div>
+                                        <p className="text-sm font-medium text-gray-600">Adding Credit Card...</p>
+                                        <p className="text-xs text-gray-400 text-center">Please wait</p>
                                     </div>
-                                    <p className="text-sm font-medium text-gray-600">Add Credit Card</p>
-                                    <p className="text-xs text-gray-400 text-center">Click to add a new card</p>
-                                </div>
+                                ) : (
+                                    <div className="flex flex-col items-center space-y-4">
+                                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                                            <Plus size={32} className="text-gray-400" />
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-600">Add Credit Card</p>
+                                        <p className="text-xs text-gray-400 text-center">Click to add a new card</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

@@ -148,3 +148,26 @@
 .hide-scrollbar {
   -ms-overflow-style: none;
 }
+
+
+/* Add to your globals.css */
+.nav-loading {
+  pointer-events: none;
+  cursor: wait;
+}
+
+.nav-loading * {
+  cursor: wait !important;
+}
+
+/* Immediate feedback for clicks */
+button:active,
+a:active {
+  transform: scale(0.98);
+  transition: transform 0.05s;
+}
+
+/* Fast transitions */
+.fast-transition {
+  transition: all 0.1s ease-in-out;
+}

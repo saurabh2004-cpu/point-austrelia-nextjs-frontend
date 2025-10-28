@@ -26,6 +26,8 @@ const ShoppingCartPopup = () => {
       setLoading(true);
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
+      console.log("get cart by customer id ", response)
+
       if (response.data.statusCode === 200) {
         const items = response.data.data || [];
         setCartItems(items);
@@ -217,12 +219,6 @@ const ShoppingCartPopup = () => {
     return currentUnits !== item.unitsQuantity || currentPackQuantity !== item.packQuentity;
   };
 
-  const getProductImage = (item) => {
-    if (item.product.images && Array.isArray(item.product.images) && item.product.images.length > 0) {
-      return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.images[0]}`;
-    }
-    return `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${item.product.sku}_1.jpg`;
-  };
 
   // Calculate items that exceed stock level
   const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
@@ -298,7 +294,7 @@ const ShoppingCartPopup = () => {
                     <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 mb-3">
                       <div className="flex-shrink-0 flex justify-center sm:justify-start mb-3 sm:mb-0">
                         <img
-                          src={getProductImage(item)}
+                          src={item.product.images}
                           alt={item.product.ProductName}
                           width={96}
                           height={96}

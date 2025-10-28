@@ -363,7 +363,7 @@ const ProductListing = () => {
             const discountedPrice = calculateDiscountedPrice(product)
 
             // Calculate total amount using the discounted price
-            const totalAmount = totalQuantity * discountedPrice
+            const totalAmount = discountedPrice
 
             // Determine discount type and percentage
             let discountType = "";

@@ -175,7 +175,25 @@ export default function SignUpComponent() {
         // setUser(res.data.data);
         // window.location.href = '/my-account-review'
         setSuccessMessage('Thank you for signing up! We are reviewing your account for approval.')
-        setFormData({});
+        setFormData({
+          customerName: '',
+          contactName: '',
+          contactEmail: '',
+          customerEmail: '',
+          CustomerPhoneNo: '',
+          contactPhone: '',
+          storeName: '',
+          abn: '',
+          category: '', // This will store the business type
+          customCategory: '', // For "Other" option
+          address1: '',
+          address2: '',
+          suburb: '',
+          country: '',
+          state: '',
+          postcode: '',
+          password: '' // Default password
+        });
         setErrors({
           success: 'Thank you for signing up! We are reviewing your account for approval.'
         });

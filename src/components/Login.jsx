@@ -101,11 +101,18 @@ export default function LoginComponent() {
 
       console.log("Login response:", res)
 
-      if (res.data.statusCode === 200) {
+      if (res.data.statusCode === 200 && res.data.data.inactive == false) {
         setIsLoading(false)
         setUser(res.data.data);
-        window.location.href = '/my-account-review'
-      } else {
+        // window.location.href = '/my-account-review'
+      } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
+        setIsLoading(false)
+        setErrors(prev => ({
+          ...prev,
+          loginError: 'Your account is inactive. Please contact support for assistance.'
+        }))
+      }
+      else {
         setErrors(prev => ({
           ...prev,
           loginError: res.data.message || 'Login failed. Please try again.'
@@ -388,7 +395,7 @@ export default function LoginComponent() {
                 </motion.button>
               </motion.div>
 
-              
+
 
               <motion.div variants={itemVariants}>
                 <motion.button

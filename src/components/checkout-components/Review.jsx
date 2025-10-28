@@ -27,8 +27,8 @@ const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm })
 
     // Get payment method text
     const paymentMethodText = submitForm.salesChannel === 'credit-card' ? 'Credit Card' :
-        submitForm.salesChannel === 'person-card' ? 'Account Customer' :
-            submitForm.salesChannel === 'phone-card' ? 'Contact me for payment' :
+        submitForm.salesChannel === 'Account Customer' ? 'Account Customer' :
+            submitForm.salesChannel === 'Contact me for payment' ? 'Contact me for payment' :
                 'Credit Card'
         ;
 

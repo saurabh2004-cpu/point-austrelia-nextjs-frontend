@@ -280,8 +280,8 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 id="person-card"
                                 name="payment-method"
                                 value="person-card"
-                                checked={selectedPayment === 'person-card'}
-                                onChange={() => handlePaymentChange('person-card')}
+                                checked={selectedPayment === 'Account Customer'}
+                                onChange={() => handlePaymentChange('Account Customer')}
                                 className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
                             />
                             <label htmlFor="person-card" className="ml-3 flex-1 cursor-pointer">
@@ -307,8 +307,8 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 id="phone-card"
                                 name="payment-method"
                                 value="phone-card"
-                                checked={selectedPayment === 'phone-card'}
-                                onChange={() => handlePaymentChange('phone-card')}
+                                checked={selectedPayment === 'Contact me for payment'}
+                                onChange={() => handlePaymentChange('Contact me for payment')}
                                 className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
                             />
                             <label htmlFor="phone-card" className="ml-3 flex-1 cursor-pointer">

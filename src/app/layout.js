@@ -36,6 +36,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         className={`${spartan.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true}
       >
         <Suspense fallback={<div>Loading...</div>}>
           <Navbar />

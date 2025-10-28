@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Check, Plus, X } from 'lucide-react';
+import { ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import CheckoutFormUI from '@/components/checkout-components/CheckOutInformation';
 import Review from '@/components/checkout-components/Review';
@@ -8,9 +8,63 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
-import { p } from 'framer-motion/client';
 
-// Address Popup Component
+// Out of Stock Warning Component
+const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
+    if (outOfStockItems.length === 0) return null;
+
+    return (
+        <div className="mb-6 bg-red-50 border-2 border-red-400 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-red-800 mb-2">
+                        Products Out of Stock
+                    </h3>
+                    <p className="text-sm text-red-700 mb-3">
+                        The following {outOfStockItems.length === 1 ? 'item is' : 'items are'} currently out of stock.
+                        Please remove {outOfStockItems.length === 1 ? 'it' : 'them'} from your cart to continue.
+                    </p>
+                    <div className="space-y-2">
+                        {outOfStockItems.map((item) => (
+                            <div key={item._id} className="bg-white rounded-md p-3 border border-red-200">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-semibold text-sm text-gray-900">
+                                            {item.product.ProductName}
+                                        </p>
+                                        <p className="text-xs text-gray-600 mt-1">
+                                            SKU: {item.product.sku}
+                                        </p>
+                                        <p className="text-xs text-red-600 mt-1">
+                                            Current Stock: {item.product.stockLevel}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => onRemoveItems([item.product._id])}
+                                        className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {outOfStockItems.length > 1 && (
+                        <button
+                            onClick={() => onRemoveItems(outOfStockItems.map(item => item._id))}
+                            className="mt-3 w-full bg-red-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition-colors"
+                        >
+                            Remove All Out of Stock Items
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Address Popup Component (keeping existing)
 const AddressPopup = ({
     isOpen,
     onClose,
@@ -86,25 +140,20 @@ const AddressPopup = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-[#000000]/20  bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-[#000000]/20 bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white border border-gray-400 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-4 border-b">
                     <h2 className="text-lg font-semibold">
                         {mode === 'add' ? 'Add New' : 'Edit'} {type === 'shipping' ? 'Shipping' : 'Billing'} Address
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-1 hover:bg-gray-100 rounded-full"
-                    >
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-4 space-y-4 ">
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Address Line 1 *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
                         <input
                             type="text"
                             name="addressOne"
@@ -116,9 +165,7 @@ const AddressPopup = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Address Line 2
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
                         <input
                             type="text"
                             name="addressTwo"
@@ -129,9 +176,7 @@ const AddressPopup = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Address Line 3
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 3</label>
                         <input
                             type="text"
                             name="addressThree"
@@ -143,9 +188,7 @@ const AddressPopup = ({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                City *
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                             <input
                                 type="text"
                                 name="city"
@@ -157,9 +200,7 @@ const AddressPopup = ({
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                State *
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
                             <input
                                 type="text"
                                 name="state"
@@ -172,9 +213,7 @@ const AddressPopup = ({
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ZIP Code *
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code *</label>
                         <input
                             type="text"
                             name="zip"
@@ -217,7 +256,6 @@ const CheckoutComponent = () => {
         addressId: null
     });
 
-
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -227,25 +265,19 @@ const CheckoutComponent = () => {
     const [selectedBillingAddress, setSelectedBillingAddress] = useState(0);
     const router = useRouter();
     const setUser = useUserStore((state) => state.setUser);
-    const [latestSalesOrderDocumentNumber, setLatestSalesOrderDocumentNumber] = React.useState('');
-    const [documentNumber, setDocumentNumber] = React.useState('');
+    const [latestSalesOrderDocumentNumber, setLatestSalesOrderDocumentNumber] = useState('');
+    const [documentNumber, setDocumentNumber] = useState('');
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const [loadingCheckOut, setLoadingCheckOut] = useState(false);
     const params = useSearchParams();
     const [accessTokenProcessed, setAccessTokenProcessed] = useState(false);
-    const [isNavigating, setIsNavigating] = useState()
-    const [cardData, setCardData] = useState({})
-    const [ewayCardData, setEwayCardData] = useState(null);
+    const [isNavigating, setIsNavigating] = useState(false);
+    const [cardData, setCardData] = useState({});
     const [isProcessingEway, setIsProcessingEway] = useState(false);
 
-    useEffect(() => {
-        // Prefetch thank you page immediately when checkout page loads
-        const timer = setTimeout(() => {
-            router.prefetch('/thank-you/SO00000');
-        }, 1000); // Small delay to let the checkout page load first
-
-        return () => clearTimeout(timer);
-    }, [router]);
+    // Stock validation state
+    const [outOfStockItems, setOutOfStockItems] = useState([]);
+    const [checkingStock, setCheckingStock] = useState(false);
 
 
     const [submitForm, setSubmitForm] = useState({
@@ -261,7 +293,97 @@ const CheckoutComponent = () => {
         items: []
     });
 
-    // Popup handlers
+    // NEW: Check stock using bulk API
+    const checkAllProductsStock = async () => {
+        if (cartItems.length === 0) return;
+
+        setCheckingStock(true);
+        try {
+            const productIds = cartItems.map(item => item.product._id);
+
+            const response = await axiosInstance.post('products/check-bulk-stock', {
+                ids: productIds
+            });
+
+            console.log("products bulk stock check ", response)
+
+            if (response.data.statusCode === 200) {
+                const { outOfStock } = response.data.data;
+
+                // Map the out of stock product IDs back to cart items
+                const outOfStockCartItems = cartItems.filter(item =>
+                    outOfStock.some(outOfStockProduct =>
+                        outOfStockProduct._id === item.product._id
+                    )
+                );
+
+                setOutOfStockItems(outOfStockCartItems);
+                return outOfStockCartItems;
+            } else {
+                setError('Failed to check product availability.');
+                return [];
+            }
+        } catch (error) {
+            console.error('Error checking stock:', error);
+            setError('Failed to verify product availability. Please try again.');
+            return [];
+        } finally {
+            setCheckingStock(false);
+        }
+    };
+
+    // NEW: Check stock before proceeding to next step
+    const checkStockAndProceed = async (nextStep) => {
+        const outOfStockItems = await checkAllProductsStock();
+
+        if (outOfStockItems.length === 0) {
+            setStep(nextStep);
+        }
+        // If there are out of stock items, the warning will be shown automatically
+    };
+
+    // NEW: Remove out of stock items from cart
+    const handleRemoveOutOfStockItems = async (itemIds) => {
+        try {
+            for (const itemId of itemIds) {
+                const response = await axiosInstance.put(`cart/remove-from-cart/${currentUser._id}/${itemId}`);
+
+                if (response.data.statusCode === 200) {
+                    setCartItemsCount(response.data.data.cartItems.length);
+                }
+                console.log("remove from cart response", response)
+            }
+
+            // Refresh cart
+            await fetchCustomersCart();
+
+            // Clear out of stock items
+            setOutOfStockItems(prev =>
+                prev.filter(item => !itemIds.includes(item._id))
+            );
+
+            // If cart is now empty, redirect to cart page
+            const remainingItems = cartItems.filter(
+                item => !itemIds.includes(item._id)
+            );
+
+            if (remainingItems.length === 0) {
+                router.push('/cart');
+            }
+        } catch (error) {
+            console.error('Error removing items:', error);
+            setError('Failed to remove items. Please try again.');
+        }
+    };
+
+    // NEW: Check stock on step changes and cart updates
+    useEffect(() => {
+        if (cartItems.length > 0) {
+            checkAllProductsStock();
+        }
+    }, [cartItems, step]);
+
+    // Popup handlers (keeping existing)
     const openAddPopup = (type) => {
         setPopupState({
             isOpen: true,
@@ -286,10 +408,8 @@ const CheckoutComponent = () => {
         setPopupState(prev => ({ ...prev, isOpen: false }));
     };
 
-    // Address management functions
+    // Address management functions (keeping existing)
     const handleAddNewAddress = async (addressData) => {
-
-        console.log("currentUser in add address:", currentUser._id);
         try {
             const endpoint = popupState.type === 'shipping'
                 ? `admin/add-shipping-address/${currentUser._id}`
@@ -298,7 +418,6 @@ const CheckoutComponent = () => {
             const response = await axiosInstance.post(endpoint, addressData);
 
             if (response.data.statusCode === 200) {
-                console.log(`New ${popupState.type} address added successfully`);
                 fetchCustomersCart();
                 closePopup();
                 setUser(response.data.data);
@@ -319,11 +438,8 @@ const CheckoutComponent = () => {
 
             const response = await axiosInstance.put(endpoint, addressData);
 
-            console.log("address updation resposnse :", response);
-
             if (response.data.statusCode === 200) {
                 setUser(response.data.data);
-                console.log(`${popupState.type} address updated successfully`);
                 fetchCustomersCart();
                 closePopup();
             } else {
@@ -348,11 +464,9 @@ const CheckoutComponent = () => {
             const response = await axiosInstance.delete(endpoint);
 
             if (response.data.statusCode === 200) {
-                console.log(`${type} address removed successfully`);
                 fetchCustomersCart();
                 setUser(response.data.data);
 
-                // Reset selection if the removed address was selected
                 if (type === 'shipping') {
                     const shippingAddresses = currentUser?.shippingAddresses || [];
                     const addressIndex = shippingAddresses.findIndex(addr => addr._id === addressId);
@@ -383,7 +497,7 @@ const CheckoutComponent = () => {
         }
     };
 
-    // Format addresses from currentUser
+    // Format addresses (keeping existing)
     const shippingAddresses = currentUser?.shippingAddresses?.map((addr, index) => ({
         id: addr._id,
         index: index,
@@ -402,30 +516,25 @@ const CheckoutComponent = () => {
         ...addr
     })) || [];
 
+    // Keep all other existing functions (fetchLatestDocumentNumber, handleCompleteCheckout, etc.)
     const fetchLatestDocumentNumber = async () => {
         try {
-            const res = await axiosInstance.get('sales-order/get-latest-document-number')
-
-            console.log("latest document number", res);
+            const res = await axiosInstance.get('sales-order/get-latest-document-number');
             if (res.data.statusCode === 200 && res.data.data && res.data.data.documentNumber) {
                 setLatestSalesOrderDocumentNumber(res.data.data.documentNumber);
             } else {
-                // If no document number exists, set to null to trigger default
                 setLatestSalesOrderDocumentNumber(null);
-                console.log('No existing document number found, will use default SO00001');
             }
         } catch (error) {
             console.error('Error fetching latest document number:', error);
-            // On error, set to null to trigger default
             setLatestSalesOrderDocumentNumber(null);
         }
-    }
+    };
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchLatestDocumentNumber();
-    }, [])
+    }, []);
 
-    // Update submitForm when addresses are selected (Step 1)
     useEffect(() => {
         if (currentUser) {
             const shippingAddr = currentUser.shippingAddresses?.[selectedShippingAddress];
@@ -444,9 +553,7 @@ const CheckoutComponent = () => {
         }
     }, [selectedShippingAddress, selectedBillingAddress, currentUser]);
 
-    // Update submitForm with cart items
     useEffect(() => {
-        console.log("checkout cart items:", cartItems);
         if (cartItems.length > 0) {
             const formattedItems = cartItems.map(item => ({
                 itemSku: item.product.sku,
@@ -454,8 +561,8 @@ const CheckoutComponent = () => {
                 unitsQuantity: item.unitsQuantity,
                 packQuantity: item.packQuentity,
                 totalQuantity: item.totalQuantity,
-                eachPrice: item.amount / item.totalQuantity, // Calculate unit price
-                amount: item.amount, // Use stored amount directly
+                eachPrice: item.amount / item.totalQuantity,
+                amount: item.amount,
                 taxable: item.product.taxable,
                 taxPercentage: item.product.taxPercentages || 0,
                 packType: item.packType,
@@ -470,16 +577,12 @@ const CheckoutComponent = () => {
         }
     }, [cartItems]);
 
-    // Calculate totals from cart items
     const calculateTotals = () => {
         let subtotalAmount = 0;
         let gstAmount = 0;
 
         cartItems.forEach(item => {
-            // Use the stored amount directly (it's already the total for this item)
             subtotalAmount += item.amount;
-
-            // Calculate tax based on the stored amount
             if (item.product.taxable && item.product.taxPercentages) {
                 gstAmount += (item.amount * item.product.taxPercentages) / 100;
             }
@@ -501,22 +604,25 @@ const CheckoutComponent = () => {
 
     useEffect(() => {
         if (latestSalesOrderDocumentNumber) {
-            // If we have an existing document number, increment it
-            const prefix = latestSalesOrderDocumentNumber.match(/[A-Za-z]+/)[0]; // "SO"
-            const number = parseInt(latestSalesOrderDocumentNumber.match(/\d+/)[0], 10); // 19082
+            const prefix = latestSalesOrderDocumentNumber.match(/[A-Za-z]+/)[0];
+            const number = parseInt(latestSalesOrderDocumentNumber.match(/\d+/)[0], 10);
             const nextDocumentNumber = `${prefix}${String(number + 1).padStart(5, '0')}`;
             setDocumentNumber(nextDocumentNumber);
         } else if (latestSalesOrderDocumentNumber === null) {
-            // If no existing document number, start with SO00001
             setDocumentNumber('SO00001');
         }
     }, [latestSalesOrderDocumentNumber]);
 
-    // UPDATED handleCompleteCheckout in your checkout component
-
-    // UPDATED handleCompleteCheckout in your checkout component
-
+    // NEW: Modified complete checkout with final stock validation
     const handleCompleteCheckout = async () => {
+        // Final stock check before completing checkout
+        const outOfStockItems = await checkAllProductsStock();
+
+        if (outOfStockItems.length > 0) {
+            setError('Some items in your cart are out of stock. Please remove them before completing your order.');
+            return;
+        }
+
         setLoadingCheckOut(true);
 
         try {
@@ -540,17 +646,13 @@ const CheckoutComponent = () => {
 
             if (response.data.statusCode === 200) {
                 const docNumber = response.data.data.documentNumber;
-
-                // Update cart count
                 setCartItemsCount(0);
                 setIsNavigating(true);
 
-                // PASS ORDER DATA VIA ROUTER STATE - This is the key change!
                 setTimeout(() => {
                     router.push(`/thank-you/${docNumber}`);
                 }, 0);
 
-                // Background cleanup
                 axiosInstance.delete(`cart/clear-cart/${currentUser._id}`)
                     .catch(err => console.error('Error clearing cart:', err));
 
@@ -571,7 +673,7 @@ const CheckoutComponent = () => {
             if (!currentUser || !currentUser._id) return;
 
             setLoading(true);
-            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
+            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
             if (response.data.statusCode === 200) {
                 const items = response.data.data || [];
@@ -589,22 +691,21 @@ const CheckoutComponent = () => {
                 setLocalQuantities(quantities);
                 setSelectedPacks(packs);
             } else {
-                setError(response.data.message)
+                setError(response.data.message);
             }
-        }
-        catch (error) {
-            console.error('Error fetching customer cart:', error)
-            setError('Failed to load cart items. Please try again.')
+        } catch (error) {
+            console.error('Error fetching customer cart:', error);
+            setError('Failed to load cart items. Please try again.');
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
         if (currentUser && currentUser._id) {
             fetchCustomersCart();
         }
-    }, [currentUser])
+    }, [currentUser]);
 
     useEffect(() => {
         const accessCode = params.get("AccessCode");
@@ -614,17 +715,13 @@ const CheckoutComponent = () => {
             const fetchEwayResult = async () => {
                 try {
                     const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
-                    console.log("eway response", response);
 
                     if (response.data.statusCode === 200) {
-                        // Set step to 2 and mark as processed
                         setAccessTokenProcessed(true);
                         setCardData(response.data.data);
-                        setIsProcessingEway(false)
-
+                        setIsProcessingEway(false);
                         setStep(2);
 
-                        // Clean up URL
                         const url = new URL(window.location.href);
                         url.searchParams.delete("AccessCode");
                         window.history.replaceState({}, document.title, url.toString());
@@ -632,13 +729,21 @@ const CheckoutComponent = () => {
                 } catch (error) {
                     console.error("Error fetching eway result:", error);
                 } finally {
-                    setIsProcessingEway(false)
+                    setIsProcessingEway(false);
                 }
             };
 
             fetchEwayResult();
         }
     }, [params, accessTokenProcessed, currentUser?._id]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.prefetch('/thank-you/SO00000');
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [router]);
 
     if (isProcessingEway) {
         return (
@@ -653,7 +758,7 @@ const CheckoutComponent = () => {
     }
 
     return (
-        <div className="min-h-screen  py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
+        <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
             <div className="max-w-8xl px-4 sm:px-6 lg:px-8 mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
@@ -686,18 +791,26 @@ const CheckoutComponent = () => {
                     </div>
                 )}
 
+                {/* Out of Stock Warning - Show on all steps */}
+                <OutOfStockWarning
+                    outOfStockItems={outOfStockItems}
+                    onRemoveItems={handleRemoveOutOfStockItems}
+                />
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-2">
                     {/* STEP 1: Select Addresses */}
-                    {step === 1 &&
-                        <div className="min-w-full col-span-2 mx-auto bg-gray-50 xl:min-h-screen">
+                    {step === 1 && (
+                        <div className="min-w-full col-span-2 mx-auto xl:min-h-screen">
                             {/* Shipping Address Section */}
                             <div className="mb-8">
                                 <h2 className="text-[24px] font-semibold text-[#2D2C70] py-6">Select Shipping Address</h2>
                                 <div className="space-y-3">
                                     <p className="text-[20px] mb-4">Shipping Address ({shippingAddresses.length})</p>
                                     {shippingAddresses.map((address) => (
-                                        <div key={address.id}
-                                            className={`bg-white rounded-lg border overflow-hidden ${selectedShippingAddress === address.index ? 'border-[#2D2C70]' : ''}`}>
+                                        <div
+                                            key={address.id}
+                                            className={`bg-white rounded-lg border overflow-hidden ${selectedShippingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
+                                        >
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
                                                     <div className="flex-shrink-0 mt-1">
@@ -752,8 +865,10 @@ const CheckoutComponent = () => {
                                 <p className="text-[20px] mb-4">Billing Address ({billingAddresses.length})</p>
                                 <div className="space-y-3">
                                     {billingAddresses.map((address) => (
-                                        <div key={`billing-${address.id}`}
-                                            className={`bg-white rounded-lg border overflow-hidden ${selectedBillingAddress === address.index ? 'border-[#2D2C70]' : ''}`}>
+                                        <div
+                                            key={`billing-${address.id}`}
+                                            className={`bg-white rounded-lg border overflow-hidden ${selectedBillingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
+                                        >
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
                                                     <div className="flex-shrink-0 mt-1">
@@ -802,10 +917,10 @@ const CheckoutComponent = () => {
                                 </div>
                             </div>
                         </div>
-                    }
+                    )}
 
                     {/* STEP 2: Checkout Information */}
-                    {step === 2 &&
+                    {step === 2 && (
                         <CheckoutFormUI
                             selectedBillingAddress={selectedBillingAddress}
                             selectedShippingAddress={selectedShippingAddress}
@@ -813,16 +928,16 @@ const CheckoutComponent = () => {
                             setSubmitForm={setSubmitForm}
                             cardDetails={cardData}
                         />
-                    }
+                    )}
 
                     {/* STEP 3: Review */}
-                    {step === 3 &&
+                    {step === 3 && (
                         <Review
                             selectedBillingAddress={selectedBillingAddress}
                             selectedShippingAddress={selectedShippingAddress}
                             submitForm={submitForm}
                         />
-                    }
+                    )}
 
                     {/* Order Summary Sidebar */}
                     <div className={`lg:col-span-1 ${step === 1 ? 'xl:mt-27' : 'xl:mt-18'}`}>
@@ -833,7 +948,7 @@ const CheckoutComponent = () => {
                                         <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
                                     </div>
                                     <div className="px-4">
-                                        <div className="flex justify-between ">
+                                        <div className="flex justify-between">
                                             <span className="text-base sm:text-lg lg:text-[20px] font-medium">
                                                 Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totalItems} Items</span>
                                             </span>
@@ -857,21 +972,26 @@ const CheckoutComponent = () => {
                                     </div>
                                 </div>
 
-                                {step < 3 ?
+                                {step < 3 ? (
                                     <>
                                         <button
-                                            className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black"
-                                            onClick={() => setStep(step + 1)}
+                                            className={`w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${checkingStock || outOfStockItems.length > 0
+                                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                                : 'bg-[#2D2C70] text-white hover:bg-[#25245a]'
+                                                }`}
+                                            onClick={() => checkStockAndProceed(step + 1)}
+                                            disabled={checkingStock || outOfStockItems.length > 0}
                                         >
-                                            Continue
+                                            {checkingStock ? 'Checking Stock...' : 'Continue'}
                                         </button>
 
                                         <div className="flex items-center space-x-3 mb-8">
                                             <button
-                                                className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group 'bg-gray-400 text-gray-200 border-gray-400  bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                onClick={() => router.push('/products')}
+                                                className="flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
                                             >
                                                 <svg
-                                                    className="w-5 h-5 transition-colors duration-300 "
+                                                    className="w-5 h-5 transition-colors duration-300"
                                                     viewBox="0 0 21 21"
                                                     fill="currentColor"
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -882,32 +1002,37 @@ const CheckoutComponent = () => {
                                             </button>
                                         </div>
                                     </>
-                                    :
+                                ) : (
                                     <button
-                                        className="w-full bg-[#2D2C70] text-white py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black"
+                                        className={`w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${loadingCheckOut || outOfStockItems.length > 0
+                                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                            : 'bg-[#2D2C70] text-white hover:bg-[#25245a]'
+                                            }`}
                                         onClick={handleCompleteCheckout}
+                                        disabled={loadingCheckOut || outOfStockItems.length > 0}
                                     >
                                         {loadingCheckOut ? 'Completing Checkout...' : "Complete Checkout"}
                                     </button>
-                                }
-
-
+                                )}
 
                                 <div className='flex items-center bg-[#2D2C70] text-white justify-between mb-2 flex-row border-1 border-black rounded-2xl px-3 py-3'>
                                     <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship ({totalItems})</p>
                                     <span><ChevronDown className="w-4 h-4 text-white" /></span>
                                 </div>
+
                                 {/* Order Items */}
                                 <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg">
                                     <div className='space-y-4 mt-4 p-3 sm:p-4'>
                                         {cartItems.map((item) => {
-                                            // The amount is already the total, no need to multiply again
-                                            const itemAmount = item.amount; // Use the stored amount directly
+                                            const isOutOfStock = outOfStockItems.some(outOfStockItem =>
+                                                outOfStockItem._id === item._id
+                                            );
+                                            const itemAmount = item.amount;
                                             const packName = item.product.typesOfPacks?.find(pack => parseInt(pack.quantity) === item.packQuentity)?.name || 'Each';
 
                                             return (
-                                                <div key={item._id} className="flex items-center space-x-3 p-2 justify-between">
-                                                    <div className="w-28 h-28   rounded-lg flex items-center justify-center flex-shrink-0">
+                                                <div key={item._id} className={`flex items-center space-x-3 p-2 justify-between ${isOutOfStock ? 'bg-red-50 border border-red-200 rounded-md' : ''}`}>
+                                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
                                                             src={item.product.images}
                                                             alt={item.product.ProductName}
@@ -920,14 +1045,25 @@ const CheckoutComponent = () => {
                                                         <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
                                                             {item.product.ProductName}
                                                         </h3>
-                                                        {/* Calculate unit price for display */}
                                                         <div className='flex w-full justify-between'>
                                                             <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
                                                                 ${(item.amount / item.totalQuantity).toFixed(2)}
                                                             </p>
-                                                            <div className="flex items-center text-[12px] font-[600] text-black py-1 px-2 w-[90px] bg-[#E7FAEF] mb-2">
-                                                                <Check className="w-3 h-3 mr-1" />
-                                                                IN STOCK
+                                                            <div className={`flex items-center text-[12px] font-[600] py-1 px-2 w-[90px] mb-2 ${isOutOfStock
+                                                                ? 'bg-red-100 text-red-700'
+                                                                : 'bg-[#E7FAEF] text-black'
+                                                                }`}>
+                                                                {isOutOfStock ? (
+                                                                    <>
+                                                                        <AlertCircle className="w-3 h-3 mr-1" />
+                                                                        OUT OF STOCK
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Check className="w-3 h-3 mr-1" />
+                                                                        IN STOCK
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
@@ -940,7 +1076,7 @@ const CheckoutComponent = () => {
                                                             <div className="space-y-1 text-xs">
                                                                 <div className='flex w-full justify-between'>
                                                                     <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div>
-                                                                    <div>Amount ${item.amount.toFixed(2)}</div> {/* Use stored amount directly */}
+                                                                    <div>Amount ${item.amount.toFixed(2)}</div>
                                                                     {item.product.taxable && (
                                                                         <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>
                                                                     )}
@@ -955,7 +1091,7 @@ const CheckoutComponent = () => {
                                     <div className='px-4'>
                                         <button
                                             onClick={() => router.push('/cart')}
-                                            className="w-full bg-[#2D2C70] text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4"
+                                            className="w-full bg-[#2D2C70] text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4 hover:bg-[#25245a] transition-colors"
                                         >
                                             Edit Cart
                                         </button>
@@ -976,7 +1112,7 @@ const CheckoutComponent = () => {
                     mode={popupState.mode}
                 />
             </div>
-        </div >
+        </div>
     );
 };
 

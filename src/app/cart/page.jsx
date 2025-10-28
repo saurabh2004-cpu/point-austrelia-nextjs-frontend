@@ -46,40 +46,6 @@ const ShoppingCart = () => {
     const [showRemoveItemConfirm, setShowRemoveItemConfirm] = useState(false);
     const [itemToRemove, setItemToRemove] = useState(null);
 
-    const checkAuth = useUserStore((state) => state.checkAuth);
-
-    useEffect(() => {
-        const checkAuthentication = async () => {
-            setLoading(true);
-
-            // If we have a user, allow access
-            if (currentUser) {
-                setLoading(false);
-                return;
-            }
-
-            // If no user in store, check if user is actually authenticated
-            try {
-                const isAuthenticated = await checkAuth();
-                if (isAuthenticated) {
-                    setLoading(false);
-                    return;
-                } else {
-                    // If not authenticated, redirect to login
-                    router.push('/login');
-                    return;
-                }
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                // If auth check fails, redirect to login
-                router.push('/login');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        checkAuthentication();
-    }, [currentUser, checkAuth, router]);
 
     // Calculate out of stock items
     const outOfStockItems = cartItems.filter(item => item.product.stockLevel <= 0);

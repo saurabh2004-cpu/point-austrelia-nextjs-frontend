@@ -1047,7 +1047,7 @@ const CheckoutComponent = () => {
                                                         </h3>
                                                         <div className='flex w-full justify-between'>
                                                             <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
-                                                                ${(item.amount / item.totalQuantity).toFixed(2)}
+                                                                ${(item.amount).toFixed(2)}
                                                             </p>
                                                             <div className={`flex items-center text-[12px] font-[600] py-1 px-2 w-[90px] mb-2 ${isOutOfStock
                                                                 ? 'bg-red-100 text-red-700'
@@ -1075,7 +1075,7 @@ const CheckoutComponent = () => {
 
                                                             <div className="space-y-1 text-xs">
                                                                 <div className='flex w-full justify-between'>
-                                                                    <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div>
+                                                                    {/* <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div> */}
                                                                     <div>Amount ${item.amount.toFixed(2)}</div>
                                                                     {item.product.taxable && (
                                                                         <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>

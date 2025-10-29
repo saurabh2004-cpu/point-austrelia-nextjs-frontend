@@ -1,76 +1,14 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import Image from 'next/image';
 // import useBrandStore from '@/zustand/BrandPAge';
-import axiosInstance from '@/axios/axiosInstance';
-import { useParams } from 'next/navigation';
+import useBrandStore from '@/zustand/BrandPage';
+import Link from 'next/link';
 
 const BrandsGrid = () => {
-    const params = useParams();
-    const slug = params.slug
+    const brandPage = useBrandStore((state) => state.brandPage);
+    const [openQuestionIndex, setOpenQuestionIndex] = useState(null);
 
-
-    const brands = [
-        {
-            id: 1,
-            name: 'Ellise Laundry',
-            backgroundColor: 'bg-slate-700',
-            textColor: 'text-white',
-            logo: 'ellise',
-            image: '/api/placeholder/400/200'
-        },
-        {
-            id: 2,
-            name: 'Sedona',
-            backgroundColor: 'bg-lime-500',
-            textColor: 'text-white',
-            logo: 'sedona',
-            image: '/api/placeholder/400/200'
-        },
-        {
-            id: 3,
-            name: 'Feldspar',
-            backgroundColor: 'bg-slate-800',
-            textColor: 'text-white',
-            logo: 'feldspar',
-            image: '/api/placeholder/400/200'
-        },
-        {
-            id: 4,
-            name: 'Rhino Shield',
-            backgroundColor: 'bg-gray-600',
-            textColor: 'text-white',
-            logo: 'rhino-shield',
-            image: '/api/placeholder/400/200'
-        }
-    ];
-
-    const features = [
-        "Stockist of market-leading brands customers know and trust.",
-        "Products designed for high-volume turnover and impulse sales.",
-        "Supplying petrol stations, discount variety stores, gift shops, and independent retailers nationwide."
-    ];
-
-    const [brandPage, setBrandPage] = useState(null);
-
-    const fetchBrandPageBySlug = async (slug) => {
-        try {
-            const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
-
-            if (response.data.statusCode === 200) {
-                setBrandPage(response.data.data);
-            }
-        } catch (error) {
-            console.error("Error fetching brand page:", error);
-        }
-    }
-
-    useEffect(() => {
-        if (slug) {
-            fetchBrandPageBySlug(slug);
-        }
-    }, [slug]);
 
     return (
         <div className="w-full bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8  ">
@@ -82,8 +20,8 @@ const BrandsGrid = () => {
                         <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
 
                         {/* Title */}
-                        <h2 className="px-1 text-lg text-[24px] font-semibold text-[#2D2C70] whitespace-nowrap">
-                            Our Brands
+                        <h2 className={`px-1 text-lg text-[24px] font-semibold text-[${brandPage?.brandHeadingTextColor}] whitespace-nowrap`}>
+                            {brandPage?.brandHeadingText}
                         </h2>
 
                         {/* Right decorative line */}
@@ -93,70 +31,60 @@ const BrandsGrid = () => {
 
                 {/* Brands Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 sm:mb-12 lg:mb-16 max-w-8xl mx-auto xl:px-16">
-                    <div className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
-                        <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
-                            <div className="flex-1 relative bg-white">
-                                <img
-                                    src="/home-images/brands-grid-1.png"
-                                    alt="Sedona Products"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
+                    {brandPage?.brands?.map((brand, index) => (
+                        <div key={brand._id} className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
+                            <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
+                                <Link href={brand?.brandUrl || '/'} className="flex-1 relative bg-white">
+                                    <img
+                                        src={brand.brandImage}
+                                        alt={brand.brandUrl || "Brand image"}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                </Link>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Sedona */}
-                    <div className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
-                        <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
-                            <div className="flex-1 relative bg-white">
-                                <img
-                                    src="/home-images/brands-grid-1.png"
-                                    alt="Sedona Products"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
-                        <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
-                            <div className="flex-1 relative bg-white">
-                                <img
-                                    src="/home-images/brands-grid-1.png"
-                                    alt="Sedona Products"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-lime-500 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 group cursor-pointer">
-                        <div className="flex flex-col sm:flex-row h-full min-h-[200px] sm:min-h-[160px]">
-                            <div className="flex-1 relative bg-white">
-                                <img
-                                    src="/home-images/brands-grid-1.png"
-                                    alt="Sedona Products"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
                 {/* Why Choose Matador Wholesale Section */}
-                <div className="bg-[#2D2C70] w-full h-full  lg:h-[295px] flex flex-col mx-auto w-full  sm:p-8  lg:py-12 text-white">
-                    <h3 className="text-[20px] font-semibold mb-6 sm:mb-8 p-4 lg:p-0 lg:px-58">
-                        {brandPage?.Question}?
+                <div
+                    className={`w-full h-full lg:h-auto flex flex-col mx-auto w-full sm:p-8 lg:py-12 text-white`}
+                    style={{ backgroundColor: brandPage?.QnaSectionBgColor || '#2D2C70' }}
+                >
+                    <h3
+                        className={`text-[20px] font-semibold mb-6 sm:mb-8 p-4 lg:p-0 lg:px-58`}
+                        style={{ color: brandPage?.QnaHeadingTextColor || '#ffffff' }}
+                    >
+                        {brandPage?.QnaHeadingText?.endsWith('?') ? brandPage?.QnaHeadingText : (brandPage?.QnaHeadingText || '') + '?'}
                     </h3>
 
-                    <div className="space-y-4 sm:space-y-6 p-4">
-                        {brandPage?.answers && brandPage.answers.map((feature, index) => (
-                            <div key={index} className="flex items-start space-x-2  xl:px-54">
-                                <div className='flex'>
-                                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1" />
-                                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1 relative right-3" />
+                    <div className="space-y-2 sm:space-y-4 p-4">
+                        {brandPage?.questions?.map((question, index) => (
+                            <div key={index} className="xl:px-54  pb-4 last:border-b-0">
+                                {/* Question - Clickable */}
+                                <div
+                                    className="flex items-start space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => setOpenQuestionIndex(openQuestionIndex === index ? null : index)}
+                                >
+                                    <div className='flex'>
+                                        <ChevronRight
+                                            className={`w-4 h-4 sm:w-5 sm:h-5 text-white flex-shrink-0 mt-1 transition-transform duration-300 ${openQuestionIndex === index ? 'rotate-90' : ''
+                                                }`}
+                                        />
+                                    </div>
+                                    <p className="text-base font-semibold leading-relaxed flex-1">
+                                        {question}
+                                    </p>
                                 </div>
-                                <p className="text-base font-semibold leading-relaxed ">
-                                    {feature}
-                                </p>
+
+                                {/* Answer - Conditionally rendered */}
+                                {openQuestionIndex === index && (
+                                    <div className="ml-6 mt-3 transition-all duration-300 animate-fadeIn">
+                                        <p className="text-sm leading-relaxed opacity-90">
+                                            {brandPage?.answers?.[index]}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

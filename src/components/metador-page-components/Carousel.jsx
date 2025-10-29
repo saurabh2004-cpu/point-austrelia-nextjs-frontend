@@ -1,36 +1,25 @@
 'use client'
 import axiosInstance from '@/axios/axiosInstance';
+import useBrandStore from '@/zustand/BrandPage';
 import { useParams } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 
 const TrustedByCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const params = useParams();
-  const slug = params.slug
+  const brandPage = useBrandStore((state) => state.brandPage);
   const [carouselImages, setCarouselImages] = useState([]);
 
-  const fetchBrandPageBySlug = async (slug) => {
-    try {
-      const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
-
-      if (response.data.statusCode === 200) {
-        setCarouselImages(response.data.data.carouselImages);
-      }
-    } catch (error) {
-      console.error("Error fetching brand page:", error);
-    }
-  }
-
   useEffect(() => {
-    if (slug) {
-      fetchBrandPageBySlug(slug);
+    if (brandPage?.carouselImages) {
+      setCarouselImages(brandPage.carouselImages);
     }
-  }, [slug]);
+  }, [brandPage]);
+
 
   // Auto-scroll
   useEffect(() => {
     if (carouselImages.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) =>
         prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
@@ -61,7 +50,7 @@ const TrustedByCarousel = () => {
   // Visible images
   const getVisibleImages = () => {
     if (carouselImages.length === 0) return [];
-    
+
     const visible = [];
     for (let i = 0; i < visibleCount; i++) {
       const index = (currentIndex + i) % carouselImages.length;
@@ -86,8 +75,8 @@ const TrustedByCarousel = () => {
             <div className="flex-1 font-extrabold h-[1px] bg-[#000000]/50 max-w-12 h-[2px] "></div>
 
             {/* Title */}
-            <h2 className="px-1 text-lg text-[24px] font-semibold text-[#2D2C70] whitespace-nowrap">
-              Trusted By
+            <h2 className={`px-1 text-lg text-[24px] font-semibold text-[${brandPage?.trustedByHeadingTextColor}] whitespace-nowrap`}>
+              {brandPage?.trustedByHeadingText || 'Trusted by'}
             </h2>
 
             {/* Right decorative line */}

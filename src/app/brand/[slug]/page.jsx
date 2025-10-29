@@ -7,29 +7,34 @@ import axiosInstance from '@/axios/axiosInstance'
 import { useParams } from 'next/navigation'
 import React, { useEffect } from 'react'
 import { Navbar } from '@/components/Navbar'
+import useBrandStore from '@/zustand/BrandPage'
 
-const page = () => {
-    // const params = useParams();
-    // const slug = params.slug
-    // const setBrandPage = useBrandStore((state) => state.setBrandPage);
+const Page = () => {
+    const params = useParams();
+    const slug = params.slug
+    const setBrandPage = useBrandStore((state) => state.setBrandPage);
 
-    // const fetchBrandPageBySlug = async (slug) => {
-    //     try {
-    //         const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
+    const fetchBrandPageBySlug = async (slug, setBrandPage) => {
+        try {
+            const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
 
-    //         if (response.data.statusCode === 200) {
-    //             setBrandPage(response.data.data);
-    //         }
-    //     } catch (error) {
-    //         console.error("Error fetching brand page:", error);
-    //     }
-    // }
+            console.log("brand page by brand slug ", response)
 
-    // useEffect(() => {
-    //     if (slug) {
-    //         fetchBrandPageBySlug(slug);
-    //     }
-    // }, [slug, setBrandPage]);
+            if (response.data.statusCode === 200) {
+                setBrandPage(response.data.data);
+            }else{
+                setBrandPage(null);
+            }
+        } catch (error) {
+            console.error("Error fetching brand page:", error);
+        }
+    }
+
+    useEffect(() => {
+        if (slug) {
+            fetchBrandPageBySlug(slug, setBrandPage);
+        }
+    }, [slug, setBrandPage, params]);
 
     return (
         <>
@@ -42,4 +47,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page

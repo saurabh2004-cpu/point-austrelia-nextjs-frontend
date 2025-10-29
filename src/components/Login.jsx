@@ -104,7 +104,7 @@ export default function LoginComponent() {
       if (res.data.statusCode === 200 && res.data.data.inactive == false) {
         setIsLoading(false)
         setUser(res.data.data);
-        // window.location.href = '/my-account-review'
+        window.location.href = '/my-account-review'
       } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
         setIsLoading(false)
         setErrors(prev => ({

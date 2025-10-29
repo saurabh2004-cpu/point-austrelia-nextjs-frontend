@@ -480,7 +480,7 @@ export function Navbar() {
 
     // Listen to route changes
     window.addEventListener('beforeunload', handleRouteChangeStart);
-    
+
     // Use setTimeout to handle route completion (Next.js doesn't have built-in route events in App Router)
     const timer = setTimeout(() => {
       setIsNavigating(false);
@@ -519,10 +519,10 @@ export function Navbar() {
       {/* Enhanced Loading Bar with smooth animation */}
       {isNavigating && (
         <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-loading-bar" 
-               style={{
-                 animation: 'loadingBar 1.5s ease-in-out infinite'
-               }} />
+          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-loading-bar"
+            style={{
+              animation: 'loadingBar 1.5s ease-in-out infinite'
+            }} />
         </div>
       )}
 
@@ -571,9 +571,9 @@ export function Navbar() {
                       className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
                     />
                     {/* OPTIMIZATION 9: Add prefetch to critical links */}
-                    <Link 
-                      href="/login" 
-                      prefetch={true} 
+                    <Link
+                      href="/login"
+                      prefetch={true}
                       className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]"
                       onClick={() => setIsNavigating(true)}
                     >
@@ -581,9 +581,9 @@ export function Navbar() {
                     </Link>
                   </div>
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
-                  <Link 
-                    href="/sign-up" 
-                    prefetch={true} 
+                  <Link
+                    href="/sign-up"
+                    prefetch={true}
                     className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]"
                     onClick={() => setIsNavigating(true)}
                   >
@@ -599,7 +599,7 @@ export function Navbar() {
                       className="flex items-center gap-2 hover:text-[#E9098D] transition-colors duration-200 group"
                     >
                       <User className="w-4 h-4 text-gray-600 group-hover:text-[#E9098D]" />
-                      <span className="font-semibold text-black group-hover:text-[#E9098D]">{currentUser.contactName}</span>
+                      <span className="font-semibold text-black group-hover:text-[#E9098D]">{currentUser?.customerName || currentUser?.contactName}</span>
                       <ChevronDown
                         strokeWidth={3}
                         className={`w-4 h-4 text-[#2d2c70] mt-1 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`}
@@ -630,8 +630,8 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   prefetch={true}
                   onClick={() => setIsNavigating(true)}
                 >
@@ -660,8 +660,8 @@ export function Navbar() {
                       <Search className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
 
-                    <Link 
-                      href="/wishlist" 
+                    <Link
+                      href="/wishlist"
                       prefetch={true}
                       className="relative bg-white group p-1"
                       onClick={() => {
@@ -684,8 +684,8 @@ export function Navbar() {
                       </span>
                     </Link>
 
-                    <Link 
-                      href="/cart" 
+                    <Link
+                      href="/cart"
                       prefetch={true}
                       className="relative bg-white group p-1"
                       onClick={() => {
@@ -752,8 +752,8 @@ export function Navbar() {
                   </div>
 
                   {currentUser && !isCheckoutPage && (
-                    <Link 
-                      href={'/wishlist'} 
+                    <Link
+                      href={'/wishlist'}
                       prefetch={true}
                       className="relative bg-white group"
                       data-navbar-cart-button

@@ -9,6 +9,7 @@ import { Heart, ChevronLeft, ChevronRight, Minus, Plus, Check } from "lucide-rea
 import Image from "next/image"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Notification from "../Notification"
 
 export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
@@ -43,6 +44,8 @@ export default function ProductDetail() {
   const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
   const [wishListItems, setWishlistItems] = useState([])
   const [wishlistLoading, setWishlistLoading] = useState(false)
+  const currentCartItems = useCartStore((state) => state.currentItems)
+
 
   // RELATED PRODUCTS STATES
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -53,7 +56,38 @@ export default function ProductDetail() {
   const [relatedProductsLoadingCart, setRelatedProductsLoadingCart] = useState({})
   const [relatedProductsLoadingWishlist, setRelatedProductsLoadingWishlist] = useState({})
 
+  // Add this with your other state declarations
+  const [notification, setNotification] = useState({
+    isVisible: false,
+    message: '',
+    type: 'success' // 'success' or 'error'
+  });
+
+  // Function to show notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({
+      isVisible: true,
+      message,
+      type
+    });
+  };
+
+  // Function to hide notification
+  const hideNotification = () => {
+    setNotification(prev => ({
+      ...prev,
+      isVisible: false
+    }));
+  };
+
   const [product, setProduct] = useState(null)
+
+
+  useEffect(() => {
+    if (currentUser && currentUser._id) {
+      fetchCustomersCart();
+    }
+  }, [currentUser, currentCartItems]); 
 
   window.addEventListener("popstate", function (event) {
     setFilters({
@@ -455,6 +489,7 @@ export default function ProductDetail() {
   const handleRelatedAddToCart = async (productId) => {
     if (!currentUser || !currentUser._id) {
       setError("Please login to add items to cart");
+      showNotification("Please login to add items to cart", "error");
       return;
     }
 
@@ -465,6 +500,7 @@ export default function ProductDetail() {
         ...prev,
         [productId]: stockCheck.message
       }));
+      showNotification(stockCheck.message, "error");
       return;
     }
 
@@ -556,9 +592,14 @@ export default function ProductDetail() {
           ...prev,
           [productId]: null
         }));
+
+        // Show success notification for related product
+        const action = isRelatedProductInCart(productId) ? "updated in" : "added to";
+        showNotification(`${product.ProductName} ${action} cart successfully!`);
       }
     } catch (error) {
       console.error('Error adding related product to cart:', error);
+      showNotification("Failed to add item to cart", "error");
     } finally {
       setRelatedProductsLoadingCart(prev => ({ ...prev, [productId]: false }));
     }
@@ -569,6 +610,7 @@ export default function ProductDetail() {
     try {
       if (!currentUser || !currentUser._id) {
         setError("Please login to manage wishlist");
+        showNotification("Please login to manage wishlist", "error");
         return;
       }
 
@@ -582,10 +624,16 @@ export default function ProductDetail() {
       if (response.data.statusCode === 200) {
         await fetchCustomersWishList();
         setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
+
+        // Show wishlist notification for related product
+        const productName = relatedProducts.find(p => p._id === productId)?.ProductName;
+        const action = isRelatedProductInWishlist(productId) ? "removed from" : "added to";
+        showNotification(`${productName} ${action} wishlist!`);
       }
     } catch (error) {
       console.error('Error managing related product in wishlist:', error);
       setError('Error managing wishlist');
+      showNotification("Error managing wishlist", "error");
     } finally {
       setRelatedProductsLoadingWishlist(prev => {
         const updated = { ...prev };
@@ -724,6 +772,7 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!currentUser || !currentUser._id) {
       setError("Please login to add items to cart");
+      showNotification("Please login to add items to cart", "error");
       return;
     }
 
@@ -733,6 +782,7 @@ export default function ProductDetail() {
     const stockCheck = checkStock();
     if (!stockCheck.isValid) {
       setError(stockCheck.message);
+      showNotification(stockCheck.message, "error");
       return;
     }
 
@@ -814,10 +864,15 @@ export default function ProductDetail() {
         setCartItemsCount(response.data.data.cartItems?.length || 0);
         setError(null);
         setStockError(null);
+
+        // Show success notification
+        const action = isProductInCart() ? "updated in" : "added to";
+        showNotification(`${product.ProductName} ${action} cart successfully!`);
       }
     } catch (error) {
       console.error('Error adding to cart:', error);
       setError('Error adding product to cart');
+      showNotification("Failed to add item to cart", "error");
     } finally {
       setLoading(false);
     }
@@ -912,10 +967,14 @@ export default function ProductDetail() {
         setCartItemsCount(response.data.data.cartItems?.length || 0);
         setError(null);
         setStockError(null);
+
+        // Show success notification for update
+        showNotification(`${product.ProductName} updated in cart successfully!`);
       }
     } catch (error) {
       console.error('Error updating cart:', error);
       setError('Error updating cart');
+      showNotification("Failed to update cart item", "error");
     } finally {
       setLoading(false);
     }
@@ -958,6 +1017,7 @@ export default function ProductDetail() {
       console.log("Cart items:", response.data.data);
       if (response.data.statusCode === 200) {
         setCartItems(response.data.data || []);
+
       }
     } catch (error) {
       console.error('Error fetching customer cart:', error);
@@ -1002,6 +1062,7 @@ export default function ProductDetail() {
     try {
       if (!currentUser || !currentUser._id) {
         setError("Please login to manage wishlist")
+        showNotification("Please login to manage wishlist", "error");
         return
       }
 
@@ -1015,12 +1076,18 @@ export default function ProductDetail() {
       console.log("Wishlist response:", response.data)
 
       if (response.data.statusCode === 200) {
-        await fetchCustomersWishList()
+        await fetchCustomersWishList();
         setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
+
+        // Show wishlist notification
+        const productName = product?.ProductName || relatedProducts.find(p => p._id === productId)?.ProductName;
+        const action = isInWishlist(productId) ? "removed from" : "added to";
+        showNotification(`${productName} ${action} wishlist!`);
       }
     } catch (error) {
       console.error('Error managing product in wishlist:', error)
       setError('Error managing wishlist')
+      showNotification("Error managing wishlist", "error");
     } finally {
       setWishlistLoading(false)
     }
@@ -1104,6 +1171,15 @@ export default function ProductDetail() {
 
   return (
     <>
+
+
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        isVisible={notification.isVisible}
+        onHide={hideNotification}
+      />
+
       {/* Breadcrumb */}
       <div className="bg-white justify-items-center pt-4 overflow-x-hidden">
         <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">

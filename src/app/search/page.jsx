@@ -7,6 +7,8 @@ import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
+import Notification from "@/components/Notification"
+import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 
 
 const SearchPage = () => {
@@ -37,6 +39,37 @@ const SearchPage = () => {
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems)
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems)
     const currentCartItems = useCartStore((state) => state.currentItems)
+
+    const {
+        setFilters,
+        clearFilters
+    } = useProductFiltersStore();
+
+
+
+    // Add this with your other state declarations
+    const [notification, setNotification] = useState({
+        isVisible: false,
+        message: '',
+        type: 'success' // 'success' or 'error'
+    });
+
+    // Function to show notification
+    const showNotification = (message, type = 'success') => {
+        setNotification({
+            isVisible: true,
+            message,
+            type
+        });
+    };
+
+    // Function to hide notification
+    const hideNotification = () => {
+        setNotification(prev => ({
+            ...prev,
+            isVisible: false
+        }));
+    };
 
     const params = useParams()
     const router = useRouter()
@@ -220,7 +253,20 @@ const SearchPage = () => {
         }
     }
 
-    const handleProductClick = (productName, productID) => {
+    const handleProductClick = (productName, productID, product) => {
+        // Set the filters with product ID before navigation
+        setFilters({
+            categorySlug: product.category?.slug || null,
+            subCategorySlug: product.subCategory?.slug || null,
+            subCategoryTwoSlug: product.subCategoryTwo?.slug || null,
+            brandSlug: product.brand?.slug || null,
+            brandId: product.brand?._id || null,
+            categoryId: product.category?._id || null,
+            subCategoryId: product.subCategory?._id || null,
+            subCategoryTwoId: product.subCategoryTwo?._id || null,
+            productID: productID  // ← This is crucial!
+        })
+
         const productSlug = productName.replace(/\s+/g, '-').toLowerCase();
         router.push(`/${productSlug}`);
     }
@@ -282,9 +328,11 @@ const SearchPage = () => {
     }
 
     // FIXED: Add to cart with proper stock validation
+    // FIXED: Add to cart with proper stock validation and notifications
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
+            showNotification("Please login to add items to cart", "error")
             return
         }
 
@@ -296,6 +344,7 @@ const SearchPage = () => {
                 ...prev,
                 [productId]: stockCheck.message
             }))
+            showNotification(stockCheck.message, "error")
             return
         }
 
@@ -382,6 +431,11 @@ const SearchPage = () => {
                 await fetchCustomersCart()
                 setCartItemsCount(response.data.data.cartItems.length);
                 setError(null)
+
+                // Show success notification
+                const action = isProductInCart(productId) ? "updated in" : "added to"
+                showNotification(`${product.ProductName} ${action} cart successfully!`)
+
                 // Clear any stock errors after successful add
                 setStockErrors(prev => ({
                     ...prev,
@@ -390,6 +444,7 @@ const SearchPage = () => {
             }
         } catch (error) {
             console.error('Error adding to cart:', error)
+            showNotification("Failed to add item to cart", "error")
         } finally {
             setLoadingCart(prev => ({ ...prev, [productId]: false }))
         }
@@ -481,7 +536,12 @@ const SearchPage = () => {
 
             console.log("Cart items:", response)
             if (response.data.statusCode === 200) {
-                setCartItems(response.data.data || [])
+                const cartData = response.data.data || [];
+                setCartItems(cartData);
+                setCartItemsCount(cartData.length);
+
+                // Force a re-render to update the UI - ADD THIS LINE
+                setProducts(prev => [...prev]);
             }
         } catch (error) {
             console.error('Error fetching customer cart:', error)
@@ -526,10 +586,12 @@ const SearchPage = () => {
     }
 
     // Add/Remove product from wishlist
+    // Add/Remove product from wishlist with notifications
     const handleAddToWishList = async (productId) => {
         try {
             if (!currentUser || !currentUser._id) {
                 setError("Please login to manage wishlist")
+                showNotification("Please login to manage wishlist", "error")
                 return
             }
 
@@ -545,10 +607,16 @@ const SearchPage = () => {
             if (response.data.statusCode === 200) {
                 await fetchCustomersWishList()
                 setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
+
+                // Show wishlist notification
+                const product = products.find(p => p._id === productId);
+                const action = isProductInWishlist(productId) ? "removed from" : "added to";
+                showNotification(`${product?.ProductName} ${action} wishlist!`);
             }
         } catch (error) {
             console.error('Error managing product in wishlist:', error)
             setError('Error managing wishlist')
+            showNotification("Error managing wishlist", "error")
         } finally {
             setLoadingWishlist(prev => {
                 const updatedLoadingWishlist = { ...prev }
@@ -746,6 +814,14 @@ const SearchPage = () => {
 
     return (
         <div className="min-h-screen ">
+
+            <Notification
+                message={notification.message}
+                type={notification.type}
+                isVisible={notification.isVisible}
+                onHide={hideNotification}
+            />
+
             {/* Breadcrumb */}
             <div className="bg-white justify-items-center pt-4">
                 <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
@@ -985,7 +1061,7 @@ const SearchPage = () => {
                                                 <div className="text-start space-y-2 lg:max-w-[229px]">
                                                     {/* Product Name */}
                                                     <h3
-                                                        onClick={() => handleProductClick(product.ProductName, product._id)}
+                                                        onClick={() => handleProductClick(product.ProductName, product._id, product)}
                                                         className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
                                                         {product.ProductName}
                                                     </h3>

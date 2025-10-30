@@ -582,7 +582,7 @@ const CheckoutComponent = () => {
         let gstAmount = 0;
 
         cartItems.forEach(item => {
-            subtotalAmount += item.amount;
+            subtotalAmount += item.amount * item.totalQuantity;
             if (item.product.taxable && item.product.taxPercentages) {
                 gstAmount += (item.amount * item.product.taxPercentages) / 100;
             }
@@ -745,6 +745,25 @@ const CheckoutComponent = () => {
         return () => clearTimeout(timer);
     }, [router]);
 
+    useEffect(() => {
+        if (outOfStockItems.length > 0) {
+            // Scroll to top of the page to show the warning
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+
+            // Alternative: Scroll to the warning element specifically
+            const warningElement = document.getElementById('out-of-stock-warning');
+            if (warningElement) {
+                warningElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+    }, [outOfStockItems.length]);
+
     if (isProcessingEway) {
         return (
             <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
@@ -793,6 +812,7 @@ const CheckoutComponent = () => {
 
                 {/* Out of Stock Warning - Show on all steps */}
                 <OutOfStockWarning
+                    id="out-of-stock-warning"
                     outOfStockItems={outOfStockItems}
                     onRemoveItems={handleRemoveOutOfStockItems}
                 />

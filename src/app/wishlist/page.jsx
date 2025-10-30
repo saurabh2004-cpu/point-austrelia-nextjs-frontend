@@ -333,8 +333,8 @@ const ProductCard = ({
                                     onChange={(e) => onUpdateUnit(productId, e.target.value)}
                                     className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                               appearance-none ${!isAvailable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                                    disabled={isLoading || !isAvailable}
+                                               appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''}`}
+                                    disabled={isLoading}
                                 >
                                     {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
                                         product.typesOfPacks.map((pack) => (
@@ -596,8 +596,59 @@ const Page = () => {
         }));
     };
 
+    // ✅ Move this function outside of ProductCard so it can be used in handleAddToCart
+    const calculateDiscountedPrice = (product, currentUser, itemBasedDiscounts, customerGroupsDiscounts) => {
+        if (!product || !product.eachPrice) return 0;
+
+        const originalPrice = product.eachPrice;
+
+        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
+        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
+            return product.comparePrice;
+        }
+
+        // If no comparePrice or comparePrice is 0, check for discounts
+        if (!currentUser || !currentUser.customerId) {
+            return originalPrice;
+        }
+
+        // Priority 2: Check for item-based discount
+        const itemDiscount = itemBasedDiscounts.find(
+            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+        );
+
+        if (itemDiscount) {
+            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+            return Math.max(0, originalPrice - discountAmount);
+        }
+
+        // Priority 3: Check for pricing group discount
+        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+            for (const groupDiscountDoc of customerGroupsDiscounts) {
+                if (groupDiscountDoc && groupDiscountDoc.customers) {
+                    const customerDiscount = groupDiscountDoc.customers.find(
+                        customer => customer.user && customer.user.customerId === currentUser.customerId
+                    );
+
+                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                        const percentage = parseFloat(customerDiscount.percentage);
+
+                        if (percentage > 0) {
+                            // Positive percentage means price increase
+                            return originalPrice + (originalPrice * percentage / 100);
+                        } else if (percentage < 0) {
+                            // Negative percentage means price decrease
+                            return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
+                        }
+                    }
+                }
+            }
+        }
+
+        return originalPrice;
+    };
+
     // ✅ NEW: Update cart item function
-    // ✅ UPDATED: Add to cart function with discount priority
     const handleAddToCart = async (productId) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart");
@@ -640,60 +691,12 @@ const Page = () => {
 
             const packType = getPackTypeName(selectedPackId);
 
-            // ✅ UPDATED: Calculate discounted price with comparePrice priority
-            const calculateDiscountedPrice = (product) => {
-                const originalPrice = product.eachPrice || 0;
-
-                // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-                if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-                    return product.comparePrice;
-                }
-
-                // If no comparePrice or comparePrice is 0, check for discounts
-                if (!currentUser || !currentUser.customerId) {
-                    return originalPrice;
-                }
-
-                // Priority 2: Check for item-based discount
-                const itemDiscount = itemBasedDiscounts.find(
-                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
-                );
-
-                if (itemDiscount) {
-                    const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-                    return Math.max(0, originalPrice - discountAmount);
-                }
-
-                // Priority 3: Check for pricing group discount
-                if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-                    for (const groupDiscountDoc of customerGroupsDiscounts) {
-                        if (groupDiscountDoc && groupDiscountDoc.customers) {
-                            const customerDiscount = groupDiscountDoc.customers.find(
-                                customer => customer.user && customer.user.customerId === currentUser.customerId
-                            );
-
-                            if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                                const percentage = parseFloat(customerDiscount.percentage);
-
-                                if (percentage > 0) {
-                                    // Positive percentage means price increase
-                                    return originalPrice + (originalPrice * percentage / 100);
-                                } else if (percentage < 0) {
-                                    // Negative percentage means price decrease
-                                    return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return originalPrice;
-            };
-
+            // Calculate discounted price with comparePrice priority
             const discountedPrice = calculateDiscountedPrice(product);
-            const totalAmount = totalQuantity * discountedPrice;
+            // FIXED: Calculate total amount correctly - discounted price is per unit
+            const totalAmount = discountedPrice.toFixed(2);
 
-            // ✅ UPDATED: Determine discount type and percentage
+            // Determine discount type and percentage
             let discountType = "";
             let discountPercentages = 0;
 
@@ -741,7 +744,7 @@ const Page = () => {
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
-                amount: totalAmount,
+                amount: totalAmount, // This is now correctly calculated
                 discountType: discountType,
                 discountPercentages: discountPercentages
             };
@@ -860,7 +863,7 @@ const Page = () => {
             };
 
             const discountedPrice = calculateDiscountedPrice(product);
-            const totalAmount = totalQuantity * discountedPrice;
+            const totalAmount = discountedPrice.toFixed(2);
 
             // ✅ UPDATED: Determine discount type and percentage
             let discountType = "";

@@ -78,9 +78,15 @@ const ShoppingCartPopup = () => {
 
       console.log("popup remove from cart ", response)
       if (response.data.statusCode === 200) {
+        // Update local state
         setCartItems(prevItems => prevItems.filter(item => item.product._id !== productId));
         setCartItemsCount(response.data.data.length);
         setError(null);
+
+        // IMPORTANT: Refresh the cart data to sync with product listing
+        await fetchCustomersCart();
+
+        window.dispatchEvent(new CustomEvent('cartUpdated'));
       } else {
         setError(response.data.message || "Failed to remove cart item");
       }
@@ -234,8 +240,8 @@ const ShoppingCartPopup = () => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 top-20 bg-transparent bg-opacity-50 flex xl:items-start lg:justify-end p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300">
+    <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto">
         <div className="flex flex-col items-center justify-between px-4">
           <div className="w-full flex justify-end">
             <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 transition-colors">

@@ -23,6 +23,12 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
     return { sortField, sortOrder };
   };
 
+  // Helper function to handle image errors
+  const handleImageError = (e) => {
+    console.log('Image failed to load, using fallback');
+    e.target.src = '/product-listing-images/product-1.avif';
+  };
+
   const fetchRecentPurchases = async (page = 1) => {
     try {
       setLoading(true)
@@ -79,25 +85,15 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
     }
   }
 
-
   const fetchProductsOfOrder = async (documentNumber) => {
     setShowProducts(true)
     try {
       setLoading(true)
       const response = await axiosInstance.get(`sales-order/get-products-by-sales-document-number/${documentNumber}`)
 
-
       if (response.data.statusCode === 200) {
         console.log("products of order", response.data.data);
         setProducts(response.data.data || [])
-        setPagination(response.data.data.pagination || {
-          currentPage: 1,
-          totalPages: 0,
-          totalOrders: 0,
-          hasNext: false,
-          hasPrev: false,
-          limit: 5
-        })
       }
     } catch (error) {
       console.error('Error fetching products of order:', error)
@@ -152,7 +148,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           </div>}
           {showProducts &&
             <button className="text-base text-black font-semibold cursor-pointer" onClick={() => setShowProducts(false)}>
-              <ChevronLeft height={20} width={20} className="inline-block"  />
+              <ChevronLeft height={20} width={20} className="inline-block" />
               Orders List
             </button>}
           {hasTimeFilter && (
@@ -163,7 +159,6 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             </div>
           )}
         </div>
-
 
         {/* Pagination Controls */}
         <div className="flex items-center space-x-2">
@@ -210,15 +205,17 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">#</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Image' : 'Document Number'}</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'SKU' : 'Date'}</th>
-                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Amount' : 'Customer Name'}</th>
-                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Tax' : 'Sales Channel'}</th>
-                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Type of Pack' : 'Tracking Number'}</th>
-                <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">{showProducts ? 'Units' : 'Shipping Address'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Product Name' : 'Customer Name'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Amount' : 'Sales Channel'}</th>
+                <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Tax' : 'Tracking Number'}</th>
+                <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">{showProducts ? 'Pack Type' : 'Shipping Address'}</th>
                 {!showProducts &&
                   <>
                     <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Billing Address</th>
                     <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Total Amount</th>
                   </>}
+                {showProducts &&
+                  <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Units</th>}
               </tr>
             </thead>
             <tbody>
@@ -232,14 +229,13 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                     {order.documentNumber}
                   </td>
                   <td className="py-4 px-4 border-r">
-                    
                     <div className='flex justify-start'>
                       <p className="font-medium truncate flex justify-start">{order.date}</p>
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r max-w-xs">
                     <div className='flex justify-start'>
-                      <p className="font-medium truncate flex justify-start">{order.customerName || 'Product not found'}</p>
+                      <p className="font-medium truncate flex justify-start">{order.customerName}</p>
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r">{order.salesChannel}</td>
@@ -260,45 +256,52 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                 </tr>
               ))}
 
-
               {showProducts && products.map((product, index) => (
-                <tr key={product.sku} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
-                  <td
-                    className="py-4 px-4 border-r hover:text-[#E9098D] flex justify-center "
-
-                  >
-                    <img src={`https://point-australia.s3.ap-southeast-2.amazonaws.com/product-images/${product.itemSku}_1.jpg`}
-                      alt=""
-                      className="h-20 w-20 object-cover rounded-md" />
+                <tr key={product._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 px-4 border-r">{index + 1}</td>
+                  <td className="py-4 px-4 border-r flex justify-center">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.productName}
+                      className="h-20 w-20 object-cover rounded-md"
+                      onError={handleImageError}
+                    />
                   </td>
                   <td className="py-4 px-4 border-r">
-                    <div className='flex justify-start'>
+                    <div className='flex justify-start items-center gap-2'>
                       <p className="font-medium truncate flex justify-start">{product.itemSku}</p>
+                      {product.isProductGroup && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          Group
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r">
                     <div className='flex justify-start'>
-                      <p className="font-medium truncate flex justify-start">{product.amount}</p>
+                      <p className="font-medium truncate flex justify-start">{product.productName}</p>
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 border-r">
+                    <div className='flex justify-start'>
+                      <p className="font-medium truncate flex justify-start">${product.amount?.toFixed(2) || '0.00'}</p>
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r max-w-xs">
-                    <p className="font-medium truncate flex justify-start">{product.taxPercentages || 'No Tax'}</p>
-                    <div className='flex justify-start'>
-                    </div>
+                    <p className="font-medium truncate flex justify-start">
+                      {product.taxPercentages ? `${product.taxPercentages}%` : 'No Tax'}
+                    </p>
                   </td>
                   <td className="py-4 px-4 border-r">{product.packType}</td>
                   <td className="py-4 px-4 border-r">{product.unitsQuantity}</td>
                 </tr>
               ))}
-
-
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Tablet View */}
+      {/* Tablet View for Orders */}
       <div className="hidden md:block lg:hidden overflow-x-auto">
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <table className="w-full border-collapse min-w-[600px] text-sm md:text-base">
@@ -317,16 +320,17 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                   <td className="py-3 px-3 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
                   <td className="py-3 px-3 border-r flex items-center space-x-3">
                     <img
-                      src={order.product?.imageUrl || '/product-listing-images/product-1.avif'}
-                      alt={order.product?.ProductName}
+                      src={order.imageUrl}
+                      alt={order.productName}
                       className="w-10 h-10 rounded-md object-cover"
-                      onError={(e) => {
-                        e.target.src = '/product-listing-images/product-1.avif'
-                      }}
+                      onError={handleImageError}
                     />
                     <div className="min-w-0">
-                      <span className="font-medium block truncate">{order.product?.ProductName || 'Product not found'}</span>
+                      <span className="font-medium block truncate">{order.productName}</span>
                       <span className="text-xs text-gray-500 block">SKU: {order.itemSku}</span>
+                      {order.isProductGroup && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">Group</span>
+                      )}
                       <span className="text-xs text-gray-500 block">Date: {order.date}</span>
                       <span className="text-xs text-gray-500 block">Order: {order.documentNumber}</span>
                     </div>
@@ -351,12 +355,10 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             <div className="flex items-start sm:items-center gap-3 sm:gap-4">
               {/* Image */}
               <img
-                src={order.product?.imageUrl || '/product-listing-images/product-1.avif'}
-                alt={order.product?.ProductName}
+                src={order.imageUrl}
+                alt={order.productName}
                 className="h-20 w-20 rounded-lg flex-shrink-0 object-cover"
-                onError={(e) => {
-                  e.target.src = '/product-listing-images/product-1.avif'
-                }}
+                onError={handleImageError}
               />
 
               {/* Details */}
@@ -365,9 +367,16 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm sm:text-base font-medium text-gray-900">
-                      {order.product?.ProductName || 'Product not found'}
+                      {order.productName}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1">SKU: {order.itemSku}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs text-gray-500">SKU: {order.itemSku}</p>
+                      {order.isProductGroup && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                          Group
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500">Order: {order.documentNumber}</p>
                     <p className="text-xs text-gray-500">Date: {order.date}</p>
                   </div>

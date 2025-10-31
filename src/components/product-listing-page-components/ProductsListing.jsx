@@ -18,19 +18,23 @@ const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Newest")
     const [viewMode, setViewMode] = useState("grid")
     const [selectedProduct, setSelectedProduct] = useState(null)
+    const [selectedProductGroup, setSelectedProductGroup] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
     const [showProductPopup, setShowProductPopup] = useState(false)
     const [perpageItems, setPerpageItems] = useState('12')
     const router = useRouter()
     const [products, setProducts] = useState([])
+    const [productGroups, setProductGroups] = useState([])
+    const [allItems, setAllItems] = useState([]) // Combined products and product groups
     const [error, setError] = useState(null)
     const [productQuantities, setProductQuantities] = useState({})
+    const [productGroupQuantities, setProductGroupQuantities] = useState({})
     const [selectedUnits, setSelectedUnits] = useState({})
     const currentUser = useUserStore((state) => state.user);
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
-    const [totalProducts, setTotalProducts] = useState(0)
+    const [totalItems, setTotalItems] = useState(0)
     const [loading, setLoading] = useState(false)
     const [cartItems, setCartItems] = useState([])
     const [stockErrors, setStockErrors] = useState({})
@@ -56,6 +60,12 @@ const ProductListing = () => {
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
     const [customerSpecificAmountGroups, setCustomerSpecificAmountGroups] = useState({})
 
+    const handleClosePopup = () => {
+        setShowProductPopup(false);
+        setSelectedProduct(null);
+        setSelectedProductGroup(null);
+    }
+
     const [notification, setNotification] = useState({
         isVisible: false,
         message: '',
@@ -79,7 +89,6 @@ const ProductListing = () => {
         }))
     }
 
-
     const searchParams = useSearchParams();
     const searchQuery = searchParams.get('q') || '';
 
@@ -100,25 +109,35 @@ const ProductListing = () => {
         brandSlug,
         setFilters,
         clearFilters,
-        productID
-    } = useProductFiltersStore();
+        productID,
+        productGroupId
+    } = useProductFiltersStore()
+
+    console.log("product group id in product listing ", productGroupId)
+    console.log("product id  product listing ", productID)
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
     const [loadingCategories, setLoadingCategories] = useState(false)
 
-    // Check if product is in wishlist
-    const isProductInWishlist = (productId) => {
-        return wishListItems.some(item => item.product?._id === productId)
+    // Check if item is in wishlist (for both products and product groups)
+    const isItemInWishlist = (itemId, isProductGroup = false) => {
+        return wishListItems.some(item => {
+            if (isProductGroup) {
+                return item.productGroup?._id === itemId;
+            } else {
+                return item.product?._id === itemId;
+            }
+        });
     }
 
-    // NEW: Calculate discounted price for a product with comparePrice priority
-    const calculateDiscountedPrice = (product) => {
-        const originalPrice = product.eachPrice || 0;
+    // Calculate discounted price for both products and product groups
+    const calculateDiscountedPrice = (item, isProductGroup = false) => {
+        const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
 
-        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            return product.comparePrice;
+        // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            return item.comparePrice;
         }
 
         // If no comparePrice or comparePrice is 0, check for discounts
@@ -128,7 +147,7 @@ const ProductListing = () => {
 
         // Priority 2: Check for item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
         );
 
         // If item-based discount exists, apply it
@@ -138,14 +157,14 @@ const ProductListing = () => {
         }
 
         // Priority 3: Check for pricing group discount
-        if (product.pricingGroup) {
-            const productPricingGroupId = typeof product.pricingGroup === 'object'
-                ? product.pricingGroup._id
-                : product.pricingGroup;
+        if (item.pricingGroup) {
+            const itemPricingGroupId = typeof item.pricingGroup === 'object'
+                ? item.pricingGroup._id
+                : item.pricingGroup;
 
             // Find matching pricing group discount for this customer
             const groupDiscountDoc = customerGroupsDiscounts.find(
-                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
+                discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
             if (groupDiscountDoc) {
@@ -171,12 +190,12 @@ const ProductListing = () => {
         return originalPrice;
     };
 
-    // NEW: Get discount percentage for display
-    const getDiscountPercentage = (product) => {
-        // If product has comparePrice, show comparePrice discount
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            const discountAmount = originalPrice - product.comparePrice;
+    // Get discount percentage for display
+    const getDiscountPercentage = (item, isProductGroup = false) => {
+        // If item has comparePrice, show comparePrice discount
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            const discountAmount = originalPrice - item.comparePrice;
             const discountPercentage = (discountAmount / originalPrice) * 100;
             return Math.round(discountPercentage);
         }
@@ -187,7 +206,7 @@ const ProductListing = () => {
 
         // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
         );
 
         if (itemDiscount) {
@@ -195,13 +214,13 @@ const ProductListing = () => {
         }
 
         // Check pricing group discount
-        if (product.pricingGroup) {
-            const productPricingGroupId = typeof product.pricingGroup === 'object'
-                ? product.pricingGroup._id
-                : product.pricingGroup;
+        if (item.pricingGroup) {
+            const itemPricingGroupId = typeof item.pricingGroup === 'object'
+                ? item.pricingGroup._id
+                : item.pricingGroup;
 
             const groupDiscountDoc = customerGroupsDiscounts.find(
-                discount => discount.pricingGroup && discount.pricingGroup._id === productPricingGroupId
+                discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
             if (groupDiscountDoc) {
@@ -218,61 +237,107 @@ const ProductListing = () => {
         return null;
     };
 
-    // NEW: Check if product has any discount or comparePrice
-    const hasDiscount = (product) => {
-        return (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) ||
-            getDiscountPercentage(product) !== null;
+    // Check if item has any discount or comparePrice
+    const hasDiscount = (item, isProductGroup = false) => {
+        return (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) ||
+            getDiscountPercentage(item, isProductGroup) !== null;
     };
 
-    // Check if product is in cart
-    const isProductInCart = (productId) => {
-        return cartItems.some(item => item.product && item.product._id === productId)
+    // Check if item is in cart (for both products and product groups)
+    const isItemInCart = (itemId, isProductGroup = false) => {
+        return cartItems?.some(item => {
+            if (isProductGroup) {
+                return item.productGroup && item.productGroup._id === itemId;
+            } else {
+                return item.product && item.product._id === itemId;
+            }
+        });
     }
 
-    // Get cart item for product - IMPROVED VERSION
-    const getCartItem = (productId) => {
-        return cartItems.find(item => item.product && item.product._id === productId)
+    // Get cart item for product or product group
+    const getCartItem = (itemId, isProductGroup = false) => {
+        return cartItems.find(item => {
+            if (isProductGroup) {
+                return item.productGroup && item.productGroup._id === itemId;
+            } else {
+                return item.product && item.product._id === itemId;
+            }
+        });
     }
 
-    // Calculate total quantity based on pack quantity and units - FIXED VERSION
-    const calculateTotalQuantity = (productId, packId = null, unitsQty = null) => {
-        const product = products.find(p => p._id === productId)
-        if (!product) return 0
+    // Calculate total quantity based on pack quantity and units
+    const calculateTotalQuantity = (itemId, isProductGroup = false, packId = null, unitsQty = null) => {
+        let item;
+        let quantities;
+        let selectedUnitsState;
+
+        if (isProductGroup) {
+            item = productGroups.find(p => p._id === itemId);
+            quantities = productGroupQuantities;
+            selectedUnitsState = selectedUnits; // Product groups use the same selectedUnits state
+        } else {
+            item = products.find(p => p._id === itemId);
+            quantities = productQuantities;
+            selectedUnitsState = selectedUnits;
+        }
+
+        if (!item) return 0;
 
         // Use provided values or fall back to state
-        const packIdToUse = packId !== null ? packId : selectedUnits[productId]
-        const unitsToUse = unitsQty !== null ? unitsQty : (productQuantities[productId] || 1)
+        const packIdToUse = packId !== null ? packId : selectedUnitsState[itemId];
+        const unitsToUse = unitsQty !== null ? unitsQty : (quantities[itemId] || 1);
 
-        const selectedPack = product.typesOfPacks?.find(pack => pack._id === packIdToUse)
-        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
+        // For product groups, we don't have typesOfPacks, so use default pack quantity of 1
+        const packQuantity = isProductGroup ? 1 :
+            (item.typesOfPacks?.find(pack => pack._id === packIdToUse) ? parseInt(item.typesOfPacks.find(pack => pack._id === packIdToUse).quantity) : 1);
 
-        return packQuantity * unitsToUse
+        return packQuantity * unitsToUse;
     }
 
-    // Check if requested quantity exceeds stock - FIXED VERSION
-    const checkStockLevel = (productId, packId = null, unitsQty = null) => {
-        const product = products.find(p => p._id === productId)
-        if (!product) return { isValid: true }
+    // Check if requested quantity exceeds stock
+    const checkStockLevel = (itemId, isProductGroup = false, packId = null, unitsQty = null) => {
+        let item;
+        if (isProductGroup) {
+            item = productGroups.find(p => p._id === itemId);
+        } else {
+            item = products.find(p => p._id === itemId);
+        }
 
-        const totalRequestedQuantity = calculateTotalQuantity(productId, packId, unitsQty)
-        const cartItem = getCartItem(productId)
-        const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0
+        if (!item) return { isValid: true };
 
-        // If product is already in cart, we're updating it, not adding new quantity
-        const newTotalQuantity = isProductInCart(productId)
+        // For product groups, calculate stock level based on products in the group
+        let stockLevel;
+        if (isProductGroup) {
+            // Use the minimum stock level among products in the group, or a default value
+            stockLevel = item.products && item.products.length > 0
+                ? Math.min(...item.products.map(p => p.stockLevel || 0))
+                : 0;
+        } else {
+            stockLevel = item.stockLevel;
+        }
+
+        const totalRequestedQuantity = calculateTotalQuantity(itemId, isProductGroup, packId, unitsQty);
+        const cartItem = getCartItem(itemId, isProductGroup);
+        const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0;
+
+        // If item is already in cart, we're updating it, not adding new quantity
+        const newTotalQuantity = isItemInCart(itemId, isProductGroup)
             ? totalRequestedQuantity
-            : totalRequestedQuantity + currentCartQuantity
+            : totalRequestedQuantity + currentCartQuantity;
 
-        const isValid = newTotalQuantity <= product.stockLevel
+        const isValid = newTotalQuantity <= stockLevel;
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock (${product.stockLevel})`,
+            message: isValid ? null : `Exceeds available stock (${stockLevel})`,
             requestedQuantity: totalRequestedQuantity,
-            currentStock: product.stockLevel
-        }
+            currentStock: stockLevel
+        };
     }
 
-    const handleProductClick = (productName, productID) => {
+    const handleProductClick = (itemName, itemId, isProductGroup = false) => {
+
+        console.log("is product group", isProductGroup, itemId)
+
         setFilters({
             categorySlug: categorySlug,
             subCategorySlug: subCategorySlug || null,
@@ -282,47 +347,56 @@ const ProductListing = () => {
             categoryId: categoryId || null,
             subCategoryId: subCategoryId || null,
             subCategoryTwoId: subCategoryTwoId || null,
-            productID: productID
-        })
-        const productSlug = productName.replace(/\s+/g, '-').toLowerCase();
-        router.push(`/${productSlug}`);
+            productID: isProductGroup ? null : itemId,
+            productGroupId: isProductGroup ? itemId : null
+        });
+
+        const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
+        router.push(`/${itemSlug}`);
     }
 
-    const handleProductImageClick = (product) => {
-        setSelectedProduct(product)
-        setShowProductPopup(true)
+    const handleProductImageClick = (item, isProductGroup = false) => {
+        if (isProductGroup) {
+            setSelectedProductGroup(item);
+        } else {
+            setSelectedProduct(item);
+        }
+        setShowProductPopup(true);
     }
 
-    // FIXED: Handle quantity change with proper stock checking
-    const handleQuantityChange = (productId, change) => {
-        const currentQuantity = productQuantities[productId] || 1;
+    // Handle quantity change for both products and product groups
+    const handleQuantityChange = (itemId, change, isProductGroup = false) => {
+        const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
+        const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
+
+        const currentQuantity = quantitiesState[itemId] || 1;
         const newQuantity = Math.max(1, currentQuantity + change);
 
         // Update quantity first
-        setProductQuantities(prev => ({
+        setQuantitiesState(prev => ({
             ...prev,
-            [productId]: newQuantity
+            [itemId]: newQuantity
         }));
 
         // Check stock with the NEW quantity
-        const stockCheck = checkStockLevel(productId, null, newQuantity);
+        const stockCheck = checkStockLevel(itemId, isProductGroup, null, newQuantity);
 
         if (!stockCheck.isValid) {
             // Set error if exceeds stock
             setStockErrors(prev => ({
                 ...prev,
-                [productId]: stockCheck.message
+                [itemId]: stockCheck.message
             }));
         } else {
             // Clear error if within stock
             setStockErrors(prev => ({
                 ...prev,
-                [productId]: null
+                [itemId]: null
             }));
         }
     }
 
-    // FIXED: Handle unit change with proper stock checking
+    // Handle unit change for products (product groups don't have units)
     const handleUnitChange = (productId, unitId, product) => {
         const selectedPack = product.typesOfPacks.find(pack => pack._id === unitId)
         setSelectedPackType(selectedPack.name)
@@ -337,7 +411,7 @@ const ProductListing = () => {
 
         // Check stock with the NEW pack but current quantity
         const currentQuantity = productQuantities[productId] || 1
-        const stockCheck = checkStockLevel(productId, unitId, currentQuantity)
+        const stockCheck = checkStockLevel(productId, false, unitId, currentQuantity)
 
         if (!stockCheck.isValid) {
             // Set error if exceeds stock
@@ -354,8 +428,8 @@ const ProductListing = () => {
         }
     }
 
-    // Add to cart function
-    const handleAddToCart = async (productId) => {
+    // Add to cart function for both products and product groups
+    const handleAddToCart = async (itemId, isProductGroup = false) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
             showNotification("Please login to add items to cart", "error")
@@ -363,74 +437,172 @@ const ProductListing = () => {
         }
 
         // Final stock check before adding to cart
-        const stockCheck = checkStockLevel(productId)
+        const stockCheck = checkStockLevel(itemId, isProductGroup)
         if (!stockCheck.isValid) {
             setError(stockCheck.message)
             setStockErrors(prev => ({
                 ...prev,
-                [productId]: stockCheck.message
+                [itemId]: stockCheck.message
             }))
             showNotification(stockCheck.message, "error")
             return
         }
 
-        setLoadingCart(prev => ({ ...prev, [productId]: true }))
+        setLoadingCart(prev => ({ ...prev, [itemId]: true }))
 
         try {
-            const product = products.find(p => p._id === productId)
-            if (!product) return
+            let item;
+            let quantitiesState;
 
-            const selectedPack = product.typesOfPacks?.find(pack => pack._id === selectedUnits[productId])
-            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
-            const unitsQuantity = productQuantities[productId] || 1
-            const totalQuantity = packQuantity * unitsQuantity
+            if (isProductGroup) {
+                item = productGroups.find(p => p._id === itemId);
+                quantitiesState = productGroupQuantities;
+            } else {
+                item = products.find(p => p._id === itemId);
+                quantitiesState = productQuantities;
+            }
 
-            // Calculate the discounted price for this product
-            const discountedPrice = calculateDiscountedPrice(product)
+            if (!item) return;
+
+            // For product groups, we don't have typesOfPacks, so use default values
+            const packQuantity = isProductGroup ? 1 :
+                (item.typesOfPacks?.find(pack => pack._id === selectedUnits[itemId]) ?
+                    parseInt(item.typesOfPacks.find(pack => pack._id === selectedUnits[itemId]).quantity) : 1);
+
+            const unitsQuantity = quantitiesState[itemId] || 1;
+            const totalQuantity = packQuantity * unitsQuantity;
+
+            // Calculate the discounted price for this item
+            const discountedPrice = calculateDiscountedPrice(item, isProductGroup);
 
             // Calculate total amount using the discounted price
-            const totalAmount = discountedPrice
+            const totalAmount = discountedPrice;
 
             // Determine discount type and percentage
             let discountType = "";
             let discountPercentages = 0;
 
-            // ... (rest of your discount calculation logic remains the same)
+            // Priority 1: Check comparePrice discount
+            if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+                const originalPrice = isProductGroup ? item.eachPrice : item.eachPrice;
+                const discountAmount = originalPrice - item.comparePrice;
+                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                discountType = "compare_price";
+            }
+            // Priority 2: Check item-based discount
+            else if (currentUser && currentUser.customerId) {
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
+                );
+
+                if (itemDiscount) {
+                    discountPercentages = itemDiscount.percentage;
+                    discountType = "item_based";
+                }
+                // Priority 3: Check pricing group discount
+                else if (item.pricingGroup) {
+                    const itemPricingGroupId = typeof item.pricingGroup === 'object'
+                        ? item.pricingGroup._id
+                        : item.pricingGroup;
+
+                    const groupDiscountDoc = customerGroupsDiscounts.find(
+                        discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
+                    );
+
+                    if (groupDiscountDoc) {
+                        const customerDiscount = groupDiscountDoc.customers.find(
+                            customer => customer.user.customerId === currentUser.customerId
+                        );
+
+                        if (customerDiscount) {
+                            discountPercentages = parseFloat(customerDiscount.percentage);
+                            discountType = "pricing_group";
+                        }
+                    }
+                }
+            }
 
             const cartData = {
                 customerId: currentUser._id,
-                productId: productId,
+                productId: isProductGroup ? null : itemId,
+                productGroupId: isProductGroup ? itemId : null,
                 packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
-                packType: selectedPack ? selectedPack.name : 'Each',
+                packType: isProductGroup ? 'Each' : (item.typesOfPacks?.find(pack => pack._id === selectedUnits[itemId]) ?
+                    item.typesOfPacks.find(pack => pack._id === selectedUnits[itemId]).name : 'Each'),
                 amount: totalAmount,
                 discountType: discountType,
                 discountPercentages: discountPercentages
-            }
+            };
 
-            const response = await axiosInstance.post('cart/add-to-cart', cartData)
+            const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
             if (response.data.statusCode === 200) {
-                await fetchCustomersCart()
+                await fetchCustomersCart();
                 setCartItemsCount(response.data.data.cartItems.length);
-                setError(null)
+                setError(null);
 
                 // Show success notification
-                const action = isProductInCart(productId) ? "updated in" : "added to"
-                showNotification(`${product.ProductName} ${action} cart successfully!`)
+                const action = isItemInCart(itemId, isProductGroup) ? "updated in" : "added to";
+                const itemName = isProductGroup ? item.name : item.ProductName;
+                showNotification(`${itemName} ${action} cart successfully!`);
 
                 // Clear any stock errors after successful add
                 setStockErrors(prev => ({
                     ...prev,
-                    [productId]: null
-                }))
+                    [itemId]: null
+                }));
             }
         } catch (error) {
-            console.error('Error adding to cart:', error)
-            showNotification("Failed to add item to cart", "error")
+            console.error('Error adding to cart:', error);
+            showNotification("Failed to add item to cart", "error");
         } finally {
-            setLoadingCart(prev => ({ ...prev, [productId]: false }))
+            setLoadingCart(prev => ({ ...prev, [itemId]: false }));
+        }
+    }
+
+    // Add/Remove item from wishlist (for both products and product groups)
+    const handleAddToWishList = async (itemId, isProductGroup = false) => {
+        try {
+            if (!currentUser || !currentUser._id) {
+                setError("Please login to manage wishlist");
+                return;
+            }
+
+            setLoadingWishlist(prev => ({ ...prev, [itemId]: true }));
+
+            const response = await axiosInstance.post('wishlist/add-to-wishlist', {
+                customerId: currentUser._id,
+                productId: isProductGroup ? null : itemId,
+                productGroupId: isProductGroup ? itemId : null
+            });
+
+            console.log("Wishlist response:", response.data);
+
+            if (response.data.statusCode === 200) {
+                // Refresh the wishlist to get updated data
+                await fetchCustomersWishList();
+                setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
+
+                // Show notification
+                const item = isProductGroup ?
+                    productGroups.find(p => p._id === itemId) :
+                    products.find(p => p._id === itemId);
+                const itemName = isProductGroup ? item?.name : item?.ProductName;
+                const action = isItemInWishlist(itemId, isProductGroup) ? "removed from" : "added to";
+                showNotification(`${itemName} ${action} wishlist!`);
+            }
+        } catch (error) {
+            console.error('Error managing item in wishlist:', error);
+            setError('Error managing wishlist');
+            showNotification("Failed to update wishlist", "error");
+        } finally {
+            setLoadingWishlist(prev => {
+                const updatedLoadingWishlist = { ...prev };
+                updatedLoadingWishlist[itemId] = false;
+                return updatedLoadingWishlist;
+            });
         }
     }
 
@@ -438,22 +610,22 @@ const ProductListing = () => {
     const getSortParams = (sortOption) => {
         switch (sortOption) {
             case "Price Low to High":
-                return { sortBy: "eachPrice", sortOrder: "asc" }
+                return { sortBy: "eachPrice", sortOrder: "asc" };
             case "Price High to Low":
-                return { sortBy: "eachPrice", sortOrder: "desc" }
+                return { sortBy: "eachPrice", sortOrder: "desc" };
             case "Newest":
-                return { sortBy: "createdAt", sortOrder: "desc" }
+                return { sortBy: "createdAt", sortOrder: "desc" };
             case "Best Seller":
             default:
-                return { sortBy: "createdAt", sortOrder: "desc" }
+                return { sortBy: "createdAt", sortOrder: "desc" };
         }
     }
 
-    // CORRECTED: Fetch products with filters
-    const fetchProducts = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
+    // CORRECTED: Fetch products and product groups with filters
+    const fetchItems = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
         try {
-            setLoading(true)
-            const sortParams = getSortParams(sortOption)
+            setLoading(true);
+            const sortParams = getSortParams(sortOption);
 
             // Build query parameters based on URL params
             const queryParams = {
@@ -461,126 +633,154 @@ const ProductListing = () => {
                 limit: itemsPerPage,
                 sortBy: sortParams.sortBy,
                 sortOrder: sortParams.sortOrder
-            }
+            };
 
             // Add filter parameters if they exist
-            if (categoryId) queryParams.categoryId = categoryId
-            if (subCategoryId) queryParams.subCategoryId = subCategoryId
-            if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId
-            if (brandId) queryParams.brandId = brandId
+            if (categoryId) queryParams.categoryId = categoryId;
+            if (subCategoryId) queryParams.subCategoryId = subCategoryId;
+            if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId;
+            if (brandId) queryParams.brandId = brandId;
 
-            console.log("Fetching products with params:", queryParams)
+            console.log("Fetching items with params:", queryParams);
 
-            const response = await axiosInstance.get('products/get-products-by-filters', {
-                params: queryParams
-            })
+            // Fetch both products and product groups in parallel
+            const [productsResponse, productGroupsResponse] = await Promise.all([
+                axiosInstance.get('products/get-products-by-filters', { params: queryParams }),
+                axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
+            ]);
 
-            console.log("all produscts response:", response.data)
+            console.log("Products response:", productsResponse.data);
+            console.log("Product groups response:", productGroupsResponse.data);
 
-            if (response.data.statusCode === 200) {
-                let productsData = response.data.data.products || []
-                const paginationInfo = response.data.data.pagination || {
-                    currentPage: 1,
-                    totalPages: 1,
-                    totalProducts: 0
-                }
+            let productsData = [];
+            let productGroupsData = [];
 
-                // Apply client-side sorting as fallback
-                productsData = applyClientSideSorting(productsData, sortOption);
-
-                setProducts(productsData)
-                setCurrentPage(paginationInfo.currentPage)
-                setTotalPages(paginationInfo.totalPages)
-                setTotalProducts(paginationInfo.totalProducts)
-
-                // Initialize quantities and selected units
-                const initialQuantities = {}
-                const initialUnits = {}
-                productsData.forEach(product => {
-                    initialQuantities[product._id] = 1
-                    if (product.typesOfPacks && product.typesOfPacks.length > 0) {
-                        initialUnits[product._id] = product.typesOfPacks[0]._id
-                    }
-                })
-                setProductQuantities(initialQuantities)
-                setSelectedUnits(initialUnits)
-                // Clear all stock errors when fetching new products
-                setStockErrors({})
-            } else {
-                setError(response.data.message)
-                setProducts([])
-                setTotalProducts(0)
+            if (productsResponse.data.statusCode === 200) {
+                productsData = productsResponse.data.data.products || [];
             }
 
+            if (productGroupsResponse.data.statusCode === 200) {
+                productGroupsData = productGroupsResponse.data.data.productGroups || [];
+            }
+
+            // Combine products and product groups
+            const combinedItems = [
+                ...productsData.map(item => ({ ...item, type: 'product' })),
+                ...productGroupsData.map(item => ({ ...item, type: 'productGroup' }))
+            ];
+
+            // Apply client-side sorting
+            const sortedItems = applyClientSideSorting(combinedItems, sortOption);
+
+            setProducts(productsData);
+            setProductGroups(productGroupsData);
+            setAllItems(sortedItems);
+
+            // Use product groups pagination info (or products if product groups is empty)
+            const paginationInfo = productGroupsResponse.data.data.pagination ||
+                productsResponse.data.data.pagination || {
+                currentPage: 1,
+                totalPages: 1,
+                totalItems: 0
+            };
+
+            setCurrentPage(paginationInfo.currentPage);
+            setTotalPages(paginationInfo.totalPages);
+            setTotalItems(paginationInfo.totalProductGroups || paginationInfo.totalProducts || 0);
+
+            // Initialize quantities and selected units for products
+            const initialQuantities = {};
+            const initialUnits = {};
+            productsData.forEach(product => {
+                initialQuantities[product._id] = 1;
+                if (product.typesOfPacks && product.typesOfPacks.length > 0) {
+                    initialUnits[product._id] = product.typesOfPacks[0]._id;
+                }
+            });
+            setProductQuantities(initialQuantities);
+            setSelectedUnits(initialUnits);
+
+            // Initialize quantities for product groups (no units for product groups)
+            const initialProductGroupQuantities = {};
+            productGroupsData.forEach(productGroup => {
+                initialProductGroupQuantities[productGroup._id] = 1;
+            });
+            setProductGroupQuantities(initialProductGroupQuantities);
+
+            // Clear all stock errors when fetching new items
+            setStockErrors({});
+
         } catch (error) {
-            console.error('Error fetching products:', error)
-            setError('An error occurred while fetching products')
-            setProducts([])
-            setTotalProducts(0)
+            console.error('Error fetching items:', error);
+            setError('An error occurred while fetching items');
+            setProducts([]);
+            setProductGroups([]);
+            setAllItems([]);
+            setTotalItems(0);
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
 
-    // NEW: Client-side sorting function
-    const applyClientSideSorting = (productsData, sortOption) => {
-        const sortedProducts = [...productsData];
+    // NEW: Client-side sorting function for combined items
+    const applyClientSideSorting = (items, sortOption) => {
+        const sortedItems = [...items];
 
         switch (sortOption) {
             case "Price Low to High":
-                return sortedProducts.sort((a, b) => {
-                    const priceA = calculateDiscountedPrice(a);
-                    const priceB = calculateDiscountedPrice(b);
+                return sortedItems.sort((a, b) => {
+                    const priceA = calculateDiscountedPrice(a, a.type === 'productGroup');
+                    const priceB = calculateDiscountedPrice(b, b.type === 'productGroup');
                     return priceA - priceB;
                 });
 
             case "Price High to Low":
-                return sortedProducts.sort((a, b) => {
-                    const priceA = calculateDiscountedPrice(a);
-                    const priceB = calculateDiscountedPrice(b);
+                return sortedItems.sort((a, b) => {
+                    const priceA = calculateDiscountedPrice(a, a.type === 'productGroup');
+                    const priceB = calculateDiscountedPrice(b, b.type === 'productGroup');
                     return priceB - priceA;
                 });
 
             case "Newest":
-                return sortedProducts.sort((a, b) => {
+                return sortedItems.sort((a, b) => {
                     const dateA = new Date(a.createdAt || 0);
                     const dateB = new Date(b.createdAt || 0);
                     return dateB - dateA;
                 });
 
             default:
-                return sortedProducts;
+                return sortedItems;
         }
     }
 
     // Fetch categories for sidebar
     const fetchCategoriesForBrand = async () => {
-        if (!brandId) return
+        if (!brandId) return;
 
         try {
-            setLoadingCategories(true)
-            const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
+            setLoadingCategories(true);
+            const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`);
 
-            console.log("categories by brand = ", res.data.data)
+            console.log("categories by brand = ", res.data.data);
 
             if (res.data.statusCode === 200) {
-                setCategories(res.data.data || [])
+                setCategories(res.data.data || []);
             }
         } catch (error) {
-            console.error('Error fetching categories:', error)
-            setCategories([])
+            console.error('Error fetching categories:', error);
+            setCategories([]);
         } finally {
-            setLoadingCategories(false)
+            setLoadingCategories(false);
         }
     }
 
     const fetchCustomersCart = async () => {
         try {
-            if (!currentUser || !currentUser._id) return
+            if (!currentUser || !currentUser._id) return;
 
-            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
+            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
-            console.log("Cart items:", response.data)
+            console.log("Cart items:", response.data);
             if (response.data.statusCode === 200) {
                 const cartData = response.data.data || [];
                 setCartItems(cartData);
@@ -588,121 +788,85 @@ const ProductListing = () => {
 
                 // Force a re-render to update the UI
                 setProducts(prev => [...prev]);
+                setProductGroups(prev => [...prev]);
             }
         } catch (error) {
-            console.error('Error fetching customer cart:', error)
+            console.error('Error fetching customer cart:', error);
         }
     }
 
-    //fetch groups discount
+    // Fetch groups discount
     const fetchCustomersGroupsDiscounts = async () => {
         try {
-            if (!currentUser || !currentUser.customerId) return
+            if (!currentUser || !currentUser.customerId) return;
 
-            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`)
+            const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`);
 
-            console.log("pricing groups discounts bu userid ", response)
-
-            if (response.data.statusCode === 200) {
-                setCustomerGroupsDiscounts(response.data.data || [])
-            }
-        }
-        catch (error) {
-            console.error('Error fetching customer groups discounts:', error)
-        }
-    }
-
-    // fetch item based discounts 
-    const fetchItemBasedDiscounts = async () => {
-        try {
-            if (!currentUser || !currentUser.customerId) return
-
-            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`)
-
-            console.log("item based discounts", response)
+            console.log("pricing groups discounts by userid ", response);
 
             if (response.data.statusCode === 200) {
-                setItemBasedDiscounts(response.data.data || [])
-            }
-        }
-        catch (error) {
-            console.error('Error fetching item based discounts:', error)
-        }
-    }
-
-    // Add/Remove product from wishlist
-    const handleAddToWishList = async (productId) => {
-        try {
-            if (!currentUser || !currentUser._id) {
-                setError("Please login to manage wishlist")
-                return
-            }
-
-            setLoadingWishlist(prev => ({ ...prev, [productId]: true }))
-
-            const response = await axiosInstance.post('wishlist/add-to-wishlist', {
-                customerId: currentUser._id,
-                productId: productId
-            })
-
-            console.log("Wishlist response:", response.data)
-
-            if (response.data.statusCode === 200) {
-                // Refresh the wishlist to get updated data
-                await fetchCustomersWishList()
-                setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
+                setCustomerGroupsDiscounts(response.data.data || []);
             }
         } catch (error) {
-            console.error('Error managing product in wishlist:', error)
-            setError('Error managing wishlist')
-        } finally {
-            setLoadingWishlist(prev => {
-                const updatedLoadingWishlist = { ...prev }
-                updatedLoadingWishlist[productId] = false
-                return updatedLoadingWishlist
-            })
+            console.error('Error fetching customer groups discounts:', error);
+        }
+    }
+
+    // Fetch item based discounts 
+    const fetchItemBasedDiscounts = async () => {
+        try {
+            if (!currentUser || !currentUser.customerId) return;
+
+            const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
+
+            console.log("item based discounts", response);
+
+            if (response.data.statusCode === 200) {
+                setItemBasedDiscounts(response.data.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching item based discounts:', error);
         }
     }
 
     const fetchCustomersWishList = async () => {
         try {
-            if (!currentUser || !currentUser._id) return
+            if (!currentUser || !currentUser._id) return;
 
-            const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
+            const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`);
 
-            console.log("customers wishlist response:", response.data)
+            console.log("customers wishlist response:", response.data);
 
             if (response.data.statusCode === 200) {
                 // Set the wishlist items from response.data.data
-                setWishlistItems(response.data.data || [])
-                setWishlistItemsCount(response.data.data?.length || 0)
+                setWishlistItems(response.data.data || []);
+                setWishlistItemsCount(response.data.data?.length || 0);
             }
-        }
-        catch (error) {
-            console.error('Error fetching customer wishlist:', error)
+        } catch (error) {
+            console.error('Error fetching customer wishlist:', error);
         }
     }
 
     // CORRECTED: Handle sort change
     const handleSortChange = (e) => {
-        const newSortBy = e.target.value
-        setSortBy(newSortBy)
-        setCurrentPage(1) // Reset to first page when sorting changes
-        fetchProducts(1, perpageItems, newSortBy)
+        const newSortBy = e.target.value;
+        setSortBy(newSortBy);
+        setCurrentPage(1); // Reset to first page when sorting changes
+        fetchItems(1, perpageItems, newSortBy);
     }
 
     // Handle items per page change
     const handleItemsPerPageChange = (e) => {
-        const newPerPage = e.target.value
-        setPerpageItems(newPerPage)
-        setCurrentPage(1) // Reset to first page when items per page changes
-        fetchProducts(1, newPerPage, sortBy)
+        const newPerPage = e.target.value;
+        setPerpageItems(newPerPage);
+        setCurrentPage(1); // Reset to first page when items per page changes
+        fetchItems(1, newPerPage, sortBy);
     }
 
     // Handle page change
     const handlePageChange = (page) => {
-        setCurrentPage(page)
-        fetchProducts(page, perpageItems, sortBy)
+        setCurrentPage(page);
+        fetchItems(page, perpageItems, sortBy);
     }
 
     // Handle category click in sidebar
@@ -717,7 +881,7 @@ const ProductListing = () => {
 
         // Navigate to category
         const parts = categorySlug?.split("/").filter(Boolean);
-        router.replace(`${parts[1]}`)
+        router.replace(`${parts[1]}`);
         setFilters({
             categorySlug: categorySlug,
             subCategorySlug: null,
@@ -726,7 +890,7 @@ const ProductListing = () => {
             subCategoryId: null,
             subCategoryTwoId: null,
             brandId: brandId
-        })
+        });
     }
 
     // Get page title based on current filter
@@ -744,6 +908,343 @@ const ProductListing = () => {
         if (categorySlug) return `Discover our ${categorySlug.replace(/-/g, ' ')} collection`
         return "Browse our complete product catalog"
     }
+
+    // Sort items by sequence and date
+    const sortItemsBySequenceAndDate = (items) => {
+        // Separate items into two groups
+        const itemsWithSequence = items.filter(item =>
+            item.sequence !== undefined && item.sequence !== null
+        );
+
+        const itemsWithoutSequence = items.filter(item =>
+            item.sequence === undefined || item.sequence === null
+        );
+
+        // Sort items with sequence by sequence number (ascending)
+        itemsWithSequence.sort((a, b) => a.sequence - b.sequence);
+
+        // Sort items without sequence by createdAt date (newest first)
+        itemsWithoutSequence.sort((a, b) =>
+            new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        // Combine both arrays: sequenced items first, then dated items
+        return [...itemsWithSequence, ...itemsWithoutSequence];
+    };
+
+    // CORRECTED: Apply both sequence sorting and current sort
+    const getSortedItems = () => {
+        let sorted = sortItemsBySequenceAndDate(allItems);
+        // Apply current sort option on top of sequence sorting
+        return applyClientSideSorting(sorted, sortBy);
+    };
+
+    const sortedItems = getSortedItems();
+
+    // Render product group badge
+    const renderProductGroupBadge = () => {
+        return (
+            <div className="absolute top-2 left-4 sm:left-6 z-10">
+                <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">
+                    BUNDLE
+                </div>
+            </div>
+        );
+    };
+
+    // Render item card (for both products and product groups)
+    const renderItemCard = (item) => {
+        const isProductGroup = item.type === 'productGroup';
+        const itemId = item._id;
+        const isInCart = isItemInCart(itemId, isProductGroup);
+        const cartItem = getCartItem(itemId, isProductGroup);
+        const isInWishlist = isItemInWishlist(itemId, isProductGroup);
+
+        // Calculate stock level for product groups
+        let isOutOfStock;
+        if (isProductGroup) {
+            isOutOfStock = item.products && item.products.length > 0
+                ? Math.min(...item.products.map(p => p.stockLevel || 0)) <= 0
+                : true;
+        } else {
+            isOutOfStock = item.stockLevel <= 0;
+        }
+
+        const stockError = stockErrors[itemId];
+        const isWishlistLoading = loadingWishlist[itemId];
+        const isCartLoading = loadingCart[itemId];
+
+        const discountedPrice = calculateDiscountedPrice(item, isProductGroup);
+        const discountPercentage = getDiscountPercentage(item, isProductGroup);
+        const hasItemDiscount = hasDiscount(item, isProductGroup);
+
+        const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
+        const currentQuantity = quantitiesState[itemId] || 1;
+
+        return (
+            <div
+                key={itemId}
+                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
+            >
+                {/* Wishlist Icon */}
+                <div className="absolute top-2 right-4 sm:right-6 z-10">
+                    <button
+                        className="rounded-full transition-colors"
+                        onClick={() => handleAddToWishList(itemId, isProductGroup)}
+                        disabled={isWishlistLoading}
+                    >
+                        <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
+                            {isWishlistLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
+                            )}
+                        </div>
+                    </button>
+                </div>
+
+                {/* Product Group Badge */}
+                {isProductGroup && renderProductGroupBadge()}
+
+                {/* Product Badge */}
+                {!isProductGroup && item.badge && (
+                    <div className="absolute top-2 left-4 sm:left-6 z-10">
+                        <div
+                            className="px-2 py-1 rounded text-xs font-medium"
+                            style={{
+                                backgroundColor: item.badge.backgroundColor,
+                                color: item.badge.textColor || '#fff',
+                            }}
+                        >
+                            {item.badge.text}
+                        </div>
+                    </div>
+                )}
+
+                {/* Item Image */}
+                <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
+                    <img
+                        src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
+                        alt={isProductGroup ? item.name : item.ProductName}
+                        className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
+                        onClick={() => handleProductImageClick(item, isProductGroup)}
+                    />
+                </div>
+
+                {/* Item Info */}
+                <div className="text-start space-y-2 lg:max-w-[229px]">
+                    {/* Item Name */}
+                    <h3
+                        onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
+                        className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
+                    >
+                        {isProductGroup ? item.name : item.ProductName}
+                    </h3>
+
+                    {/* SKU */}
+                    <div className="space-y-1 flex justify-between items-center">
+                        <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                            SKU {isProductGroup ? item.sku : item.sku}
+                        </p>
+
+                        {/* Stock Status */}
+                        <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
+                            {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>}
+                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                                {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-center space-x-2">
+                        <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                            ${discountedPrice.toFixed(2)}
+                        </span>
+                        {discountedPrice < item.eachPrice && (
+                            <span className="text-sm text-gray-500 line-through">
+                                ${isProductGroup ? (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00') : (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00')}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Product Group Info */}
+                    {isProductGroup && item.products && item.products.length > 0 && (
+                        <div className="mt-4 mb-6 text-xs text-gray-600">
+                            Includes {item.products.length} product(s)
+                        </div>
+                    )}
+
+                    {/* Discount Badge */}
+                    {/* {hasItemDiscount && discountPercentage !== null && discountPercentage !== 0 && (
+                        <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold w-fit">
+                            {discountPercentage}% OFF
+                        </div>
+                    )} */}
+
+                    {/* Stock Error Message */}
+                    {stockError && (
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                            {stockError}
+                        </div>
+                    )}
+
+                    {/* Units Dropdown (only for products, not product groups) */}
+                    {!isProductGroup && item.typesOfPacks && item.typesOfPacks.length > 0 && (
+                        <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                            <div className="relative w-full">
+                                <select
+                                    value={selectedUnits[itemId] || ''}
+                                    onChange={(e) => handleUnitChange(itemId, e.target.value, item)}
+                                    disabled={isOutOfStock}
+                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                    appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                >
+                                    {item.typesOfPacks && item.typesOfPacks.length > 0 ? (
+                                        item.typesOfPacks.map((pack) => (
+                                            <option key={pack._id} value={pack._id}>
+                                                {pack.name}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option value="">No packs available</option>
+                                    )}
+                                </select>
+
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                    <svg
+                                        className="w-4 h-4 text-gray-500"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quantity Controls */}
+                    <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
+                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                        <div className="flex items-center space-x-4">
+                            <button
+                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(itemId, -1, isProductGroup);
+                                }}
+                                disabled={currentQuantity <= 1}
+                            >
+                                <span className="text-xl font-bold flex items-center">
+                                    <Image src="/icons/minus-icon.png"
+                                        alt="Minus"
+                                        width={12}
+                                        height={12}
+                                    />
+                                </span>
+                            </button>
+                            <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
+                                {currentQuantity}
+                            </span>
+                            <button
+                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(itemId, 1, isProductGroup);
+                                }}
+                                disabled={isOutOfStock}
+                            >
+                                <Image src="/icons/plus-icon.png"
+                                    alt="Plus"
+                                    width={12}
+                                    height={12}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Add to Cart Button */}
+                    <div className="flex items-center space-x-3">
+                        <button
+                            className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
+                                ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                }`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isOutOfStock && !isCartLoading && !stockError) {
+                                    handleAddToCart(itemId, isProductGroup);
+                                }
+                            }}
+                            disabled={isOutOfStock || isCartLoading || !!stockError}
+                        >
+                            {isCartLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <svg
+                                    className="w-5 h-5 transition-colors duration-300"
+                                    viewBox="0 0 21 21"
+                                    fill="currentColor"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                </svg>
+                            )}
+                            {isCartLoading ? 'Adding...' : 'Add to Cart'}
+                        </button>
+                    </div>
+
+                    {/* Action Buttons Row - Only show when item is in cart */}
+                    {isInCart && (
+                        <div className="flex space-x-2 mt-1">
+                            <button
+                                className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                onClick={(e) => e.stopPropagation()}
+                                disabled
+                            >
+                                <span>Added</span>
+                                <svg className="w-5 h-5 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                            <div className="w-px bg-black h-[20px] mt-2"></div>
+                            <button
+                                className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
+                                    ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                    }`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isOutOfStock && !isCartLoading && !stockError) {
+                                        handleAddToCart(itemId, isProductGroup);
+                                    }
+                                }}
+                                disabled={isOutOfStock || isCartLoading || !!stockError}
+                            >
+                                {isCartLoading ? 'Updating...' : 'Update'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Cart Quantity Info */}
+                    {isInCart && cartItem && (
+                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
+                            In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
+                        </div>
+                    )}
+
+
+                </div>
+            </div>
+        );
+    };
 
     useEffect(() => {
         fetchCustomersWishList()
@@ -764,7 +1265,7 @@ const ProductListing = () => {
 
     useEffect(() => {
         if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
-            fetchProducts()
+            fetchItems()
             fetchCategoriesForBrand()
         }
     }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
@@ -989,39 +1490,7 @@ const ProductListing = () => {
         setExpandedCategory(categoryId);
     }
 
-    const sortProductsBySequenceAndDate = (products) => {
-        // Separate products into two groups
-        const productsWithSequence = products.filter(product =>
-            product.sequence !== undefined && product.sequence !== null
-        );
-
-        const productsWithoutSequence = products.filter(product =>
-            product.sequence === undefined || product.sequence === null
-        );
-
-        // Sort products with sequence by sequence number (ascending)
-        productsWithSequence.sort((a, b) => a.sequence - b.sequence);
-
-        // Sort products without sequence by createdAt date (newest first)
-        productsWithoutSequence.sort((a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-        );
-
-        // Combine both arrays: sequenced products first, then dated products
-        return [...productsWithSequence, ...productsWithoutSequence];
-    };
-
-    // CORRECTED: Apply both sequence sorting and current sort
-    const getSortedProducts = () => {
-        let sorted = sortProductsBySequenceAndDate(products);
-
-        // Apply current sort option on top of sequence sorting
-        return applyClientSideSorting(sorted, sortBy);
-    };
-
-    const sortedProducts = getSortedProducts();
-
-    if (!productID) {
+    if (!productID && !productGroupId) {
         return (
             <div className="min-h-screen">
 
@@ -1189,7 +1658,7 @@ const ProductListing = () => {
                             <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 ">
                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
                                     <h2 className="text-lg lg:text-[1.2rem] font-[400] text-black">
-                                        Products <span className="text-[#000000]/60">({totalProducts})</span>
+                                        Items <span className="text-[#000000]/60">({totalItems})</span>
                                     </h2>
 
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-[27px] w-full sm:w-auto">
@@ -1276,268 +1745,13 @@ const ProductListing = () => {
                                 </div>
                             )}
 
-                            {/* Products Grid */}
+                            {/* Items Grid */}
                             {!loading && (
                                 <>
-                                    {products.length > 0 ? (
+                                    {sortedItems.length > 0 ? (
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-1">
-                                                {sortedProducts.map((product, index) => {
-                                                    const isInCart = isProductInCart(product._id)
-                                                    const cartItem = getCartItem(product._id)
-                                                    const isInWishlist = isProductInWishlist(product._id)
-                                                    const isOutOfStock = product.stockLevel <= 0
-                                                    const stockError = stockErrors[product._id]
-                                                    const isWishlistLoading = loadingWishlist[product._id]
-                                                    const isCartLoading = loadingCart[product._id]
-
-                                                    const discountedPrice = calculateDiscountedPrice(product)
-                                                    const discountPercentage = getDiscountPercentage(product)
-                                                    const hasProductDiscount = hasDiscount(product)
-
-                                                    return (
-                                                        <div
-                                                            key={product._id}
-                                                            className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
-                                                        >
-
-                                                            {/* Wishlist Icon */}
-                                                            <div className="absolute top-2 right-4 sm:right-6 z-10">
-                                                                <button
-                                                                    className="rounded-full transition-colors"
-                                                                    onClick={() => handleAddToWishList(product._id)}
-                                                                    disabled={isWishlistLoading}
-                                                                >
-                                                                    <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex mt-3 items-center justify-center rounded-full transition-colors cursor-pointer">
-                                                                        {isWishlistLoading ? (
-                                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#E9098D]"></div>
-                                                                        ) : (
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={isInWishlist ? "#E9098D" : "#D9D9D9"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart-icon lucide-heart"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></svg>
-                                                                        )}
-                                                                    </div>
-                                                                </button>
-                                                            </div>
-
-                                                            {/* product Badge */}
-                                                            {product.badge && (
-                                                                <div className="absolute top-2 left-4 sm:left-6 z-10">
-                                                                    <div
-                                                                        className="px-2 py-1 rounded text-xs font-medium"
-                                                                        style={{
-                                                                            backgroundColor: product.badge.backgroundColor,
-                                                                            color: product.badge.textColor || '#fff',
-                                                                        }}
-                                                                    >
-                                                                        {product.badge.text}
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Product Image */}
-                                                            <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
-                                                                <img
-                                                                    src={product.images || "/placeholder.svg"}
-                                                                    alt={product.ProductName}
-                                                                    className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
-                                                                    onClick={() => handleProductImageClick(product)}
-                                                                />
-                                                            </div>
-
-                                                            {/* Product Info */}
-                                                            <div className="text-start space-y-2 lg:max-w-[229px]">
-                                                                {/* Product Name */}
-                                                                <h3
-                                                                    onClick={() => handleProductClick(product.ProductName, product._id)}
-                                                                    className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase">
-                                                                    {product.ProductName}
-                                                                </h3>
-
-                                                                {/* SKU */}
-                                                                <div className="space-y-1 flex justify-between items-center ">
-                                                                    <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                                                        SKU {product.sku}
-                                                                    </p>
-
-                                                                    {/* Stock Status */}
-                                                                    <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
-                                                                        <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
-                                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                                        </svg>
-                                                                        <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
-                                                                            {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Price */}
-                                                                <div className="flex items-center space-x-2">
-                                                                    <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
-                                                                        ${discountedPrice.toFixed(2)}
-                                                                    </span>
-                                                                    {hasProductDiscount && !discountPercentage > product.eachPrice && (
-                                                                        <span className="text-sm text-gray-500 line-through">
-                                                                            ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Stock Error Message */}
-                                                                {stockError && (
-                                                                    <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
-                                                                        {stockError}
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Units Dropdown */}
-                                                                <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
-                                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                                                                    <div className="relative w-full">
-                                                                        <select
-                                                                            value={selectedUnits[product._id] || ''}
-                                                                            onChange={(e) => handleUnitChange(product._id, e.target.value, product)}
-                                                                            disabled={isOutOfStock}
-                                                                            className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                                        focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                                                        appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                        >
-                                                                            {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
-                                                                                product.typesOfPacks.map((pack) => (
-                                                                                    <option key={pack._id} value={pack._id}>
-                                                                                        {pack.name}
-                                                                                    </option>
-                                                                                ))
-                                                                            ) : (
-                                                                                <option value="">No packs available</option>
-                                                                            )}
-                                                                        </select>
-
-                                                                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                                            <svg
-                                                                                className="w-4 h-4 text-gray-500"
-                                                                                fill="none"
-                                                                                stroke="currentColor"
-                                                                                strokeWidth="2.5"
-                                                                                viewBox="0 0 24 24"
-                                                                            >
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                                            </svg>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Quantity Controls */}
-                                                                <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
-                                                                    <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
-                                                                    <div className="flex items-center space-x-4">
-                                                                        <button
-                                                                            className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleQuantityChange(product._id, -1);
-                                                                            }}
-                                                                            disabled={(productQuantities[product._id] || 1) <= 1}
-                                                                        >
-                                                                            <span className="text-xl font-bold flex items-center ">
-                                                                                <Image src="/icons/minus-icon.png"
-                                                                                    alt="Minus"
-                                                                                    width={12}
-                                                                                    height={12}
-                                                                                />
-                                                                            </span>
-                                                                        </button>
-                                                                        <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
-                                                                            {productQuantities[product._id] || 1}
-                                                                        </span>
-                                                                        <button
-                                                                            className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleQuantityChange(product._id, 1);
-                                                                            }}
-                                                                            disabled={isOutOfStock}
-                                                                        >
-                                                                            <Image src="/icons/plus-icon.png"
-                                                                                alt="Plus"
-                                                                                width={12}
-                                                                                height={12}
-                                                                            />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Add to Cart Button */}
-                                                                <div className="flex items-center space-x-3">
-                                                                    <button
-                                                                        className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
-                                                                            ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                                                            : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
-                                                                            }`}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (!isOutOfStock && !isCartLoading && !stockError) {
-                                                                                handleAddToCart(product._id);
-                                                                            }
-                                                                        }}
-                                                                        disabled={isOutOfStock || isCartLoading || !!stockError}
-                                                                    >
-                                                                        {isCartLoading ? (
-                                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                                        ) : (
-                                                                            <svg
-                                                                                className="w-5 h-5 transition-colors duration-300 "
-                                                                                viewBox="0 0 21 21"
-                                                                                fill="currentColor"
-                                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                            >
-                                                                                <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                                                                            </svg>
-                                                                        )}
-                                                                        {isCartLoading ? 'Adding...' : 'Add to Cart'}
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* Action Buttons Row - Only show when product is in cart */}
-                                                                {isInCart && (
-                                                                    <div className="flex space-x-2 mt-1">
-                                                                        <button
-                                                                            className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                                            onClick={(e) => e.stopPropagation()}
-                                                                            disabled
-                                                                        >
-                                                                            <span>Added</span>
-                                                                            <svg className="w-5 h-5 mt-1" fill="currentColor" viewBox="0 0 20 20">
-                                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                                            </svg>
-                                                                        </button>
-                                                                        <div className="w-px bg-black h-[20px] mt-2"></div>
-                                                                        <button
-                                                                            className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
-                                                                                ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                                                                : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
-                                                                                }`}
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (!isOutOfStock && !isCartLoading && !stockError) {
-                                                                                    handleAddToCart(product._id);
-                                                                                }
-                                                                            }}
-                                                                            disabled={isOutOfStock || isCartLoading || !!stockError}
-                                                                        >
-                                                                            {isCartLoading ? 'Updating...' : 'Update'}
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-
-                                                                {/* Cart Quantity Info */}
-                                                                {isInCart && cartItem && (
-                                                                    <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
-                                                                        In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
+                                                {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 
                                             {/* Pagination */}
@@ -1549,7 +1763,7 @@ const ProductListing = () => {
                                         </>
                                     ) : (
                                         <div className="text-center py-8">
-                                            <p className="text-lg text-gray-500">No products found for the selected category.</p>
+                                            <p className="text-lg text-gray-500">No items found for the selected category.</p>
                                         </div>
                                     )}
                                 </>
@@ -1560,8 +1774,9 @@ const ProductListing = () => {
 
                 <ProductPopup
                     isOpen={showProductPopup}
-                    onClose={() => setShowProductPopup(false)}
+                    onClose={handleClosePopup}
                     productId={selectedProduct?._id}
+                    productGroupId={selectedProductGroup?._id}
                     categoryId={categoryId}
                     subCategoryId={subCategoryId}
                     subCategoryTwoId={subCategoryTwoId}
@@ -1577,6 +1792,7 @@ const ProductListing = () => {
                     customerGroupsDiscounts={customerGroupsDiscounts}
                     itemBasedDiscounts={itemBasedDiscounts}
                 />
+
             </div>
         )
     }

@@ -25,23 +25,34 @@ const ProductCard = ({
     itemBasedDiscounts,
     cartItems
 }) => {
-    const product = item.product;
-    const productId = product._id;
+    // Determine if it's a product or product group
+    const isProductGroup = !!item.productGroup;
+    const productData = isProductGroup ? item.productGroup : item.product;
+    const productId = isProductGroup ? item.productGroup._id : item.product._id;
+
     const isLoading = loadingProducts[productId];
 
-    // ✅ Check if product is already in cart
-    const isProductInCart = cartItems.some(cartItem => cartItem.product._id === productId);
-    const cartItem = cartItems.find(cartItem => cartItem.product._id === productId);
+    // ✅ Check if product/group is already in cart
+    const isItemInCart = cartItems.some(cartItem => 
+        isProductGroup 
+            ? cartItem.productGroup?._id === productId
+            : cartItem.product?._id === productId
+    );
+    const cartItem = cartItems.find(cartItem => 
+        isProductGroup 
+            ? cartItem.productGroup?._id === productId
+            : cartItem.product?._id === productId
+    );
 
     // ✅ UPDATED: Discount calculation with comparePrice priority
-    const calculateDiscountedPrice = (product) => {
-        if (!product || !product.eachPrice) return 0;
+    const calculateDiscountedPrice = (productData) => {
+        if (!productData) return 0;
 
-        const originalPrice = product.eachPrice;
+        const originalPrice = isProductGroup ? productData.eachPrice : productData.eachPrice;
 
         // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            return product.comparePrice;
+        if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+            return productData.comparePrice;
         }
 
         // If no comparePrice or comparePrice is 0, check for discounts
@@ -51,7 +62,7 @@ const ProductCard = ({
 
         // Priority 2: Check for item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
         );
 
         if (itemDiscount) {
@@ -86,14 +97,14 @@ const ProductCard = ({
     };
 
     // ✅ UPDATED: Get discount percentage for display with comparePrice priority
-    const getDiscountPercentage = (product) => {
-        if (!product) return null;
+    const getDiscountPercentage = (productData) => {
+        if (!productData) return null;
 
         // If product has comparePrice, show comparePrice discount
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            if (originalPrice > 0 && product.comparePrice < originalPrice) {
-                const discountAmount = originalPrice - product.comparePrice;
+        if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+            const originalPrice = productData.eachPrice || 0;
+            if (originalPrice > 0 && productData.comparePrice < originalPrice) {
+                const discountAmount = originalPrice - productData.comparePrice;
                 const discountPercentage = (discountAmount / originalPrice) * 100;
                 return Math.round(discountPercentage);
             }
@@ -106,7 +117,7 @@ const ProductCard = ({
 
         // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
         );
 
         if (itemDiscount) {
@@ -132,26 +143,66 @@ const ProductCard = ({
     };
 
     // ✅ UPDATED: Check if product has any discount or comparePrice
-    const hasDiscount = (product) => {
-        if (!product) return false;
+    const hasDiscount = (productData) => {
+        if (!productData) return false;
 
         // Check if product has comparePrice discount
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            if (product.comparePrice < originalPrice) {
+        if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+            const originalPrice = productData.eachPrice || 0;
+            if (productData.comparePrice < originalPrice) {
                 return true;
             }
         }
 
         // Check if product has item-based or pricing group discount
-        return getDiscountPercentage(product) !== null;
+        return getDiscountPercentage(productData) !== null;
     };
 
-    // Get pack quantity from selected unit
-    const getPackQuantity = (selectedUnitId) => {
-        if (!product.typesOfPacks || product.typesOfPacks.length === 0) return 1;
+    // Get image URL for product or product group
+    const getImageUrl = () => {
+        if (isProductGroup) {
+            // For product groups, use thumbnail or first image
+            if (productData.thumbnail) {
+                return productData.thumbnail;
+            } else if (productData.images && productData.images.length > 0) {
+                return productData.images[0];
+            }
+        } else {
+            // For individual products
+            if (productData.images) {
+                return productData.images;
+            }
+        }
+        return '/product-listing-images/product-1.avif';
+    };
 
-        const selectedPack = product.typesOfPacks.find(pack =>
+    // Get product name
+    const getProductName = () => {
+        return isProductGroup ? productData.name : productData.ProductName;
+    };
+
+    // Get SKU
+    const getSku = () => {
+        return productData.sku;
+    };
+
+    // Get stock level - for product groups, check the minimum stock among all products
+    const getStockLevel = () => {
+        if (isProductGroup) {
+            if (!productData.products || productData.products.length === 0) return 0;
+            return Math.min(...productData.products.map(p => p.stockLevel || 0));
+        } else {
+            return productData.stockLevel || 0;
+        }
+    };
+
+    // Get pack quantity from selected unit (only for individual products)
+    const getPackQuantity = (selectedUnitId) => {
+        if (isProductGroup) return 1; // Product groups don't have pack types
+
+        if (!productData.typesOfPacks || productData.typesOfPacks.length === 0) return 1;
+
+        const selectedPack = productData.typesOfPacks.find(pack =>
             (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
         );
 
@@ -168,11 +219,13 @@ const ProductCard = ({
         return quantity || 1;
     };
 
-    // Get pack type name from selected unit
+    // Get pack type name from selected unit (only for individual products)
     const getPackTypeName = (selectedUnitId) => {
-        if (!product.typesOfPacks || product.typesOfPacks.length === 0) return "Each";
+        if (isProductGroup) return "Group"; // Product groups don't have pack types
 
-        const selectedPack = product.typesOfPacks.find(pack =>
+        if (!productData.typesOfPacks || productData.typesOfPacks.length === 0) return "Each";
+
+        const selectedPack = productData.typesOfPacks.find(pack =>
             (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
         );
 
@@ -187,46 +240,57 @@ const ProductCard = ({
     // Calculate total quantity (pack quantity * units quantity)
     const calculateTotalQuantity = (productId) => {
         const unitsQuantity = productQuantities[productId] || 1;
-        const selectedUnitId = selectedUnits[productId];
-        const packQuantity = getPackQuantity(selectedUnitId);
-        return packQuantity * unitsQuantity;
+        if (isProductGroup) {
+            return unitsQuantity; // Product groups are sold as single units
+        } else {
+            const selectedUnitId = selectedUnits[productId];
+            const packQuantity = getPackQuantity(selectedUnitId);
+            return packQuantity * unitsQuantity;
+        }
     };
 
     // Check if product is out of stock or exceeds stock level
+    const stockLevel = getStockLevel();
     const totalQuantity = calculateTotalQuantity(productId);
-    const isOutOfStock = product.stockLevel <= 0;
-    const exceedsStock = totalQuantity > product.stockLevel;
+    const isOutOfStock = stockLevel <= 0;
+    const exceedsStock = totalQuantity > stockLevel;
     const isAvailable = !isOutOfStock && !exceedsStock;
 
     // ✅ NEW: Check if cart item has been modified locally
     const isCartItemModified = () => {
-        if (!isProductInCart || !cartItem) return false;
+        if (!isItemInCart || !cartItem) return false;
 
         const currentQty = productQuantities[productId] || 1;
-        const currentPackId = selectedUnits[productId];
 
-        // Compare with cart item data
-        const cartPackQuantity = cartItem.packQuentity || 1;
-        const currentPackQuantity = getPackQuantity(currentPackId);
-
-        return currentQty !== cartItem.unitsQuantity || currentPackQuantity !== cartPackQuantity;
+        if (isProductGroup) {
+            return currentQty !== cartItem.unitsQuantity;
+        } else {
+            const currentPackId = selectedUnits[productId];
+            const cartPackQuantity = cartItem.packQuentity || 1;
+            const currentPackQuantity = getPackQuantity(currentPackId);
+            return currentQty !== cartItem.unitsQuantity || currentPackQuantity !== cartPackQuantity;
+        }
     };
 
     // Calculate amount based on selected pack and quantity
-    const calculateAmount = (product, productId) => {
+    const calculateAmount = (productData, productId) => {
         const unitsQuantity = productQuantities[productId] || 1;
-        const selectedUnitId = selectedUnits[productId];
-        const packQuantity = getPackQuantity(selectedUnitId);
-        const totalQuantity = packQuantity * unitsQuantity;
+        let totalQuantity = unitsQuantity;
 
-        const discountedPrice = calculateDiscountedPrice(product);
+        if (!isProductGroup) {
+            const selectedUnitId = selectedUnits[productId];
+            const packQuantity = getPackQuantity(selectedUnitId);
+            totalQuantity = packQuantity * unitsQuantity;
+        }
+
+        const discountedPrice = calculateDiscountedPrice(productData);
         return (discountedPrice * totalQuantity).toFixed(2);
     };
 
     // Get discounted price and discount info
-    const discountedPrice = calculateDiscountedPrice(product);
-    const discountPercentage = getDiscountPercentage(product);
-    const hasProductDiscount = hasDiscount(product);
+    const discountedPrice = calculateDiscountedPrice(productData);
+    const discountPercentage = getDiscountPercentage(productData);
+    const hasProductDiscount = hasDiscount(productData);
 
     const hasModifications = isCartItemModified();
 
@@ -237,22 +301,30 @@ const ProductCard = ({
                 <div className="flex-shrink-0 mr-4">
                     <div className="xl:w-39 h-full rounded-lg flex items-center justify-center align-middle relative">
                         <img
-                            src={product.images || '/product-listing-images/product-1.avif'}
-                            alt={product.ProductName}
+                            src={getImageUrl()}
+                            alt={getProductName()}
                             className="object-contain h-[156px] w-[156px]"
                             key={productId}
+                            onError={(e) => {
+                                e.target.src = '/product-listing-images/product-1.avif';
+                            }}
                         />
+                        {isProductGroup && (
+                            <span className="absolute top-2 left-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                Group
+                            </span>
+                        )}
                     </div>
                 </div>
 
                 {/* Product Details */}
                 <div className="flex-1 min-w-0 space-y-2 max-w-[350px] mx-auto xl:mx-0">
                     <h3 className="text-[15px] font-semibold line-clamp-2 mb-2">
-                        {product.ProductName}
+                        {getProductName()}
                     </h3>
                     <div className="flex items-center space-x-10 mb-2 justify-between align-middle">
                         <span className="font-medium text-[13px]">
-                            SKU: {product.sku}
+                            SKU: {getSku()}
                         </span>
                         {isAvailable ? (
                             <div className="flex items-center text-[14px] font-medium text-black p-1 font-semibold text-[11px] bg-[#E7FAEF]">
@@ -270,7 +342,7 @@ const ProductCard = ({
                     {/* Available Stock Display */}
                     {!isOutOfStock && (
                         <p className="text-[12px] text-gray-600 mb-1">
-                            Available: {product.stockLevel} units
+                            Available: {stockLevel} {isProductGroup ? 'groups' : 'units'}
                         </p>
                     )}
 
@@ -278,7 +350,7 @@ const ProductCard = ({
                     {isOutOfStock && (
                         <div className="bg-red-50 border border-red-200 rounded-md p-2 mb-2">
                             <p className="text-red-600 text-[12px] font-medium">
-                                This product is currently out of stock and cannot be added to cart.
+                                This {isProductGroup ? 'product group' : 'product'} is currently out of stock and cannot be added to cart.
                             </p>
                         </div>
                     )}
@@ -289,81 +361,67 @@ const ProductCard = ({
                             <div className="flex items-start">
                                 <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
                                 <p className="text-orange-600 text-[12px] font-medium">
-                                    Requested quantity ({totalQuantity}) exceeds available stock ({product.stockLevel}). Please reduce quantity.
+                                    Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
                                 </p>
                             </div>
                         </div>
                     )}
-
-                    {/* Already in Cart Info */}
-                    {/* {isProductInCart && !hasModifications && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
-                            <div className="flex items-start">
-                                <Check className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                                <p className="text-blue-600 text-[12px] font-medium">
-                                    This product is already in your cart ({cartItem?.unitsQuantity} units)
-                                </p>
-                            </div>
-                        </div>
-                    )} */}
 
                     {/* Price with Discount */}
                     <div className="flex items-center space-x-2">
                         <span className="text-[#2D2C70] font-semibold text-[24px]">
                             ${discountedPrice.toFixed(2)}
                         </span>
-                        {hasProductDiscount && !discountPercentage > product.eachPrice && (
+                        {hasProductDiscount && !discountPercentage > productData.eachPrice && (
                             <span className="text-sm text-gray-500 line-through">
-                                ${product.eachPrice ? product.eachPrice.toFixed(2) : '0.00'}
+                                ${productData.eachPrice ? productData.eachPrice.toFixed(2) : '0.00'}
                             </span>
                         )}
-                        {/* {discountPercentage && (
-                            <span className="text-sm text-green-600 font-semibold">
-                                {discountPercentage}% OFF
-                            </span>
-                        )} */}
                     </div>
 
                     <div className='flex items-center justify-between'>
-                        <div className="mb-3 space-x-12 align-center items-center font-spartan">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                            <div className="relative w-full">
-                                <select
-                                    value={selectedUnits[productId] || ''}
-                                    onChange={(e) => onUpdateUnit(productId, e.target.value)}
-                                    className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
-                                               focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                               appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''}`}
-                                    disabled={isLoading}
-                                >
-                                    {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
-                                        product.typesOfPacks.map((pack) => (
-                                            <option
-                                                key={typeof pack === 'string' ? pack : pack._id}
-                                                value={typeof pack === 'string' ? pack : pack._id}
-                                            >
-                                                {typeof pack === 'string' ? `Pack ${pack}` : (pack.name || `Pack of ${pack.quantity || 1}`)}
-                                            </option>
-                                        ))
-                                    ) : (
-                                        <option value="">Each</option>
-                                    )}
-                                </select>
-
-                                {/* Custom Arrow */}
-                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                    <svg
-                                        className="w-4 h-4 text-gray-500"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2.5"
-                                        viewBox="0 0 24 24"
+                        {/* Pack Type Selector - Only for individual products */}
+                        {!isProductGroup && (
+                            <div className="mb-3 space-x-12 align-center items-center font-spartan">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                                <div className="relative w-full">
+                                    <select
+                                        value={selectedUnits[productId] || ''}
+                                        onChange={(e) => onUpdateUnit(productId, e.target.value)}
+                                        className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
+                                                   focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                                   appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''}`}
+                                        disabled={isLoading}
                                     >
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                                        {productData.typesOfPacks && productData.typesOfPacks.length > 0 ? (
+                                            productData.typesOfPacks.map((pack) => (
+                                                <option
+                                                    key={typeof pack === 'string' ? pack : pack._id}
+                                                    value={typeof pack === 'string' ? pack : pack._id}
+                                                >
+                                                    {typeof pack === 'string' ? `Pack ${pack}` : (pack.name || `Pack of ${pack.quantity || 1}`)}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="">Each</option>
+                                        )}
+                                    </select>
+
+                                    {/* Custom Arrow */}
+                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                        <svg
+                                            className="w-4 h-4 text-gray-500"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="flex items-start space-x-2 space-y-2 flex-col justify-between">
                             <span className="text-[13px] font-medium">Quantity</span>
@@ -393,24 +451,24 @@ const ProductCard = ({
                     <div className='text-[16px] font-semibold mt-4 gap-2 flex'>
                         <span>Amount:</span>
                         <span className="text-[#2D2C70] text-[18px]">
-                            ${calculateAmount(product, productId)}
+                            ${calculateAmount(productData, productId)}
                         </span>
                     </div>
 
                     <div className='flex text-[13px] font-semibold justify-between w-full'>
                         {/* ✅ UPDATE BUTTON: Only enabled when product is in cart AND has modifications */}
                         <button
-                            onClick={() => onAddToCart(productId)}
-                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-8 disabled:opacity-50 ${hasModifications && isAvailable && isProductInCart
+                            onClick={() => onAddToCart(productId, isProductGroup)}
+                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-8 disabled:opacity-50 ${hasModifications && isAvailable && isItemInCart
                                 ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
                                 }`}
-                            disabled={isLoading || !hasModifications || !isAvailable || !isProductInCart}
+                            disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
-                                !isProductInCart
-                                    ? "Product not in cart"
+                                !isItemInCart
+                                    ? `${isProductGroup ? 'Product group' : 'Product'} not in cart`
                                     : !isAvailable
-                                        ? (isOutOfStock ? "Product is out of stock" : "Requested quantity exceeds available stock")
+                                        ? (isOutOfStock ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock` : "Requested quantity exceeds available stock")
                                         : !hasModifications
                                             ? "No changes to update"
                                             : "Update cart item"
@@ -421,17 +479,17 @@ const ProductCard = ({
 
                         {/* ✅ ADD TO CART BUTTON: Disabled when product is already in cart */}
                         <button
-                            onClick={() => onAddToCart(productId)}
-                            className={`flex py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-1 px-8 disabled:opacity-50 ${isAvailable && !isProductInCart
+                            onClick={() => onAddToCart(productId, isProductGroup)}
+                            className={`flex py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-1 px-8 disabled:opacity-50 ${isAvailable && !isItemInCart
                                 ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
                                 }`}
-                            disabled={isLoading || !isAvailable || isProductInCart}
+                            disabled={isLoading || !isAvailable || isItemInCart}
                             title={
-                                isProductInCart
-                                    ? "Product already in cart"
+                                isItemInCart
+                                    ? `${isProductGroup ? 'Product group' : 'Product'} already in cart`
                                     : !isAvailable
-                                        ? (isOutOfStock ? "Product is out of stock" : "Requested quantity exceeds available stock")
+                                        ? (isOutOfStock ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock` : "Requested quantity exceeds available stock")
                                         : "Add to cart"
                             }
                         >
@@ -445,12 +503,12 @@ const ProductCard = ({
                             </svg>
                             {!isAvailable
                                 ? (isOutOfStock ? 'Out of Stock' : 'Exceeds Stock')
-                                : (isProductInCart ? 'In Cart' : 'Add to Cart')
+                                : (isItemInCart ? 'In Cart' : 'Add to Cart')
                             }
                         </button>
 
                         <button
-                            onClick={() => onRemoveFromWishlist(productId)}
+                            onClick={() => onRemoveFromWishlist(productId, isProductGroup)}
                             className={`h-9 w-9 border rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
                                 }`}
                             disabled={isLoading}
@@ -530,9 +588,13 @@ const Page = () => {
                 const initialQuantities = {};
                 const initialUnits = {};
                 items.forEach(item => {
-                    initialQuantities[item.product._id] = item.unitsQuantity || 1;
+                    const isProductGroup = !!item.productGroup;
+                    const itemId = isProductGroup ? item.productGroup._id : item.product._id;
+                    
+                    initialQuantities[itemId] = item.unitsQuantity || 1;
 
-                    if (item.product.typesOfPacks && item.product.typesOfPacks.length > 0) {
+                    // Only set pack types for individual products
+                    if (!isProductGroup && item.product.typesOfPacks && item.product.typesOfPacks.length > 0) {
                         const matchingPack = item.product.typesOfPacks.find(pack => {
                             if (typeof pack === 'string') {
                                 return parseInt(pack) === item.packQuentity;
@@ -541,9 +603,9 @@ const Page = () => {
                         });
 
                         if (matchingPack) {
-                            initialUnits[item.product._id] = typeof matchingPack === 'string' ? matchingPack : matchingPack._id;
+                            initialUnits[itemId] = typeof matchingPack === 'string' ? matchingPack : matchingPack._id;
                         } else {
-                            initialUnits[item.product._id] = typeof item.product.typesOfPacks[0] === 'string'
+                            initialUnits[itemId] = typeof item.product.typesOfPacks[0] === 'string'
                                 ? item.product.typesOfPacks[0]
                                 : item.product.typesOfPacks[0]._id;
                         }
@@ -563,9 +625,17 @@ const Page = () => {
         }
     };
 
-    // Get pack quantity from selected unit
+    // Get pack quantity from selected unit (only for individual products)
     const getPackQuantity = (productId, selectedUnitId) => {
-        const product = wishListItems.find(item => item.product._id === productId)?.product;
+        const item = wishListItems.find(item => 
+            (item.product && item.product._id === productId) || 
+            (item.productGroup && item.productGroup._id === productId)
+        );
+        
+        // If it's a product group or no product found, return 1
+        if (!item || item.productGroup) return 1;
+
+        const product = item.product;
         if (!product || !product.typesOfPacks || product.typesOfPacks.length === 0) return 1;
 
         const selectedPack = product.typesOfPacks.find(pack =>
@@ -588,7 +658,7 @@ const Page = () => {
         }
     };
 
-    // Update selected pack type
+    // Update selected pack type (only for individual products)
     const updateSelectedUnit = (productId, packId) => {
         setSelectedUnits(prev => ({
             ...prev,
@@ -596,60 +666,8 @@ const Page = () => {
         }));
     };
 
-    // ✅ Move this function outside of ProductCard so it can be used in handleAddToCart
-    const calculateDiscountedPrice = (product, currentUser, itemBasedDiscounts, customerGroupsDiscounts) => {
-        if (!product || !product.eachPrice) return 0;
-
-        const originalPrice = product.eachPrice;
-
-        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            return product.comparePrice;
-        }
-
-        // If no comparePrice or comparePrice is 0, check for discounts
-        if (!currentUser || !currentUser.customerId) {
-            return originalPrice;
-        }
-
-        // Priority 2: Check for item-based discount
-        const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
-        );
-
-        if (itemDiscount) {
-            const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-            return Math.max(0, originalPrice - discountAmount);
-        }
-
-        // Priority 3: Check for pricing group discount
-        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-            for (const groupDiscountDoc of customerGroupsDiscounts) {
-                if (groupDiscountDoc && groupDiscountDoc.customers) {
-                    const customerDiscount = groupDiscountDoc.customers.find(
-                        customer => customer.user && customer.user.customerId === currentUser.customerId
-                    );
-
-                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                        const percentage = parseFloat(customerDiscount.percentage);
-
-                        if (percentage > 0) {
-                            // Positive percentage means price increase
-                            return originalPrice + (originalPrice * percentage / 100);
-                        } else if (percentage < 0) {
-                            // Negative percentage means price decrease
-                            return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
-                        }
-                    }
-                }
-            }
-        }
-
-        return originalPrice;
-    };
-
-    // ✅ NEW: Update cart item function
-    const handleAddToCart = async (productId) => {
+    // ✅ UPDATED: Add to cart function that handles both products and product groups
+    const handleAddToCart = async (productId, isProductGroup = false) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart");
             return;
@@ -658,69 +676,115 @@ const Page = () => {
         setLoadingProducts(prev => ({ ...prev, [productId]: true }));
 
         try {
-            const item = wishListItems.find(item => item.product._id === productId);
+            const item = wishListItems.find(item => 
+                isProductGroup 
+                    ? item.productGroup?._id === productId
+                    : item.product?._id === productId
+            );
             if (!item) return;
 
-            const product = item.product;
-            const selectedPackId = selectedUnits[productId];
-            const packQuantity = getPackQuantity(productId, selectedPackId);
+            const productData = isProductGroup ? item.productGroup : item.product;
             const unitsQuantity = productQuantities[productId] || 1;
-            const totalQuantity = packQuantity * unitsQuantity;
+            let packQuantity = 1;
+            let packType = "Each";
+
+            if (!isProductGroup) {
+                const selectedPackId = selectedUnits[productId];
+                packQuantity = getPackQuantity(productId, selectedPackId);
+                
+                // Get pack type name for individual products
+                if (productData.typesOfPacks && productData.typesOfPacks.length > 0) {
+                    const selectedPack = productData.typesOfPacks.find(pack =>
+                        (typeof pack === 'string' ? pack : pack._id) === selectedPackId
+                    );
+                    if (selectedPack) {
+                        packType = typeof selectedPack === 'string' 
+                            ? `Pack of ${selectedPack}` 
+                            : selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
+                    }
+                }
+            } else {
+                packType = "Group";
+            }
+
+            const totalQuantity = isProductGroup ? unitsQuantity : packQuantity * unitsQuantity;
 
             // Check stock level before adding to cart
-            if (totalQuantity > product.stockLevel) {
-                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${product.stockLevel})`);
+            const stockLevel = isProductGroup 
+                ? Math.min(...productData.products.map(p => p.stockLevel || 0))
+                : productData.stockLevel || 0;
+
+            if (totalQuantity > stockLevel) {
+                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${stockLevel})`);
                 return;
             }
 
-            // Get pack type name for cart schema
-            const getPackTypeName = (selectedUnitId) => {
-                if (!product.typesOfPacks || product.typesOfPacks.length === 0) return "Each";
+            // Calculate discounted price with comparePrice priority
+            const calculateDiscountedPrice = (productData) => {
+                const originalPrice = productData.eachPrice || 0;
 
-                const selectedPack = product.typesOfPacks.find(pack =>
-                    (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
+                if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+                    return productData.comparePrice;
+                }
+
+                if (!currentUser || !currentUser.customerId) {
+                    return originalPrice;
+                }
+
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
                 );
 
-                if (!selectedPack) return "Each";
-
-                if (typeof selectedPack === 'string') {
-                    return `Pack of ${selectedPack}`;
+                if (itemDiscount) {
+                    const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
+                    return Math.max(0, originalPrice - discountAmount);
                 }
-                return selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
+
+                if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+                    for (const groupDiscountDoc of customerGroupsDiscounts) {
+                        if (groupDiscountDoc && groupDiscountDoc.customers) {
+                            const customerDiscount = groupDiscountDoc.customers.find(
+                                customer => customer.user && customer.user.customerId === currentUser.customerId
+                            );
+
+                            if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                                const percentage = parseFloat(customerDiscount.percentage);
+                                if (percentage > 0) {
+                                    return originalPrice + (originalPrice * percentage / 100);
+                                } else if (percentage < 0) {
+                                    return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return originalPrice;
             };
 
-            const packType = getPackTypeName(selectedPackId);
-
-            // Calculate discounted price with comparePrice priority
-            const discountedPrice = calculateDiscountedPrice(product);
-            // FIXED: Calculate total amount correctly - discounted price is per unit
+            const discountedPrice = calculateDiscountedPrice(productData);
             const totalAmount = discountedPrice.toFixed(2);
 
             // Determine discount type and percentage
             let discountType = "";
             let discountPercentages = 0;
 
-            // Priority 1: Check if product has comparePrice
-            if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-                const originalPrice = product.eachPrice || 0;
-                if (originalPrice > 0 && product.comparePrice < originalPrice) {
-                    const discountAmount = originalPrice - product.comparePrice;
+            if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+                const originalPrice = productData.eachPrice || 0;
+                if (originalPrice > 0 && productData.comparePrice < originalPrice) {
+                    const discountAmount = originalPrice - productData.comparePrice;
                     discountPercentages = Math.round((discountAmount / originalPrice) * 100);
                     discountType = "Compare Price";
                 }
-            }
-            // Priority 2: Check for item-based discount
-            else if (currentUser && currentUser.customerId) {
+            } else if (currentUser && currentUser.customerId) {
                 const itemDiscount = itemBasedDiscounts.find(
-                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+                    discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
                 );
 
                 if (itemDiscount) {
                     discountPercentages = itemDiscount.percentage;
                     discountType = "Item Based Discount";
-                }
-                // Priority 3: Check for pricing group discount
-                else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+                } else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
                     for (const groupDiscountDoc of customerGroupsDiscounts) {
                         if (groupDiscountDoc && groupDiscountDoc.customers) {
                             const customerDiscount = groupDiscountDoc.customers.find(
@@ -739,24 +803,31 @@ const Page = () => {
 
             const cartData = {
                 customerId: currentUser._id,
-                productId: productId,
-                packType: packType,
-                packQuentity: packQuantity,
                 unitsQuantity: unitsQuantity,
                 totalQuantity: totalQuantity,
-                amount: totalAmount, // This is now correctly calculated
+                amount: totalAmount,
                 discountType: discountType,
                 discountPercentages: discountPercentages
             };
 
-            console.log("Sending cart data with discounts:", cartData);
+            // Add product or product group reference
+            if (isProductGroup) {
+                cartData.productGroupId = productId;
+                cartData.packType = "Group";
+                cartData.packQuentity = 1;
+            } else {
+                cartData.productId = productId;
+                cartData.packType = packType;
+                cartData.packQuentity = packQuantity;
+            }
+
+            console.log("Sending cart data:", cartData);
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
             if (response.data.statusCode === 200) {
                 setError(null);
                 console.log("Added to cart successfully");
-                // Refresh cart items count
                 await fetchCustomersCart();
             } else {
                 setError(response.data.message || "Failed to add to cart");
@@ -769,192 +840,35 @@ const Page = () => {
         }
     };
 
-    // ✅ UPDATED: Update cart function with discount priority
-    const handleUpdateCart = async (productId) => {
-        if (!currentUser || !currentUser._id) {
-            setError("Please login to update cart");
-            return;
-        }
-
-        setLoadingProducts(prev => ({ ...prev, [productId]: true }));
-
-        try {
-            const item = wishListItems.find(item => item.product._id === productId);
-            if (!item) return;
-
-            const product = item.product;
-            const selectedPackId = selectedUnits[productId];
-            const packQuantity = getPackQuantity(productId, selectedPackId);
-            const unitsQuantity = productQuantities[productId] || 1;
-            const totalQuantity = packQuantity * unitsQuantity;
-
-            // Check stock level
-            if (totalQuantity > product.stockLevel) {
-                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${product.stockLevel})`);
-                return;
-            }
-
-            // Get pack type name
-            const getPackTypeName = (selectedUnitId) => {
-                if (!product.typesOfPacks || product.typesOfPacks.length === 0) return "Each";
-
-                const selectedPack = product.typesOfPacks.find(pack =>
-                    (typeof pack === 'string' ? pack : pack._id) === selectedUnitId
-                );
-
-                if (!selectedPack) return "Each";
-
-                if (typeof selectedPack === 'string') {
-                    return `Pack of ${selectedPack}`;
-                }
-                return selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
-            };
-
-            const packType = getPackTypeName(selectedPackId);
-
-            // ✅ UPDATED: Calculate discounted price with comparePrice priority
-            const calculateDiscountedPrice = (product) => {
-                const originalPrice = product.eachPrice || 0;
-
-                // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-                if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-                    return product.comparePrice;
-                }
-
-                // If no comparePrice or comparePrice is 0, check for discounts
-                if (!currentUser || !currentUser.customerId) {
-                    return originalPrice;
-                }
-
-                // Priority 2: Check for item-based discount
-                const itemDiscount = itemBasedDiscounts.find(
-                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
-                );
-
-                if (itemDiscount) {
-                    const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-                    return Math.max(0, originalPrice - discountAmount);
-                }
-
-                // Priority 3: Check for pricing group discount
-                if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-                    for (const groupDiscountDoc of customerGroupsDiscounts) {
-                        if (groupDiscountDoc && groupDiscountDoc.customers) {
-                            const customerDiscount = groupDiscountDoc.customers.find(
-                                customer => customer.user && customer.user.customerId === currentUser.customerId
-                            );
-
-                            if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                                const percentage = parseFloat(customerDiscount.percentage);
-
-                                if (percentage > 0) {
-                                    // Positive percentage means price increase
-                                    return originalPrice + (originalPrice * percentage / 100);
-                                } else if (percentage < 0) {
-                                    // Negative percentage means price decrease
-                                    return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return originalPrice;
-            };
-
-            const discountedPrice = calculateDiscountedPrice(product);
-            const totalAmount = discountedPrice.toFixed(2);
-
-            // ✅ UPDATED: Determine discount type and percentage
-            let discountType = "";
-            let discountPercentages = 0;
-
-            // Priority 1: Check if product has comparePrice
-            if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-                const originalPrice = product.eachPrice || 0;
-                if (originalPrice > 0 && product.comparePrice < originalPrice) {
-                    const discountAmount = originalPrice - product.comparePrice;
-                    discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                    discountType = "Compare Price";
-                }
-            }
-            // Priority 2: Check for item-based discount
-            else if (currentUser && currentUser.customerId) {
-                const itemDiscount = itemBasedDiscounts.find(
-                    discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
-                );
-
-                if (itemDiscount) {
-                    discountPercentages = itemDiscount.percentage;
-                    discountType = "Item Based Discount";
-                }
-                // Priority 3: Check for pricing group discount
-                else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-                    for (const groupDiscountDoc of customerGroupsDiscounts) {
-                        if (groupDiscountDoc && groupDiscountDoc.customers) {
-                            const customerDiscount = groupDiscountDoc.customers.find(
-                                customer => customer.user && customer.user.customerId === currentUser.customerId
-                            );
-
-                            if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                                discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-                                discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            const updateData = {
-                customerId: currentUser._id,
-                productId: productId,
-                packType: packType,
-                packQuentity: packQuantity,
-                unitsQuantity: unitsQuantity,
-                totalQuantity: totalQuantity,
-                amount: totalAmount,
-                discountType: discountType,
-                discountPercentages: discountPercentages
-            };
-
-            console.log("Updating cart with data:", updateData);
-
-            const response = await axiosInstance.put('cart/update-cart-items', updateData);
-
-            if (response.data.statusCode === 200) {
-                setError(null);
-                console.log("Cart updated successfully");
-                // Refresh cart items
-                await fetchCustomersCart();
-            } else {
-                setError(response.data.message || "Failed to update cart");
-            }
-        } catch (error) {
-            console.error('Error updating cart:', error);
-            setError('An error occurred while updating cart');
-        } finally {
-            setLoadingProducts(prev => ({ ...prev, [productId]: false }));
-        }
-    };
-
-    // Remove from wishlist
-    const removeFromWishlist = async (productId) => {
+    // ✅ UPDATED: Remove from wishlist function to match backend
+    const removeFromWishlist = async (productId, isProductGroup = false) => {
         try {
             if (!currentUser || !currentUser._id) return;
 
             setLoadingProducts(prev => ({ ...prev, [productId]: true }));
 
-            const res = await axiosInstance.put(`wishlist/remove-from-wishlist`,
-                {
-                    customerId: currentUser._id,
-                    productId: productId
-                }
-            );
+            const requestBody = {
+                customerId: currentUser._id
+            };
+
+            // Add the correct field based on whether it's a product or product group
+            if (isProductGroup) {
+                requestBody.productGroupId = productId;
+            } else {
+                requestBody.productId = productId;
+            }
+
+            console.log("Removing from wishlist:", requestBody);
+
+            const res = await axiosInstance.put(`wishlist/remove-from-wishlist`, requestBody);
 
             if (res.data.statusCode === 200) {
-                setWishlistItems(prev => prev.filter(item => item.product._id !== productId));
-                setWishlistItemsCount(res.data.data.length);
+                setWishlistItems(prev => prev.filter(item => 
+                    isProductGroup 
+                        ? item.productGroup?._id !== productId
+                        : item.product?._id !== productId
+                ));
+                setWishlistItemsCount(res.data.data.wishlistItems?.length || 0);
                 setError(null);
             } else {
                 setError(res.data.message);
@@ -973,8 +887,6 @@ const Page = () => {
             if (!currentUser || !currentUser._id) return;
 
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
-
-            console.log("Customer cart:", response.data.data);
 
             if (response.data.statusCode === 200) {
                 const items = response.data.data || [];
@@ -1022,7 +934,7 @@ const Page = () => {
                     <div className="mb-6">
                         <h1 className="text-[24px] font-semibold">
                             Wishlist <span className="text-[20px] font-semibold text-[#2D2C70]">
-                                ({wishListItems.length} {wishListItems.length === 1 ? 'Product' : 'Products'})
+                                ({wishListItems.length} {wishListItems.length === 1 ? 'Item' : 'Items'})
                             </span>
                         </h1>
                         <div className="w-full h-[2px] bg-[#2D2C70] mt-2"></div>
@@ -1059,7 +971,7 @@ const Page = () => {
                                             onUpdateQuantity={updateQuantity}
                                             onUpdateUnit={updateSelectedUnit}
                                             onAddToCart={handleAddToCart}
-                                            onUpdateCart={handleUpdateCart}
+                                            onUpdateCart={handleAddToCart} // Using same function for update
                                             onRemoveFromWishlist={removeFromWishlist}
                                             customerGroupsDiscounts={customerGroupsDiscounts}
                                             itemBasedDiscounts={itemBasedDiscounts}
@@ -1081,7 +993,7 @@ const Page = () => {
                                                 onUpdateQuantity={updateQuantity}
                                                 onUpdateUnit={updateSelectedUnit}
                                                 onAddToCart={handleAddToCart}
-                                                onUpdateCart={handleUpdateCart}
+                                                onUpdateCart={handleAddToCart} // Using same function for update
                                                 onRemoveFromWishlist={removeFromWishlist}
                                                 customerGroupsDiscounts={customerGroupsDiscounts}
                                                 itemBasedDiscounts={itemBasedDiscounts}

@@ -10,10 +10,11 @@ import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 
-export default function ProductPopup({ 
-    isOpen, 
-    onClose, 
+export default function ProductPopup({
+    isOpen,
+    onClose,
     productId,
+    productGroupId,
     categoryId,
     subCategoryId,
     subCategoryTwoId,
@@ -32,8 +33,9 @@ export default function ProductPopup({
     const [selectedImage, setSelectedImage] = useState(0)
     const [quantity, setQuantity] = useState(1)
     const [selectedUnitId, setSelectedUnitId] = useState("")
-    const [productImages, setProductImages] = useState([])
+    const [itemImages, setItemImages] = useState([])
     const [product, setProduct] = useState(null)
+    const [productGroup, setProductGroup] = useState(null)
     const [loading, setLoading] = useState(false)
     const [cartItems, setCartItems] = useState([])
     const [error, setError] = useState(null)
@@ -41,21 +43,190 @@ export default function ProductPopup({
     const [loadingCart, setLoadingCart] = useState(false)
     const [loadingWishlist, setLoadingWishlist] = useState(false)
 
+    // State to track if we're showing a product or product group
+    const [itemType, setItemType] = useState(null) // 'product' or 'productGroup'
+
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const currentCartItems = useCartStore((state) => state.currentItems);
     const currentUser = useUserStore((state) => state.user)
     const router = useRouter()
 
-    // UPDATED: Calculate discounted price with comparePrice priority
-    const calculateDiscountedPrice = () => {
-        if (!product || !product.eachPrice) return 0;
+    // Determine item type based on provided IDs
+    useEffect(() => {
+        setProduct(null);
+        setProductGroup(null);
+        setItemType(null);
+        setItemImages([]);
+        setSelectedImage(0);
+        setQuantity(1);
+        setSelectedUnitId("");
 
-        const originalPrice = product.eachPrice;
+        if (productId) {
+            setItemType('product');
+            fetchProductDetail(productId);
+        } else if (productGroupId) {
+            setItemType('productGroup');
+            fetchProductGroupDetail(productGroupId);
+        }
+    }, [productId, productGroupId]); // Add dependencies here
+    // Get current item (product or product group)
+    const getCurrentItem = () => {
+        return itemType === 'product' ? product : productGroup;
+    };
 
-        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            return product.comparePrice;
+    // Get item name
+    const getItemName = () => {
+        const item = getCurrentItem();
+        if (!item) return '';
+        return itemType === 'product' ? item.ProductName : item.name;
+    };
+
+    // Get item SKU
+    const getItemSku = () => {
+        const item = getCurrentItem();
+        if (!item) return '';
+        return item.sku;
+    };
+
+    // Get item images for both products and product groups
+    // Get item images for both products and product groups
+    const getItemImages = (item) => {
+        if (!item) return [];
+
+        console.log("item type in getItemImages:", itemType);
+        console.log("item data:", item);
+
+        try {
+            // If we can determine the type from the item structure itself, use that
+            const determinedType = item.products !== undefined ? 'productGroup' : 'product';
+            console.log("Determined type from item structure:", determinedType);
+
+            if (determinedType === 'product') {
+                // Handle product images
+                if (Array.isArray(item.images) && item.images.length > 0) {
+                    return item.images.filter(img => img && img.trim() !== '');
+                } else if (typeof item.images === 'string' && item.images.trim() !== '') {
+                    return [item.images];
+                } else if (Array.isArray(item.allImages) && item.allImages.length > 0) {
+                    return item.allImages.filter(img => img && img.trim() !== '');
+                }
+                return []; // No images for product
+
+            } else if (determinedType === 'productGroup') {
+                // Use the separate function for product groups
+                return getItemImagesForProductGroup(item);
+            }
+        } catch (error) {
+            console.error("Error getting item images:", error);
+        }
+
+        return [];
+    };
+
+    // Separate function for product group images
+    const getItemImagesForProductGroup = (item) => {
+        if (!item) return [];
+
+        console.log("Getting images for product group:", item.name);
+
+        const allImages = [];
+        const addedUrls = new Set(); // Track added URLs to avoid duplicates
+
+        // Check thumbnailUrl first (full URL)
+        if (item.thumbnailUrl && item.thumbnailUrl.trim() !== '' && !addedUrls.has(item.thumbnailUrl)) {
+            console.log("Adding thumbnailUrl:", item.thumbnailUrl);
+            allImages.push(item.thumbnailUrl);
+            addedUrls.add(item.thumbnailUrl);
+        }
+
+        // Then check thumbnail (filename) - only add if not already added via thumbnailUrl
+        if (item.thumbnail && item.thumbnail.trim() !== '') {
+            const thumbnailFullUrl = `https://point-australia.s3.ap-southeast-2.amazonaws.com/product-group-images/${item.thumbnail}`;
+            if (!addedUrls.has(thumbnailFullUrl) && !addedUrls.has(item.thumbnailUrl)) {
+                console.log("Adding thumbnail as full URL:", thumbnailFullUrl);
+                allImages.push(thumbnailFullUrl);
+                addedUrls.add(thumbnailFullUrl);
+            }
+        }
+
+        // Add additional images from images array
+        if (item.images && Array.isArray(item.images)) {
+            item.images.forEach(image => {
+                if (image && image.trim() !== '' && !addedUrls.has(image)) {
+                    console.log("Adding additional image:", image);
+                    allImages.push(image);
+                    addedUrls.add(image);
+                }
+            });
+        }
+
+        // Also check imageUrls if it exists
+        if (item.imageUrls && Array.isArray(item.imageUrls)) {
+            item.imageUrls.forEach(image => {
+                if (image && image.trim() !== '' && !addedUrls.has(image)) {
+                    console.log("Adding imageUrl:", image);
+                    allImages.push(image);
+                    addedUrls.add(image);
+                }
+            });
+        }
+
+        console.log("Final images for product group:", allImages);
+        return allImages;
+    };
+
+    // Check if item is out of stock
+    const isItemOutOfStock = () => {
+        const item = getCurrentItem();
+        if (!item) return true;
+
+        if (itemType === 'product') {
+            return item.stockLevel <= 0;
+        } else if (itemType === 'productGroup') {
+            // For product groups, check if any product in the group is out of stock
+            return item.products && item.products.some(product => product.stockLevel <= 0);
+        }
+        return true;
+    };
+
+    useEffect(() => {
+        const item = getCurrentItem();
+        if (item && itemType) {
+            console.log("Updating images for:", itemType, item.name);
+            const images = getItemImages(item);
+            setItemImages(images);
+            setSelectedImage(0); // Reset to first image
+        }
+    }, [itemType, product, productGroup]);
+
+    // Get stock level for display
+    const getStockLevel = () => {
+        const item = getCurrentItem();
+        if (!item) return 0;
+
+        if (itemType === 'product') {
+            return item.stockLevel;
+        } else if (itemType === 'productGroup') {
+            // For product groups, return the minimum stock level among products
+            if (item.products && item.products.length > 0) {
+                return Math.min(...item.products.map(p => p.stockLevel || 0));
+            }
+            return 0;
+        }
+        return 0;
+    };
+
+    // UPDATED: Calculate discounted price for both products and product groups
+    const calculateDiscountedPrice = (targetItem = null) => {
+        const itemToUse = targetItem || getCurrentItem();
+        if (!itemToUse || !itemToUse.eachPrice) return 0;
+
+        const originalPrice = itemToUse.eachPrice;
+
+        // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+        if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+            return itemToUse.comparePrice;
         }
 
         // If no comparePrice or comparePrice is 0, check for discounts
@@ -65,46 +236,40 @@ export default function ProductPopup({
 
         // Priority 2: Check for item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === itemToUse.sku && discount.customerId === currentUser.customerId
         );
 
         // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-            return Math.max(0, originalPrice - discountAmount); // Ensure price doesn't go negative
+            return Math.max(0, originalPrice - discountAmount);
         }
 
         // Priority 3: Check for pricing group discount
-        // Since products don't have pricingGroup field, we need to check if any pricing group discount exists for this customer
-        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-            console.log("Checking pricing group discounts for customer:", currentUser.customerId);
-            console.log("Available pricing group discounts:", customerGroupsDiscounts);
+        if (itemToUse.pricingGroup) {
+            const itemPricingGroupId = typeof itemToUse.pricingGroup === 'object'
+                ? itemToUse.pricingGroup._id
+                : itemToUse.pricingGroup;
 
-            // Find any pricing group discount that applies to this customer
-            for (const groupDiscountDoc of customerGroupsDiscounts) {
-                if (groupDiscountDoc && groupDiscountDoc.customers) {
-                    // Find the specific customer discount within the pricing group
-                    const customerDiscount = groupDiscountDoc.customers.find(
-                        customer => customer.user && customer.user.customerId === currentUser.customerId
-                    );
+            // Find matching pricing group discount for this customer
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
+            );
 
-                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                        const percentage = parseFloat(customerDiscount.percentage);
-                        console.log("Applying pricing group discount:", percentage, "% to product:", product.ProductName);
-                        
-                        // Handle both positive and negative percentages
-                        if (percentage > 0) {
-                            // Positive percentage means price increase
-                            const finalPrice = originalPrice + (originalPrice * percentage / 100);
-                            console.log("Final price after increase:", finalPrice);
-                            return finalPrice;
-                        } else if (percentage < 0) {
-                            // Negative percentage means price decrease
-                            const finalPrice = originalPrice - (originalPrice * Math.abs(percentage) / 100);
-                            console.log("Final price after decrease:", finalPrice);
-                            return Math.max(0, finalPrice); // Ensure price doesn't go negative
-                        }
-                        // If percentage is 0, continue to next discount
+            if (groupDiscountDoc) {
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount) {
+                    const percentage = parseFloat(customerDiscount.percentage);
+                    // Handle both positive and negative percentages
+                    if (percentage > 0) {
+                        // Positive percentage means price increase
+                        return originalPrice + (originalPrice * percentage / 100);
+                    } else {
+                        // Negative percentage means price decrease
+                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
                     }
                 }
             }
@@ -114,19 +279,17 @@ export default function ProductPopup({
         return originalPrice;
     };
 
-    // UPDATED: Get discount percentage for display
-    const getDiscountPercentage = () => {
-        if (!product) return null;
+    // UPDATED: Get discount percentage for display for both products and product groups
+    const getDiscountPercentage = (targetItem = null) => {
+        const itemToUse = targetItem || getCurrentItem();
+        if (!itemToUse) return null;
 
-        // If product has comparePrice, show comparePrice discount
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            if (originalPrice > 0 && product.comparePrice < originalPrice) {
-                const discountAmount = originalPrice - product.comparePrice;
-                const discountPercentage = (discountAmount / originalPrice) * 100;
-                return Math.round(discountPercentage);
-            }
-            return null;
+        // If item has comparePrice, show comparePrice discount
+        if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+            const originalPrice = itemToUse.eachPrice || 0;
+            const discountAmount = originalPrice - itemToUse.comparePrice;
+            const discountPercentage = (discountAmount / originalPrice) * 100;
+            return Math.round(discountPercentage);
         }
 
         if (!currentUser || !currentUser.customerId) {
@@ -135,7 +298,7 @@ export default function ProductPopup({
 
         // Check item-based discount
         const itemDiscount = itemBasedDiscounts.find(
-            discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
+            discount => discount.productSku === itemToUse.sku && discount.customerId === currentUser.customerId
         );
 
         if (itemDiscount) {
@@ -143,17 +306,28 @@ export default function ProductPopup({
         }
 
         // Check pricing group discount
-        if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-            // Find any pricing group discount that applies to this customer
-            for (const groupDiscountDoc of customerGroupsDiscounts) {
-                if (groupDiscountDoc && groupDiscountDoc.customers) {
-                    const customerDiscount = groupDiscountDoc.customers.find(
-                        customer => customer.user && customer.user.customerId === currentUser.customerId
-                    );
+        if (itemToUse.pricingGroup) {
+            const itemPricingGroupId = typeof itemToUse.pricingGroup === 'object'
+                ? itemToUse.pricingGroup._id
+                : itemToUse.pricingGroup;
 
-                    if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                        return parseFloat(customerDiscount.percentage);
+            const groupDiscountDoc = customerGroupsDiscounts.find(
+                discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
+            );
+
+            if (groupDiscountDoc) {
+                const customerDiscount = groupDiscountDoc.customers.find(
+                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                );
+
+                if (customerDiscount) {
+                    const percentageValue = parseFloat(customerDiscount.percentage);
+                    // For display purposes, we show the absolute value for negative percentages (discounts)
+                    // For positive percentages (price increases), we don't show a discount percentage
+                    if (percentageValue < 0) {
+                        return Math.abs(percentageValue);
                     }
+                    return null;
                 }
             }
         }
@@ -161,25 +335,18 @@ export default function ProductPopup({
         return null;
     };
 
-    // UPDATED: Check if product has any discount or comparePrice
-    const hasDiscount = () => {
-        if (!product) return false;
+    // UPDATED: Check if item has any discount or comparePrice
+    const hasDiscount = (targetItem = null) => {
+        const itemToUse = targetItem || getCurrentItem();
+        if (!itemToUse) return false;
 
-        // Check if product has comparePrice discount
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            if (product.comparePrice < originalPrice) {
-                return true;
-            }
-        }
-
-        // Check if product has item-based or pricing group discount
-        return getDiscountPercentage() !== null;
+        return (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) ||
+            getDiscountPercentage(itemToUse) !== null;
     };
 
     const discountedPrice = calculateDiscountedPrice();
     const discountPercentage = getDiscountPercentage();
-    const hasProductDiscount = hasDiscount();
+    const hasItemDiscount = hasDiscount();
 
     const incrementQuantity = () => {
         const newQuantity = quantity + 1;
@@ -195,49 +362,74 @@ export default function ProductPopup({
 
     // Calculate total quantity based on pack quantity and units
     const calculateTotalQuantity = (qty = quantity, unitId = selectedUnitId) => {
-        if (!product) return 0;
+        const item = getCurrentItem();
+        if (!item) return 0;
 
-        const selectedPack = product.typesOfPacks?.find(pack => pack._id === unitId);
-        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1;
+        // For product groups, we don't have typesOfPacks, so use default pack quantity of 1
+        const packQuantity = itemType === 'productGroup' ? 1 :
+            (item.typesOfPacks?.find(pack => pack._id === unitId) ?
+                parseInt(item.typesOfPacks.find(pack => pack._id === unitId).quantity) : 1);
+
         return packQuantity * qty;
     };
 
-    // Check if product is in cart
-    const isProductInCart = () => {
-        return cartItems.some(item => item.product?._id === product?._id);
+    // Check if item is in cart
+    const isItemInCart = () => {
+        const item = getCurrentItem();
+        if (!item) return false;
+
+        if (itemType === 'product') {
+            return cartItems.some(cartItem => cartItem.product?._id === item._id);
+        } else {
+            return cartItems.some(cartItem => cartItem.productGroup?._id === item._id);
+        }
     };
 
-    // Get cart item for product
+    // Get cart item for product or product group
     const getCartItem = () => {
-        return cartItems.find(item => item.product?._id === product?._id);
+        const item = getCurrentItem();
+        if (!item) return null;
+
+        if (itemType === 'product') {
+            return cartItems.find(cartItem => cartItem.product?._id === item._id);
+        } else {
+            return cartItems.find(cartItem => cartItem.productGroup?._id === item._id);
+        }
     };
 
     // Check stock level
     const checkStock = (qty = quantity, unitId = selectedUnitId) => {
-        if (!product) return { isValid: true };
+        const item = getCurrentItem();
+        if (!item) return { isValid: true };
 
-        const totalRequestedQuantity = calculateTotalQuantity(qty, unitId);
+        // For product groups, we don't have typesOfPacks, so use default pack quantity of 1
+        const packQuantity = itemType === 'productGroup' ? 1 :
+            (item.typesOfPacks?.find(pack => pack._id === unitId) ?
+                parseInt(item.typesOfPacks.find(pack => pack._id === unitId).quantity) : 1);
+
+        const totalRequestedQuantity = packQuantity * qty;
+
         const cartItem = getCartItem();
         const currentCartQuantity = cartItem ? cartItem.totalQuantity : 0;
 
-        // If product is already in cart, we're updating it, not adding new quantity
-        const newTotalQuantity = isProductInCart()
+        const newTotalQuantity = isItemInCart()
             ? totalRequestedQuantity
             : totalRequestedQuantity + currentCartQuantity;
 
-        const isValid = newTotalQuantity <= product.stockLevel;
+        const stockLevel = getStockLevel();
+        const isValid = newTotalQuantity <= stockLevel;
 
         if (!isValid) {
-            setStockError(`Exceeds available stock (${product.stockLevel})`);
+            setStockError(`Exceeds available stock (${stockLevel})`);
         } else {
             setStockError(null);
         }
 
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock (${product.stockLevel})`,
+            message: isValid ? null : `Exceeds available stock (${stockLevel})`,
             requestedQuantity: totalRequestedQuantity,
-            currentStock: product.stockLevel
+            currentStock: stockLevel
         };
     };
 
@@ -255,13 +447,39 @@ export default function ProductPopup({
             if (response.data.statusCode === 200) {
                 const productData = response.data.data
                 setProduct(productData)
-                if (productData.images?.length > 0) {
-                    setProductImages(productData.images)
-                }
+                const images = getItemImages(productData);
+                setItemImages(images);
+
                 // Set default selected unit to the first available pack type
                 if (productData.typesOfPacks && productData.typesOfPacks.length > 0) {
                     setSelectedUnitId(productData.typesOfPacks[0]._id);
                 }
+            }
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Fetch product group details
+    // Fetch product group details
+    const fetchProductGroupDetail = async (productGroupId) => {
+        try {
+            setLoading(true)
+            const response = await axiosInstance(`product-group/get-product-group/${productGroupId}`)
+
+            console.log("response of product group", response.data.data.thumbnailUrl)
+
+            if (response.data.statusCode === 200) {
+                const productGroupData = response.data.data
+                setProductGroup(productGroupData)
+
+                // Set itemType first, then get images
+                setItemType('productGroup');
+
+                const images = getItemImagesForProductGroup(productGroupData);
+                setItemImages(images);
             }
         } catch (error) {
             console.log(error)
@@ -300,153 +518,161 @@ export default function ProductPopup({
     }
 
     useEffect(() => {
-        if (productId) {
-            fetchProductDetail(productId)
-        }
-    }, [productId])
-
-    useEffect(() => {
         if (isOpen && currentUser?._id) {
             fetchCustomersCart()
             fetchCustomersWishList()
         }
     }, [isOpen, currentUser, currentCartItems])
 
-    // Reset quantity when product changes or when cart items update
+    // Reset quantity when item changes or when cart items update
     useEffect(() => {
-        if (product && cartItems.length >= 0) {
+        const item = getCurrentItem();
+        if (item && cartItems.length >= 0) {
             const cartItem = getCartItem();
             if (cartItem) {
-                // Product is in cart - set quantity from cart
+                // Item is in cart - set quantity from cart
                 setQuantity(cartItem.unitsQuantity);
-                const pack = product.typesOfPacks?.find(p => p.name === cartItem.packType);
-                if (pack) {
-                    setSelectedUnitId(pack._id);
+                if (itemType === 'product') {
+                    const pack = item.typesOfPacks?.find(p => p.name === cartItem.packType);
+                    if (pack) {
+                        setSelectedUnitId(pack._id);
+                    }
                 }
             } else {
-                // Product not in cart - reset to default
+                // Item not in cart - reset to default
                 setQuantity(1);
-                if (product.typesOfPacks && product.typesOfPacks.length > 0) {
-                    setSelectedUnitId(product.typesOfPacks[0]._id);
+                if (itemType === 'product' && item.typesOfPacks && item.typesOfPacks.length > 0) {
+                    setSelectedUnitId(item.typesOfPacks[0]._id);
                 }
             }
-            // Clear stock error when product/cart changes
+            // Clear stock error when item/cart changes
             setStockError(null);
         }
-    }, [product, cartItems])
+    }, [product, productGroup, cartItems, itemType])
 
-    // Add to cart function
-    // UPDATED: Add to cart function with discount data
-const handleAddToCart = async () => {
-    if (!currentUser?._id) {
-        setError("Please login to add to cart")
-        return
-    }
-    if (!product) return;
-
-    // Final stock check before adding to cart
-    const stockCheck = checkStock();
-    if (!stockCheck.isValid) {
-        setError(stockCheck.message);
-        return;
-    }
-
-    setLoadingCart(true);
-    try {
-        const selectedPack = product.typesOfPacks?.find(p => p._id === selectedUnitId)
-        const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : 1
-        const totalQuantity = packQuantity * quantity
-
-        // Calculate the discounted price for this product
-        const currentDiscountedPrice = calculateDiscountedPrice();
-
-        // Calculate total amount using the discounted price
-        const totalAmount = totalQuantity * currentDiscountedPrice
-
-        // Determine discount type and percentage
-        let discountType = "";
-        let discountPercentages = 0;
-
-        // Priority 1: Check if product has comparePrice
-        if (product.comparePrice !== null && product.comparePrice !== undefined && product.comparePrice !== 0) {
-            const originalPrice = product.eachPrice || 0;
-            if (originalPrice > 0 && product.comparePrice < originalPrice) {
-                const discountAmount = originalPrice - product.comparePrice;
-                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                discountType = "Compare Price";
-            }
+    // UPDATED: Add to cart function for both products and product groups
+    const handleAddToCart = async () => {
+        if (!currentUser?._id) {
+            setError("Please login to add to cart")
+            return
         }
-        // Priority 2: Check for item-based discount
-        else if (currentUser && currentUser.customerId) {
-            const itemDiscount = itemBasedDiscounts.find(
-                discount => discount.productSku === product.sku && discount.customerId === currentUser.customerId
-            );
 
-            if (itemDiscount) {
-                discountPercentages = itemDiscount.percentage;
-                discountType = "Item Based Discount";
+        const item = getCurrentItem();
+        if (!item) return;
+
+        // Final stock check before adding to cart
+        const stockCheck = checkStock();
+        if (!stockCheck.isValid) {
+            setError(stockCheck.message);
+            return;
+        }
+
+        setLoadingCart(true);
+        try {
+            // For product groups, we don't have typesOfPacks, so use default values
+            const packQuantity = itemType === 'productGroup' ? 1 :
+                (item.typesOfPacks?.find(p => p._id === selectedUnitId) ?
+                    parseInt(item.typesOfPacks.find(p => p._id === selectedUnitId).quantity) : 1);
+
+            const totalQuantity = packQuantity * quantity
+
+            // Calculate the discounted price for this item
+            const currentDiscountedPrice = calculateDiscountedPrice();
+
+            // Calculate total amount using the discounted price
+            const totalAmount = currentDiscountedPrice;
+
+            // Determine discount type and percentage
+            let discountType = "";
+            let discountPercentages = 0;
+
+            // Priority 1: Check if item has comparePrice
+            if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+                const originalPrice = item.eachPrice || 0;
+                const discountAmount = originalPrice - item.comparePrice;
+                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                discountType = "compare_price";
             }
-            // Priority 3: Check for pricing group discount
-            else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
-                // Find any pricing group discount that applies to this customer
-                for (const groupDiscountDoc of customerGroupsDiscounts) {
-                    if (groupDiscountDoc && groupDiscountDoc.customers) {
+            // Priority 2: Check for item-based discount
+            else if (currentUser && currentUser.customerId) {
+                const itemDiscount = itemBasedDiscounts.find(
+                    discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
+                );
+
+                if (itemDiscount) {
+                    discountPercentages = itemDiscount.percentage;
+                    discountType = "item_based";
+                }
+                // Priority 3: Check for pricing group discount
+                else if (item.pricingGroup) {
+                    const itemPricingGroupId = typeof item.pricingGroup === 'object'
+                        ? item.pricingGroup._id
+                        : item.pricingGroup;
+
+                    const groupDiscountDoc = customerGroupsDiscounts.find(
+                        discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
+                    );
+
+                    if (groupDiscountDoc) {
                         const customerDiscount = groupDiscountDoc.customers.find(
                             customer => customer.user && customer.user.customerId === currentUser.customerId
                         );
 
-                        if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
+                        if (customerDiscount) {
                             discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-                            discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
-                            break; // Use the first matching discount found
+                            discountType = "pricing_group";
                         }
                     }
                 }
             }
+
+            const cartData = {
+                customerId: currentUser._id,
+                productId: itemType === 'product' ? item._id : null,
+                productGroupId: itemType === 'productGroup' ? item._id : null,
+                packQuentity: packQuantity,
+                unitsQuantity: quantity,
+                totalQuantity: totalQuantity,
+                packType: itemType === 'productGroup' ? 'Each' : (item.typesOfPacks?.find(p => p._id === selectedUnitId) ?
+                    item.typesOfPacks.find(p => p._id === selectedUnitId).name : 'Each'),
+                amount: totalAmount, // Store the discounted total amount
+                discountType: discountType,
+                discountPercentages: discountPercentages
+            }
+
+            console.log("Sending cart data with discounts:", cartData);
+
+            const res = await axiosInstance.post("cart/add-to-cart", cartData)
+
+            if (res.data.statusCode === 200) {
+                await fetchCustomersCart()
+                setCartItemsCount(res.data.data.cartItems?.length || 0);
+                setError(null)
+                setStockError(null)
+            }
+        } catch (err) {
+            console.error(err)
+            setError("Error adding to cart")
+        } finally {
+            setLoadingCart(false)
         }
-
-        const cartData = {
-            customerId: currentUser._id,
-            productId: product._id,
-            packQuentity: packQuantity,
-            unitsQuantity: quantity,
-            totalQuantity: totalQuantity,
-            packType: selectedPack ? selectedPack.name : 'Each',
-            amount: totalAmount, // Store the discounted total amount
-            discountType: discountType,
-            discountPercentages: discountPercentages
-        }
-
-        console.log("Sending cart data with discounts:", cartData);
-
-        const res = await axiosInstance.post("cart/add-to-cart", cartData)
-
-        if (res.data.statusCode === 200) {
-            await fetchCustomersCart()
-            setCartItemsCount(res.data.data.cartItems?.length || 0);
-            setError(null)
-            setStockError(null)
-        }
-    } catch (err) {
-        console.error(err)
-        setError("Error adding to cart")
-    } finally {
-        setLoadingCart(false)
     }
-}
 
     const handleAddToWishlist = async () => {
         if (!currentUser?._id) {
             setError("Please login to add to wishlist");
             return;
         }
-        if (!product) return;
+
+        const item = getCurrentItem();
+        if (!item) return;
 
         setLoadingWishlist(true);
         try {
             const res = await axiosInstance.post("wishlist/add-to-wishlist", {
                 customerId: currentUser._id,
-                productId: product._id,
+                productId: itemType === 'product' ? item._id : null,
+                productGroupId: itemType === 'productGroup' ? item._id : null,
             });
 
             if (res.data.statusCode === 200) {
@@ -462,28 +688,53 @@ const handleAddToCart = async () => {
     };
 
     const isInWishlist = () => {
-        return wishListItems.some(
-            (item) => item.product?._id === product?._id
-        );
+        const item = getCurrentItem();
+        if (!item) return false;
+
+        return wishListItems.some(wishlistItem => {
+            if (itemType === 'product') {
+                return wishlistItem.product?._id === item._id;
+            } else {
+                return wishlistItem.productGroup?._id === item._id;
+            }
+        });
     };
 
-    const isOutOfStock = product?.stockLevel <= 0;
+    const isOutOfStock = isItemOutOfStock();
     const totalRequestedQuantity = calculateTotalQuantity();
-    const isInCart = isProductInCart();
+    const isInCart = isItemInCart();
     const cartItem = getCartItem();
 
-    const handleViewProductDetails = () => {
+    const handleViewItemDetails = () => {
+        const item = getCurrentItem();
+        if (!item) return;
+
         setFilters({
             categorySlug: categorySlug || null,
             subCategorySlug: subCategorySlug || null,
             subCategoryTwoSlug: subCategoryTwoSlug || null,
             brandSlug: brandSlug || null,
-            productID: product._id
+            productID: itemType === 'product' ? item._id : null,
+            productGroupId: itemType === 'productGroup' ? item._id : null
         })
-        const productSlug = product.ProductName.replace(/\s+/g, '-').toLowerCase();
-        router.push(`/${productSlug}`);
+
+        const itemSlug = getItemName().replace(/\s+/g, '-').toLowerCase();
+        router.push(`/${itemSlug}`);
         onClose();
     }
+
+    // Render product group badge
+    const renderProductGroupBadge = () => {
+        if (itemType !== 'productGroup') return null;
+
+        return (
+            <div className="absolute top-2 left-4 sm:left-6 z-10">
+                <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">
+                    BUNDLE
+                </div>
+            </div>
+        );
+    };
 
     if (!isOpen) return null
 
@@ -491,7 +742,7 @@ const handleAddToCart = async () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-[#000000]/10 bg-opacity-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-medium font-spartan">{product?.ProductName}</h2>
+                    <h2 className="text-lg font-medium font-spartan">{getItemName()}</h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
                         <X className="w-5 h-5" />
                     </button>
@@ -502,46 +753,53 @@ const handleAddToCart = async () => {
                         <div className="flex justify-center items-center py-8">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70]"></div>
                         </div>
-                    ) : product ? (
+                    ) : getCurrentItem() ? (
                         <div className="flex flex-col lg:flex-row gap-6">
                             {/* Left side images */}
                             <div className="flex-1">
                                 <div className="flex flex-col-reverse xl:flex-row space-x-8">
-                                    <div className="flex xl:flex-col space-x-2 xl:space-x-0 space-y-2 justify-center">
-                                        {productImages.map((image, index) => (
-                                            <button
-                                                key={index}
-                                                onClick={() => setSelectedImage(index)}
-                                                className={`flex-shrink-0 p-2 bg-white shadow-xl ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
-                                                    }`}
-                                            >
-                                                <img
-                                                    src={image || "/placeholder.svg"}
-                                                    alt={`Thumbnail ${index + 1}`}
-                                                    className="h-[50px] w-[50px] object-contain rounded-md"
-                                                />
-                                            </button>
-                                        ))}
-                                    </div>
+                                    {itemImages.length > 0 && (
+                                        <div className="flex xl:flex-col space-x-2 xl:space-x-0 space-y-2 justify-center">
+                                            {itemImages.map((image, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => setSelectedImage(index)}
+                                                    className={`flex-shrink-0 p-2 bg-white shadow-xl ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
+                                                        }`}
+                                                >
+                                                    <img
+                                                        src={image || "/placeholder.svg"}
+                                                        alt={`Thumbnail ${index + 1}`}
+                                                        className="h-[50px] w-[50px] object-contain rounded-md"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
 
                                     <div className="relative">
                                         <div className="rounded-lg p-4 bg-[#FAFAFA]">
-                                            {product.badge && (
+                                            {/* Product Badge */}
+                                            {itemType === 'product' && getCurrentItem().badge && (
                                                 <div className="absolute top-2 left-4 sm:left-6 z-10">
                                                     <div
                                                         className="px-2 py-1 rounded text-xs font-bold"
                                                         style={{
-                                                            backgroundColor: product.badge.backgroundColor,
-                                                            color: product.badge.textColor || '#fff',
+                                                            backgroundColor: getCurrentItem().badge.backgroundColor,
+                                                            color: getCurrentItem().badge.textColor || '#fff',
                                                         }}
                                                     >
-                                                        {product.badge.text}
+                                                        {getCurrentItem().badge.text}
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Product Group Badge */}
+                                            {renderProductGroupBadge()}
+
                                             <img
-                                                src={productImages[selectedImage] || "/placeholder.svg"}
-                                                alt={product.ProductName}
+                                                src={itemImages[selectedImage] || "/placeholder.svg"}
+                                                alt={getItemName()}
                                                 className="w-full h-[260px] object-contain"
                                             />
                                         </div>
@@ -551,10 +809,10 @@ const handleAddToCart = async () => {
 
                             {/* Right side details */}
                             <div className="flex-1 space-y-3 font-spartan">
-                                <h1 className="text-[18px] font-semibold text-black uppercase">{product.ProductName}</h1>
+                                <h1 className="text-[18px] font-semibold text-black uppercase">{getItemName()}</h1>
                                 <div className="space-y-1 flex justify-between items-center">
                                     <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                        SKU {product.sku}
+                                        SKU {getItemSku()}
                                     </p>
 
                                     {/* Stock Status */}
@@ -568,14 +826,28 @@ const handleAddToCart = async () => {
                                     </div>
                                 </div>
 
+                                {/* Product Group Info */}
+                                {itemType === 'productGroup' && getCurrentItem().products && getCurrentItem().products.length > 0 && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                        <p className="text-sm text-blue-800 font-medium">
+                                            This bundle includes {getCurrentItem().products.length} product(s)
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* Price */}
                                 <div className="flex items-center space-x-2">
                                     <span className="text-[24px] font-semibold text-[#2D2C70]">
                                         ${discountedPrice.toFixed(2)}
                                     </span>
-                                    {hasProductDiscount && product.eachPrice && (
+                                    {hasItemDiscount && getCurrentItem().eachPrice && discountedPrice < getCurrentItem().eachPrice && (
                                         <span className="text-sm text-gray-500 line-through">
-                                            ${product.eachPrice.toFixed(2)}
+                                            ${getCurrentItem().eachPrice.toFixed(2)}
+                                        </span>
+                                    )}
+                                    {discountPercentage && discountPercentage > 0 && (
+                                        <span className="text-sm text-green-600 font-semibold">
+                                            ({discountPercentage}% OFF)
                                         </span>
                                     )}
                                 </div>
@@ -587,7 +859,7 @@ const handleAddToCart = async () => {
                                     </div>
                                 )}
 
-                                {/* Quantity & Units */}
+                                {/* Quantity & Units - Only show units for products */}
                                 <div className="flex items-center space-x-6">
                                     <div>
                                         <span className="block mb-2 text-sm">Quantity</span>
@@ -602,7 +874,7 @@ const handleAddToCart = async () => {
                                             <span className="px-4">{quantity}</span>
                                             <button
                                                 onClick={incrementQuantity}
-                                                disabled={isOutOfStock}
+                                                disabled={isOutOfStock || totalRequestedQuantity >= getStockLevel()}
                                                 className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
                                             >
                                                 <Plus className="w-4 h-4" />
@@ -610,25 +882,28 @@ const handleAddToCart = async () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col space-y-2 w-full">
-                                        <span className="text-sm">Units</span>
-                                        <select
-                                            value={selectedUnitId}
-                                            onChange={(e) => handleUnitChange(e.target.value)}
-                                            disabled={isOutOfStock}
-                                            className="w-full border rounded-md p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                        >
-                                            {product.typesOfPacks && product.typesOfPacks.length > 0 ? (
-                                                product.typesOfPacks.map((pack) => (
-                                                    <option key={pack._id} value={pack._id}>
-                                                        {pack.name}
-                                                    </option>
-                                                ))
-                                            ) : (
-                                                <option value="">No packs available</option>
-                                            )}
-                                        </select>
-                                    </div>
+                                    {/* Units - Only for products */}
+                                    {itemType === 'product' && (
+                                        <div className="flex flex-col space-y-2 w-full">
+                                            <span className="text-sm">Units</span>
+                                            <select
+                                                value={selectedUnitId}
+                                                onChange={(e) => handleUnitChange(e.target.value)}
+                                                disabled={isOutOfStock}
+                                                className="w-full border rounded-md p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                            >
+                                                {getCurrentItem().typesOfPacks && getCurrentItem().typesOfPacks.length > 0 ? (
+                                                    getCurrentItem().typesOfPacks.map((pack) => (
+                                                        <option key={pack._id} value={pack._id}>
+                                                            {pack.name}
+                                                        </option>
+                                                    ))
+                                                ) : (
+                                                    <option value="">No packs available</option>
+                                                )}
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Action Buttons */}
@@ -685,7 +960,7 @@ const handleAddToCart = async () => {
                                         </button>
                                     </div>
 
-                                    {/* Added and Update Row - Only show when product is in cart */}
+                                    {/* Added and Update Row - Only show when item is in cart */}
                                     {isInCart && (
                                         <div className="flex space-x-2">
                                             <button
@@ -717,17 +992,17 @@ const handleAddToCart = async () => {
                                     )}
                                 </div>
 
-                                <button 
-                                    onClick={handleViewProductDetails} 
+                                <button
+                                    onClick={handleViewItemDetails}
                                     className="text-sm underline flex items-center hover:text-[#E9098D] transition-colors"
                                 >
-                                    View product details <ArrowRight className="ml-1 h-4 w-4" />
+                                    View {itemType === 'product' ? 'product' : 'bundle'} details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>
                             </div>
                         </div>
                     ) : (
                         <div className="flex justify-center items-center py-8">
-                            <p className="text-gray-500">Product not found</p>
+                            <p className="text-gray-500">Item not found</p>
                         </div>
                     )}
                 </div>

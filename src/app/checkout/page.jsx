@@ -31,17 +31,22 @@ const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-semibold text-sm text-gray-900">
-                                            {item.product.ProductName}
+                                            {item.product ? item.product.ProductName : item.productGroup?.name}
                                         </p>
                                         <p className="text-xs text-gray-600 mt-1">
-                                            SKU: {item.product.sku}
+                                            SKU: {item.product ? item.product.sku : item.productGroup?.sku}
+                                            {item.productGroup && (
+                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                    Product Group
+                                                </span>
+                                            )}
                                         </p>
                                         <p className="text-xs text-red-600 mt-1">
-                                            Current Stock: {item.product.stockLevel}
+                                            {item.product ? `Current Stock: ${item.product.stockLevel}` : 'One or more products in this group are out of stock'}
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => onRemoveItems([item.product._id])}
+                                        onClick={() => onRemoveItems([item._id])}
                                         className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
                                     >
                                         Remove
@@ -64,7 +69,7 @@ const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
     );
 };
 
-// Address Popup Component (keeping existing)
+// Address Popup Component
 const AddressPopup = ({
     isOpen,
     onClose,
@@ -279,7 +284,6 @@ const CheckoutComponent = () => {
     const [outOfStockItems, setOutOfStockItems] = useState([]);
     const [checkingStock, setCheckingStock] = useState(false);
 
-
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
         documentNumber: '',
@@ -293,36 +297,51 @@ const CheckoutComponent = () => {
         items: []
     });
 
-    // NEW: Check stock using bulk API
+    // Updated: Check stock for both products and product groups
     const checkAllProductsStock = async () => {
         if (cartItems.length === 0) return;
 
         setCheckingStock(true);
         try {
-            const productIds = cartItems.map(item => item.product._id);
+            const productIds = [];
+            const productGroupIds = [];
 
-            const response = await axiosInstance.post('products/check-bulk-stock', {
-                ids: productIds
+            // Separate product and product group IDs
+            cartItems.forEach(item => {
+                if (item.product) {
+                    productIds.push(item.product._id);
+                } else if (item.productGroup) {
+                    productGroupIds.push(item.productGroup._id);
+                }
             });
 
-            console.log("products bulk stock check ", response)
+            const responses = await Promise.all([
+                productIds.length > 0 ? 
+                    axiosInstance.post('products/check-bulk-stock', { ids: productIds }) : 
+                    Promise.resolve({ data: { data: { outOfStock: [] } } }),
+                productGroupIds.length > 0 ? 
+                    axiosInstance.post('product-group/check-bulk-stock', { ids: productGroupIds }) : 
+                    Promise.resolve({ data: { data: { outOfStock: [] } } })
+            ]);
 
-            if (response.data.statusCode === 200) {
-                const { outOfStock } = response.data.data;
+            const [productsResponse, productGroupsResponse] = responses;
 
-                // Map the out of stock product IDs back to cart items
-                const outOfStockCartItems = cartItems.filter(item =>
-                    outOfStock.some(outOfStockProduct =>
-                        outOfStockProduct._id === item.product._id
-                    )
-                );
+            const outOfStockProducts = productsResponse.data.data?.outOfStock || [];
+            const outOfStockGroups = productGroupsResponse.data.data?.outOfStock || [];
 
-                setOutOfStockItems(outOfStockCartItems);
-                return outOfStockCartItems;
-            } else {
-                setError('Failed to check product availability.');
-                return [];
-            }
+            // Map back to cart items
+            const outOfStockCartItems = cartItems.filter(item => {
+                if (item.product && outOfStockProducts.some(p => p._id === item.product._id)) {
+                    return true;
+                }
+                if (item.productGroup && outOfStockGroups.some(g => g._id === item.productGroup._id)) {
+                    return true;
+                }
+                return false;
+            });
+
+            setOutOfStockItems(outOfStockCartItems);
+            return outOfStockCartItems;
         } catch (error) {
             console.error('Error checking stock:', error);
             setError('Failed to verify product availability. Please try again.');
@@ -332,17 +351,16 @@ const CheckoutComponent = () => {
         }
     };
 
-    // NEW: Check stock before proceeding to next step
+    // Check stock before proceeding to next step
     const checkStockAndProceed = async (nextStep) => {
         const outOfStockItems = await checkAllProductsStock();
 
         if (outOfStockItems.length === 0) {
             setStep(nextStep);
         }
-        // If there are out of stock items, the warning will be shown automatically
     };
 
-    // NEW: Remove out of stock items from cart
+    // Remove out of stock items from cart
     const handleRemoveOutOfStockItems = async (itemIds) => {
         try {
             for (const itemId of itemIds) {
@@ -351,7 +369,6 @@ const CheckoutComponent = () => {
                 if (response.data.statusCode === 200) {
                     setCartItemsCount(response.data.data.cartItems.length);
                 }
-                console.log("remove from cart response", response)
             }
 
             // Refresh cart
@@ -376,14 +393,14 @@ const CheckoutComponent = () => {
         }
     };
 
-    // NEW: Check stock on step changes and cart updates
+    // Check stock on step changes and cart updates
     useEffect(() => {
         if (cartItems.length > 0) {
             checkAllProductsStock();
         }
     }, [cartItems, step]);
 
-    // Popup handlers (keeping existing)
+    // Popup handlers
     const openAddPopup = (type) => {
         setPopupState({
             isOpen: true,
@@ -408,7 +425,7 @@ const CheckoutComponent = () => {
         setPopupState(prev => ({ ...prev, isOpen: false }));
     };
 
-    // Address management functions (keeping existing)
+    // Address management functions
     const handleAddNewAddress = async (addressData) => {
         try {
             const endpoint = popupState.type === 'shipping'
@@ -497,7 +514,7 @@ const CheckoutComponent = () => {
         }
     };
 
-    // Format addresses (keeping existing)
+    // Format addresses
     const shippingAddresses = currentUser?.shippingAddresses?.map((addr, index) => ({
         id: addr._id,
         index: index,
@@ -516,7 +533,6 @@ const CheckoutComponent = () => {
         ...addr
     })) || [];
 
-    // Keep all other existing functions (fetchLatestDocumentNumber, handleCompleteCheckout, etc.)
     const fetchLatestDocumentNumber = async () => {
         try {
             const res = await axiosInstance.get('sales-order/get-latest-document-number');
@@ -553,22 +569,46 @@ const CheckoutComponent = () => {
         }
     }, [selectedShippingAddress, selectedBillingAddress, currentUser]);
 
+    // Updated: Format order items for both products and product groups
     useEffect(() => {
         if (cartItems.length > 0) {
-            const formattedItems = cartItems.map(item => ({
-                itemSku: item.product.sku,
-                productName: item.product.ProductName,
-                unitsQuantity: item.unitsQuantity,
-                packQuantity: item.packQuentity,
-                totalQuantity: item.totalQuantity,
-                eachPrice: item.amount / item.totalQuantity,
-                amount: item.amount,
-                taxable: item.product.taxable,
-                taxPercentage: item.product.taxPercentages || 0,
-                packType: item.packType,
-                discountType: item.discountType,
-                discountPercentages: item.discountPercentages
-            }));
+            const formattedItems = cartItems.map(item => {
+                const baseItem = {
+                    unitsQuantity: item.unitsQuantity,
+                    packQuantity: item.packQuentity,
+                    totalQuantity: item.totalQuantity,
+                    amount: item.amount,
+                    packType: item.packType,
+                    discountType: item.discountType,
+                    discountPercentages: item.discountPercentages
+                };
+
+                if (item.product) {
+                    return {
+                        ...baseItem,
+                        itemSku: item.product.sku,
+                        productName: item.product.ProductName,
+                        eachPrice: item.amount / item.totalQuantity,
+                        taxable: item.product.taxable,
+                        taxPercentage: item.product.taxPercentages || 0,
+                        type: 'individual',
+                        product: item.product._id
+                    };
+                } else if (item.productGroup) {
+                    return {
+                        ...baseItem,
+                        itemSku: item.productGroup.sku,
+                        productName: item.productGroup.name,
+                        eachPrice: item.productGroup.eachPrice,
+                        taxable: item.productGroup.taxable,
+                        taxPercentage: item.productGroup.taxPercentages || 0,
+                        type: 'group',
+                        productGroup: item.productGroup._id
+                    };
+                }
+                
+                return baseItem;
+            });
 
             setSubmitForm(prev => ({
                 ...prev,
@@ -577,14 +617,28 @@ const CheckoutComponent = () => {
         }
     }, [cartItems]);
 
+    // Updated: Calculate totals for both products and product groups
     const calculateTotals = () => {
         let subtotalAmount = 0;
         let gstAmount = 0;
 
         cartItems.forEach(item => {
-            subtotalAmount += item.amount * item.totalQuantity;
-            if (item.product.taxable && item.product.taxPercentages) {
-                gstAmount += (item.amount * item.product.taxPercentages) / 100;
+            subtotalAmount += item.amount;
+            
+            // Handle tax calculation for both products and product groups
+            let taxable = false;
+            let taxPercentages = 0;
+
+            if (item.product) {
+                taxable = item.product.taxable;
+                taxPercentages = item.product.taxPercentages || 0;
+            } else if (item.productGroup) {
+                taxable = item.productGroup.taxable;
+                taxPercentages = item.productGroup.taxPercentages || 0;
+            }
+
+            if (taxable && taxPercentages) {
+                gstAmount += (item.amount * taxPercentages) / 100;
             }
         });
 
@@ -613,7 +667,7 @@ const CheckoutComponent = () => {
         }
     }, [latestSalesOrderDocumentNumber]);
 
-    // NEW: Modified complete checkout with final stock validation
+    // Updated: Complete checkout with support for both products and product groups
     const handleCompleteCheckout = async () => {
         // Final stock check before completing checkout
         const outOfStockItems = await checkAllProductsStock();
@@ -636,7 +690,8 @@ const CheckoutComponent = () => {
                 billingAddress: submitForm.billingAddress,
                 customerPO: submitForm.customerPO || '',
                 comments: submitForm.comments || '',
-                items: submitForm.items
+                items: submitForm.items,
+                customer: currentUser._id
             };
 
             const response = await axiosInstance.post(
@@ -683,10 +738,7 @@ const CheckoutComponent = () => {
                 const packs = {};
                 items.forEach(item => {
                     quantities[item._id] = item.unitsQuantity;
-                    const matchingPack = item.product.typesOfPacks?.find(
-                        pack => parseInt(pack.quantity) === item.packQuentity
-                    );
-                    packs[item._id] = matchingPack?._id || item.product.typesOfPacks?.[0]?._id;
+                    packs[item._id] = item.packType;
                 });
                 setLocalQuantities(quantities);
                 setSelectedPacks(packs);
@@ -747,13 +799,11 @@ const CheckoutComponent = () => {
 
     useEffect(() => {
         if (outOfStockItems.length > 0) {
-            // Scroll to top of the page to show the warning
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'
             });
 
-            // Alternative: Scroll to the warning element specifically
             const warningElement = document.getElementById('out-of-stock-warning');
             if (warningElement) {
                 warningElement.scrollIntoView({
@@ -1047,15 +1097,19 @@ const CheckoutComponent = () => {
                                             const isOutOfStock = outOfStockItems.some(outOfStockItem =>
                                                 outOfStockItem._id === item._id
                                             );
+                                            
+                                            // Determine if it's a product or product group
+                                            const isProductGroup = !!item.productGroup;
+                                            const itemData = isProductGroup ? item.productGroup : item.product;
                                             const itemAmount = item.amount;
-                                            const packName = item.product.typesOfPacks?.find(pack => parseInt(pack.quantity) === item.packQuentity)?.name || 'Each';
+                                            const packName = item.packType;
 
                                             return (
                                                 <div key={item._id} className={`flex items-center space-x-3 p-2 justify-between ${isOutOfStock ? 'bg-red-50 border border-red-200 rounded-md' : ''}`}>
                                                     <div className="w-28 h-28 rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
-                                                            src={item.product.images}
-                                                            alt={item.product.ProductName}
+                                                            src={isProductGroup ? item.productGroup.thumbnail : item.product.images}
+                                                            alt={itemData.name || itemData.ProductName}
                                                             width={98}
                                                             height={98}
                                                             className="object-contain"
@@ -1063,7 +1117,12 @@ const CheckoutComponent = () => {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
-                                                            {item.product.ProductName}
+                                                            {itemData.name || itemData.ProductName}
+                                                            {isProductGroup && (
+                                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                                    Group
+                                                                </span>
+                                                            )}
                                                         </h3>
                                                         <div className='flex w-full justify-between'>
                                                             <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
@@ -1087,18 +1146,16 @@ const CheckoutComponent = () => {
                                                             </div>
                                                         </div>
                                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
-                                                            <p className="mb-1">{item.product.sku}</p>
+                                                            <p className="mb-1">{itemData.sku}</p>
                                                             <div className='flex w-full justify-between'>
-                                                                <p className="mb-1">Units: {packName}</p>
+                                                                <p className="mb-1">Pack: {packName}</p>
                                                                 <div>Quantity {item.totalQuantity}</div>
                                                             </div>
-
                                                             <div className="space-y-1 text-xs">
                                                                 <div className='flex w-full justify-between'>
-                                                                    {/* <div>Unit price ${(item.amount / item.totalQuantity).toFixed(2)}</div> */}
                                                                     <div>Amount ${item.amount.toFixed(2)}</div>
-                                                                    {item.product.taxable && (
-                                                                        <div>Tax ({item.product.taxPercentages}%): ${((item.amount * item.product.taxPercentages) / 100).toFixed(2)}</div>
+                                                                    {itemData.taxable && (
+                                                                        <div>Tax ({itemData.taxPercentages}%): ${((item.amount * itemData.taxPercentages) / 100).toFixed(2)}</div>
                                                                     )}
                                                                 </div>
                                                             </div>

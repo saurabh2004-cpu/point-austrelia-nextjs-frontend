@@ -10,6 +10,7 @@ export const useProductFiltersStore = create(
       subCategoryTwoId: null,
       brandId: null,
       productID: null,
+      productGroupId: null,
 
       // Slug states for URL
       categorySlug: null,
@@ -29,6 +30,7 @@ export const useProductFiltersStore = create(
           subCategorySlug: filters.subCategorySlug || null,
           subCategoryTwoSlug: filters.subCategoryTwoSlug || null,
           productID: filters.productID || null,
+          productGroupId: filters.productGroupId || null,
         }),
 
       // Clear all filters
@@ -43,6 +45,7 @@ export const useProductFiltersStore = create(
           subCategorySlug: null,
           subCategoryTwoSlug: null,
           productID: null,
+          productGroupId: null,
         }),
     }),
 

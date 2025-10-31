@@ -46,23 +46,76 @@ const ShoppingCart = () => {
     const [showRemoveItemConfirm, setShowRemoveItemConfirm] = useState(false);
     const [itemToRemove, setItemToRemove] = useState(null);
 
+    // Helper functions for handling both products and product groups
+    const isProductGroup = (item) => {
+        return !!item.productGroup;
+    };
+
+    const getItemName = (item) => {
+        if (item.product) {
+            return item.product.ProductName;
+        } else if (item.productGroup) {
+            return item.productGroup.name;
+        }
+        return 'Unknown Item';
+    };
+
+    const getItemImage = (item) => {
+        if (item.product && item.product.images) {
+            return item.product.images;
+        } else if (item.productGroup && item.productGroup.thumbnail) {
+            return item.productGroup.thumbnail;
+        }
+        return '/placeholder.svg';
+    };
+
+    const getItemSku = (item) => {
+        if (item.product) {
+            return item.product.sku;
+        } else if (item.productGroup) {
+            return item.productGroup.sku;
+        }
+        return 'N/A';
+    };
+
+    const getStockLevel = (item) => {
+        if (item.product) {
+            return item.product.stockLevel || 0;
+        } else if (item.productGroup) {
+            // For product groups, use minimum stock of all products in the group
+            const minStock = Math.min(...(item.productGroup.products || []).map(p => p.stockLevel || 0));
+            return minStock;
+        }
+        return 0;
+    };
+
+    const isOutOfStock = (item) => {
+        return getStockLevel(item) <= 0;
+    };
 
     // Calculate out of stock items
-    const outOfStockItems = cartItems.filter(item => item.product.stockLevel <= 0);
+    const outOfStockItems = cartItems.filter(item => isOutOfStock(item));
     const outOfStockCount = outOfStockItems.length;
 
     // Get effective quantity = packQuantity * unitsQuantity
     const calculateDisplayTotalQuantity = (item) => {
-        const pack = item.product.typesOfPacks?.find(p => p._id === selectedPacks[item._id]);
-        const packQuantity = pack ? parseInt(pack.quantity) : item.packQuentity || 1;
-        const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
-        return packQuantity * unitsQuantity;
+        if (item.product) {
+            const pack = item.product.typesOfPacks?.find(p => p._id === selectedPacks[item._id]);
+            const packQuantity = pack ? parseInt(pack.quantity) : item.packQuentity || 1;
+            const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
+            return packQuantity * unitsQuantity;
+        } else if (item.productGroup) {
+            // Product groups use simple quantity (no packs)
+            const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
+            return unitsQuantity;
+        }
+        return 0;
     };
 
     // Check if quantity exceeds stock level
     const exceedsStockLevel = (item) => {
         const totalQuantity = calculateDisplayTotalQuantity(item);
-        return totalQuantity > item.product.stockLevel;
+        return totalQuantity > getStockLevel(item);
     };
 
     // Get items that exceed stock level
@@ -89,8 +142,14 @@ const ShoppingCart = () => {
             console.log("customer cart cart ", response.data.data)
 
             if (response.data.statusCode === 200) {
-                const { items, pagination: paginationData } = response.data.data;
-                setTotals(response.data.data.totals)
+                const { items, pagination: paginationData, totals: totalsData } = response.data.data;
+                setTotals(totalsData || {
+                    subtotal: 0,
+                    tax: 0,
+                    grandTotal: 0,
+                    totalQuantity: 0,
+                    totalItems: 0
+                });
 
                 if (isLoadMore) {
                     // Append new items for infinite scroll
@@ -106,15 +165,21 @@ const ShoppingCart = () => {
                 // Initialize local quantities and selected packs from cart data
                 const quantities = {};
                 const packs = {};
-                const itemsToProcess = isLoadMore ? items : response.data.data.items || items;
+                const itemsToProcess = isLoadMore ? items : (response.data.data.items || items);
 
                 itemsToProcess.forEach(item => {
                     quantities[item._id] = item.unitsQuantity;
-                    // Find the pack that matches the current packQuentity
-                    const matchingPack = item.product.typesOfPacks?.find(
-                        pack => parseInt(pack.quantity) === item.packQuentity
-                    );
-                    packs[item._id] = matchingPack?._id || item.product.typesOfPacks?.[0]?._id;
+
+                    if (item.product) {
+                        // Find the pack that matches the current packQuentity for products
+                        const matchingPack = item.product.typesOfPacks?.find(
+                            pack => parseInt(pack.quantity) === item.packQuentity
+                        );
+                        packs[item._id] = matchingPack?._id || item.product.typesOfPacks?.[0]?._id;
+                    } else if (item.productGroup) {
+                        // Product groups don't have packs, set default
+                        packs[item._id] = 'default';
+                    }
                 });
 
                 setLocalQuantities(prev => ({ ...prev, ...quantities }));
@@ -180,8 +245,8 @@ const ShoppingCart = () => {
             console.log("remove out of stock items", response);
 
             if (response.data.statusCode === 200) {
-                setCartItems(response.data.data.cartItems);
-                setCartItemsCount(response.data.data.cartItems.length);
+                setCartItems(response.data.data.cartItems || []);
+                setCartItemsCount(response.data.data.cartItems?.length || 0);
                 setError(null);
             } else {
                 setError(response.data.message || "Failed to remove out of stock items");
@@ -201,31 +266,40 @@ const ShoppingCart = () => {
 
     // Get selected pack from local state
     const getSelectedPack = (item) => {
-        return selectedPacks[item._id] || item.product.typesOfPacks?.[0]?._id;
+        return selectedPacks[item._id];
     };
 
     // Check if local state differs from original (to enable Update button)
     const isItemModified = (item) => {
         const currentQty = localQuantities[item._id] || item.unitsQuantity;
-        const currentPack = selectedPacks[item._id] || item.packQuentity;
-        return currentQty !== item.unitsQuantity || currentPack !== item.packQuentity;
+
+        if (item.product) {
+            const currentPack = selectedPacks[item._id];
+            const originalPack = item.product.typesOfPacks?.find(p => parseInt(p.quantity) === item.packQuentity)?._id;
+            return currentQty !== item.unitsQuantity || currentPack !== originalPack;
+        } else if (item.productGroup) {
+            // For product groups, only check quantity changes
+            return currentQty !== item.unitsQuantity;
+        }
+
+        return false;
     };
 
-    // --- Handlers ---
-
-    // Just update local state, don't call API here
     const handleQuantityChange = (itemId, change) => {
         setLocalQuantities(prev => {
             const newQty = Math.max(1, (prev[itemId] || 1) + change);
             return { ...prev, [itemId]: newQty };
         });
+        // This will trigger the useEffect and update the UI immediately
     };
 
-    // Handle pack change
+    // Handle pack change (only for products)
     const handlePackChange = (itemId, packId) => {
         setSelectedPacks(prev => ({ ...prev, [itemId]: packId }));
+        // This will trigger the useEffect and update the UI immediately
     };
 
+    // Update cart item using add-to-cart API
     // Update cart item using add-to-cart API
     const updateCartItem = async (item) => {
         if (!currentUser || !currentUser._id) {
@@ -237,18 +311,37 @@ const ShoppingCart = () => {
 
         try {
             const newQty = localQuantities[item._id] || item.unitsQuantity;
-            const selectedPackId = selectedPacks[item._id];
-            const selectedPack = item.product.typesOfPacks?.find(p => p._id === selectedPackId);
-            const packQuantity = selectedPack ? parseInt(selectedPack.quantity) : item.packQuentity;
+            let packQuantity = 1;
+            let packType = 'Each';
+            let productId = null;
+            let productGroupId = null;
+
+            if (item.product) {
+                // For products
+                productId = item.product._id;
+                const selectedPackId = selectedPacks[item._id];
+                const selectedPack = item.product.typesOfPacks?.find(p => p._id === selectedPackId);
+                packQuantity = selectedPack ? parseInt(selectedPack.quantity) : item.packQuentity;
+                packType = selectedPack ? selectedPack.name : 'Each';
+            } else if (item.productGroup) {
+                // For product groups
+                productGroupId = item.productGroup._id;
+                // Product groups use default pack values
+            }
+
+            const totalQuantity = packQuantity * newQty;
 
             const response = await axiosInstance.post('cart/add-to-cart', {
                 customerId: currentUser._id,
-                productId: item.product._id,
+                productId: productId,
+                productGroupId: productGroupId,
                 packQuentity: packQuantity,
                 unitsQuantity: newQty,
-                totalQuantity: packQuantity * newQty,
-                packType: selectedPack ? selectedPack.name : 'Each',
-                amount: item.amount
+                totalQuantity: totalQuantity,
+                packType: packType,
+                amount: item.amount,
+                discountType: item.discountType || "",
+                discountPercentages: item.discountPercentages || 0
             });
 
             console.log("update cart item", response)
@@ -256,23 +349,27 @@ const ShoppingCart = () => {
             if (response.data.statusCode === 200) {
                 setCartItems(prevItems => {
                     return prevItems.map(prevItem => {
-                        if (prevItem.product._id === item.product._id) {
+                        if (prevItem._id === item._id) {
                             // Find the updated item from response
                             const updatedItem = response.data.data.cartItems.find(
-                                cartItem => cartItem.product._id === item.product._id
+                                cartItem => cartItem._id === item._id
                             );
 
                             if (updatedItem) {
-                                // Preserve the full product object from previous state
+                                // Preserve the full product/productGroup object from previous state
                                 return {
                                     ...updatedItem,
-                                    product: prevItem.product // Keep the original populated product
+                                    product: prevItem.product, // Keep the original populated product
+                                    productGroup: prevItem.productGroup // Keep the original populated productGroup
                                 };
                             }
                         }
                         return prevItem;
                     });
                 });
+
+                // Refresh the cart to get updated totals
+                await fetchCustomersCart(1, false);
                 setError(null);
             } else {
                 setError(response.data.message || "Failed to update cart item");
@@ -283,6 +380,97 @@ const ShoppingCart = () => {
         } finally {
             setUpdatingItems(prev => ({ ...prev, [item._id]: false }));
         }
+    };
+
+
+    // Calculate real-time subtotal for display (before API refresh)
+    const calculateRealtimeSubtotal = () => {
+        return cartItems.reduce((sum, item) => {
+            const itemPrice = item.amount || 0;
+            const totalQuantity = calculateDisplayTotalQuantity(item);
+            return sum + (itemPrice * totalQuantity);
+        }, 0);
+    };
+
+    // Calculate real-time tax for display (before API refresh)
+    const calculateRealtimeTax = () => {
+        return cartItems.reduce((sum, item) => {
+            // For products
+            if (item.product && item.product.taxable && item.product.taxPercentages) {
+                const itemPrice = item.amount || 0;
+                const totalQuantity = calculateDisplayTotalQuantity(item);
+                const subtotal = itemPrice * totalQuantity;
+                return sum + (subtotal * item.product.taxPercentages) / 100;
+            }
+            // For product groups
+            if (item.productGroup && item.productGroup.taxable && item.productGroup.taxPercentages) {
+                const itemPrice = item.amount || 0;
+                const totalQuantity = calculateDisplayTotalQuantity(item);
+                const subtotal = itemPrice * totalQuantity;
+                return sum + (subtotal * item.productGroup.taxPercentages) / 100;
+            }
+            return sum;
+        }, 0);
+    };
+
+    // Calculate real-time grand total
+    const calculateRealtimeGrandTotal = () => {
+        const subtotal = calculateRealtimeSubtotal();
+        const tax = calculateRealtimeTax();
+        return subtotal + tax;
+    };
+
+    // Calculate real-time total quantity
+    const calculateRealtimeTotalQuantity = () => {
+        return cartItems.reduce((sum, item) => sum + calculateDisplayTotalQuantity(item), 0);
+    };
+
+    // Calculate item-specific tax for display in the product card
+    const calculateItemTax = (item) => {
+        const totalQuantity = calculateDisplayTotalQuantity(item);
+        const itemSubtotal = (item.amount || 0) * totalQuantity;
+
+        // For products
+        if (item.product && item.product.taxable && item.product.taxPercentages) {
+            return (itemSubtotal * item.product.taxPercentages) / 100;
+        }
+        // For product groups
+        if (item.productGroup && item.productGroup.taxable && item.productGroup.taxPercentages) {
+            return (itemSubtotal * item.productGroup.taxPercentages) / 100;
+        }
+        return 0;
+    };
+
+    // Calculate item total (subtotal + tax) for display in product card
+    const calculateItemTotal = (item) => {
+        const totalQuantity = calculateDisplayTotalQuantity(item);
+        const itemSubtotal = (item.amount || 0) * totalQuantity;
+        const itemTax = calculateItemTax(item);
+        return itemSubtotal + itemTax;
+    };
+
+    // Calculate brand-wise pricing in real-time
+    const calculateBrandWisePricing = () => {
+        const brandTotals = {};
+
+        cartItems.forEach(item => {
+            let brandName = 'No Brand';
+            if (item.product?.commerceCategoriesOne?.name) {
+                brandName = item.product.commerceCategoriesOne.name;
+            } else if (item.productGroup?.commerceCategoriesOne?.name) {
+                brandName = item.productGroup.commerceCategoriesOne.name;
+            }
+
+            const totalQuantity = calculateDisplayTotalQuantity(item);
+            const itemTotal = (item.amount || 0) * totalQuantity;
+
+            if (!brandTotals[brandName]) {
+                brandTotals[brandName] = 0;
+            }
+            brandTotals[brandName] += itemTotal;
+        });
+
+        return brandTotals;
     };
 
     // Show confirmation for removing single item
@@ -298,16 +486,31 @@ const ShoppingCart = () => {
             return;
         }
 
-        setUpdatingItems(prev => ({ ...prev, [itemToRemove.product._id]: true }));
+        const itemId = itemToRemove.product?._id || itemToRemove.productGroup?._id;
+        setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
 
         try {
-            const response = await axiosInstance.put(`cart/remove-from-cart/${currentUser._id}/${itemToRemove.product._id}`);
+            const response = await axiosInstance.put(`cart/remove-from-cart/${currentUser._id}`, {
+                productId: itemToRemove.product?._id || null,
+                productGroupId: itemToRemove.productGroup?._id || null
+            });
 
             console.log("remove cart item", response)
             if (response.data.statusCode === 200) {
-                setCartItems(prevItems => prevItems.filter(item => item.product._id !== itemToRemove.product._id));
-                setCartItemsCount(response.data.data.cartItems.length);
+                setCartItems(prevItems => prevItems.filter(item => item._id !== itemToRemove._id));
+                setCartItemsCount(response.data.data.cartItems?.length || 0);
                 setError(null);
+
+                // Refresh totals
+                if (response.data.data.cartItems?.length === 0) {
+                    setTotals({
+                        subtotal: 0,
+                        tax: 0,
+                        grandTotal: 0,
+                        totalQuantity: 0,
+                        totalItems: 0
+                    });
+                }
             } else {
                 setError(response.data.message || "Failed to remove cart item");
             }
@@ -315,7 +518,7 @@ const ShoppingCart = () => {
             console.error('Error removing cart item:', error);
             setError('An error occurred while removing cart item');
         } finally {
-            setUpdatingItems(prev => ({ ...prev, [itemToRemove.product._id]: false }));
+            setUpdatingItems(prev => ({ ...prev, [itemId]: false }));
             setShowRemoveItemConfirm(false);
             setItemToRemove(null);
         }
@@ -340,7 +543,8 @@ const ShoppingCart = () => {
             // Add to wishlist
             const wishlistResponse = await axiosInstance.post('wishlist/add-to-wishlist', {
                 customerId: currentUser._id,
-                productId: item.product._id
+                productId: item.product?._id || null,
+                productGroupId: item.productGroup?._id || null
             });
 
             console.log("move to wishlist", wishlistResponse)
@@ -435,7 +639,7 @@ const ShoppingCart = () => {
             <div className="px-6 md:px-0  md:max-w-7xl mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
-                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {cartItemsCount} Items)</span>
+                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalItems || cartItemsCount} Items)</span>
                 </h1>
             </div>
 
@@ -517,20 +721,21 @@ const ShoppingCart = () => {
                                         <>
                                             {cartItems.map((item) => {
                                                 const isLoading = updatingItems[item._id];
-                                                const isOutOfStock = item.product.stockLevel <= 0;
+                                                const outOfStock = isOutOfStock(item);
                                                 const displayQuantity = getDisplayQuantity(item);
                                                 const selectedPack = getSelectedPack(item);
                                                 const totalQuantity = calculateDisplayTotalQuantity(item);
                                                 const itemSubtotal = (item.amount * totalQuantity);
-                                                const itemTax = totals.tax;
+                                                const itemTax = totals.tax / (totals.totalItems || 1); // Approximate tax per item
                                                 const itemTotal = itemSubtotal + itemTax;
                                                 const hasModifications = isItemModified(item);
                                                 const exceedsStock = exceedsStockLevel(item);
-                                                const stockLevel = item.product.stockLevel;
+                                                const stockLevel = getStockLevel(item);
+                                                const isProductGroupItem = isProductGroup(item);
 
                                                 return (
                                                     <div key={item._id} className="lg:py-6">
-                                                        <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0 md:space-x-25 ${isOutOfStock
+                                                        <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0 md:space-x-25 ${outOfStock
                                                             ? 'border-red-300 bg-red-50/30'
                                                             : exceedsStock
                                                                 ? 'border-orange-300 bg-orange-50/30'
@@ -541,10 +746,13 @@ const ShoppingCart = () => {
                                                                 <div className="rounded-lg flex items-center w-full  justify-items-center  ">
                                                                     <img
                                                                         className='object-contain xl:pl-2'
-                                                                        src={item.product.images || "/placeholder.svg"}
-                                                                        alt={item.product.ProductName}
+                                                                        src={getItemImage(item)}
+                                                                        alt={getItemName(item)}
                                                                         width={116}
                                                                         height={116}
+                                                                        onError={(e) => {
+                                                                            e.target.src = '/placeholder.svg';
+                                                                        }}
                                                                     />
                                                                 </div>
                                                             </div>
@@ -552,28 +760,35 @@ const ShoppingCart = () => {
                                                             {/* Product Details */}
                                                             <div className="flex-1 ">
                                                                 {/* Product Name */}
-                                                                <h3 className="text-[15px] font-semibold  mb-1">
-                                                                    {item.product.ProductName}
-                                                                </h3>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <h3 className="text-[15px] font-semibold">
+                                                                        {getItemName(item)}
+                                                                    </h3>
+                                                                    {isProductGroupItem && (
+                                                                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                                                            BUNDLE
+                                                                        </span>
+                                                                    )}
+                                                                </div>
 
                                                                 {/* SKU and Stock */}
                                                                 <div className='flex align-center justify-between pr-12 items-center'>
-                                                                    <p className="text-[13px] text-[400] ">SKU: {item.product.sku}</p>
-                                                                    <div className={`flex items-center w-[100px] text-[10px] font-semibold p-2 text-[14px] rounded ${isOutOfStock
+                                                                    <p className="text-[13px] text-[400] ">SKU: {getItemSku(item)}</p>
+                                                                    <div className={`flex items-center w-[100px] text-[10px] font-semibold p-2 text-[14px] rounded ${outOfStock
                                                                         ? 'bg-red-100 text-red-600'
                                                                         : 'bg-[#E7FAEF] text-black'
                                                                         }`}>
-                                                                        {isOutOfStock ? (
+                                                                        {outOfStock ? (
                                                                             <X className="w-3 h-3 mr-1" />
                                                                         ) : (
                                                                             <Check className="w-3 h-3 mr-1" />
                                                                         )}
-                                                                        {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                                                                        {outOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                                                                     </div>
                                                                 </div>
 
                                                                 {/* Stock Level Warning for Item */}
-                                                                {exceedsStock && !isOutOfStock && (
+                                                                {exceedsStock && !outOfStock && (
                                                                     <div className="flex items-center space-x-2 mt-2 mb-2 bg-orange-100 border border-orange-300 rounded-md p-2">
                                                                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
                                                                         <p className="text-xs text-orange-700">
@@ -583,7 +798,7 @@ const ShoppingCart = () => {
                                                                 )}
 
                                                                 {/* Available Stock Display */}
-                                                                {!isOutOfStock && (
+                                                                {!outOfStock && (
                                                                     <p className="text-[12px] text-gray-600 mb-1">
                                                                         Available: {stockLevel} units
                                                                     </p>
@@ -594,44 +809,44 @@ const ShoppingCart = () => {
                                                                     ${item?.amount?.toFixed(2)}
                                                                 </div>
 
+
                                                                 {/* Quantity and Actions */}
                                                                 <div className="space-y-4 ">
                                                                     <div className="flex flex-col xl:flex-row   align-middle sm:space-x-8 space-y-4 sm:space-y-0">
-                                                                        <div className="mb-3  space-x-12 align-center items-center font-spartan">
-                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">Pack Type</label>
-                                                                            <div className="relative w-full">
-                                                                                <select
-                                                                                    value={selectedPacks[item._id] || ''}
-                                                                                    onChange={(e) => handlePackChange(item._id, e.target.value)}
-                                                                                    disabled={isOutOfStock}
-                                                                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                                                                >
-                                                                                    {item.product.typesOfPacks && item.product.typesOfPacks.length > 0 ? (
-                                                                                        item.product.typesOfPacks.map((pack) => (
+                                                                        {/* Pack Type Dropdown (only for products) */}
+                                                                        {item.product && item.product.typesOfPacks && item.product.typesOfPacks.length > 0 && (
+                                                                            <div className="mb-3  space-x-12 align-center items-center font-spartan">
+                                                                                <label className="block text-sm font-medium text-gray-700 mb-1">Pack Type</label>
+                                                                                <div className="relative w-full">
+                                                                                    <select
+                                                                                        value={selectedPacks[item._id] || ''}
+                                                                                        onChange={(e) => handlePackChange(item._id, e.target.value)}
+                                                                                        disabled={outOfStock}
+                                                                                        className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                    >
+                                                                                        {item.product.typesOfPacks.map((pack) => (
                                                                                             <option key={pack._id} value={pack._id}>
                                                                                                 {pack.name}
                                                                                             </option>
-                                                                                        ))
-                                                                                    ) : (
-                                                                                        <option value="">No packs available</option>
-                                                                                    )}
-                                                                                </select>
-                                                                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                                                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                                                    </svg>
+                                                                                        ))}
+                                                                                    </select>
+                                                                                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                                                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                                                        </svg>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
+                                                                        )}
 
-                                                                        <div className="hidden xl:block bg-gray-300 w-[1px] h-15 ml-8"></div>
+                                                                        {item.product && <div className="hidden xl:block bg-gray-300 w-[1px] h-15 ml-8"></div>}
 
                                                                         <div className="flex  items-start space-x-2 space-y-2 flex-col">
                                                                             <span className="text-sm font-[400] ">Quantity</span>
                                                                             <div className="flex items-center  rounded-lg">
                                                                                 <button
                                                                                     onClick={() => handleQuantityChange(item._id, -1)}
-                                                                                    disabled={isLoading || displayQuantity <= 1 || isOutOfStock}
+                                                                                    disabled={isLoading || displayQuantity <= 1 || outOfStock}
                                                                                     className="p-1 bg-black rounded-md  px-2 py-1 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                                                                 >
                                                                                     <Minus className="w-4 h-4 text-white" />
@@ -645,7 +860,7 @@ const ShoppingCart = () => {
                                                                                 </span>
                                                                                 <button
                                                                                     onClick={() => handleQuantityChange(item._id, 1)}
-                                                                                    disabled={isLoading || isOutOfStock || exceedsStock}
+                                                                                    disabled={isLoading || outOfStock || exceedsStock}
                                                                                     className="p-1 bg-black rounded-md py-1  px-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                                                                     title={exceedsStock ? 'Stock level exceeded' : ''}
                                                                                 >
@@ -658,9 +873,27 @@ const ShoppingCart = () => {
 
                                                                 {/* Amount with Tax */}
                                                                 <div className="space-y-1">
-                                                                    <span className="text-[13px] font-semibold ">
-                                                                        Amount: <span className="text-[#2D2C70] text-[15px] font-semibold">${itemTotal.toFixed(2)}</span>
-                                                                    </span>
+                                                                    <div className="flex justify-between text-[13px]">
+                                                                        <span className="font-semibold">Subtotal:</span>
+                                                                        <span className="text-[#2D2C70] font-semibold">
+                                                                            ${((item.amount || 0) * calculateDisplayTotalQuantity(item)).toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* Show tax only if applicable for this item */}
+                                                                    {calculateItemTax(item) > 0 && (
+                                                                        <div className="flex justify-between text-[12px] text-gray-600">
+                                                                            <span>Tax ({item.product?.taxPercentages || item.productGroup?.taxPercentages || 0}%):</span>
+                                                                            <span>${calculateItemTax(item).toFixed(2)}</span>
+                                                                        </div>
+                                                                    )}
+
+                                                                    <div className="flex justify-between text-[13px] font-semibold border-t pt-1">
+                                                                        <span>Total:</span>
+                                                                        <span className="text-[#2D2C70] text-[15px]">
+                                                                            ${calculateItemTotal(item).toFixed(2)}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Action Buttons */}
@@ -762,43 +995,41 @@ const ShoppingCart = () => {
                                     <h2 className="text-[20px] font-semibold mb-6">Order Summary</h2>
 
                                     <div className="space-y-4">
-                                        <div className=" text-sm">
+                                        <div className="text-sm">
                                             <div className="flex justify-between">
-                                                <span className="text-[1rem] font-[400]"><span className='text-[20px] font-medium'>Subtotal</span> ({totals.totalItems} Items)</span>
-                                                <span className="text-[20px] font-medium text-[#2D2C70]">${totals.subtotal.toFixed(2)}</span>
+                                                <span className="text-[1rem] font-[400]">
+                                                    <span className='text-[20px] font-medium'>Subtotal</span> ({calculateRealtimeTotalQuantity()} Items)
+                                                </span>
+                                                <span className="text-[20px] font-medium text-[#2D2C70]">
+                                                    ${calculateRealtimeSubtotal().toFixed(2)}
+                                                </span>
                                             </div>
                                             <div className="text-[14px] text-[400] text-gray-600">
                                                 Subtotal does not include shipping
                                             </div>
                                         </div>
 
-                                        {(() => {
-                                            // Group items by brand
-                                            const brandTotals = {};
-                                            cartItems.forEach(item => {
-                                                const brandName = item.product.commerceCategoriesOne?.name || 'No Brand';
-                                                const itemTotal = item.product.eachPrice * calculateDisplayTotalQuantity(item);
+                                        {/* Brand-wise Pricing - Real-time */}
+                                        {Object.entries(calculateBrandWisePricing()).map(([brandName, total]) => (
+                                            <div key={brandName} className="flex justify-between text-sm">
+                                                <span className="text-[14px] text-[500] text-[#000000]/80">{brandName}</span>
+                                                <span className="text-[14px] font-medium">${total.toFixed(2)}</span>
+                                            </div>
+                                        ))}
 
-                                                if (!brandTotals[brandName]) {
-                                                    brandTotals[brandName] = 0;
-                                                }
-                                                brandTotals[brandName] += itemTotal;
-                                            });
-
-                                            // Convert to array and render
-                                            return Object.entries(brandTotals).map(([brandName, total]) => (
-                                                <div key={brandName} className="flex justify-between text-sm">
-                                                    <span className="text-[14px] text-[500] text-[#000000]/80">{brandName}</span>
-                                                    <span className="text-[14px] font-medium">${total.toFixed(2)}</span>
-                                                </div>
-                                            ));
-                                        })()}
+                                        {/* Tax Breakdown */}
+                                        {calculateRealtimeTax() > 0 && (
+                                            <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
+                                                <span className="text-[14px] text-[500] text-[#000000]/80">Tax</span>
+                                                <span className="text-[14px] font-medium">${calculateRealtimeTax().toFixed(2)}</span>
+                                            </div>
+                                        )}
 
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">
                                             <div className="flex justify-between text-lg font-semibold mb-2">
                                                 <span>Total</span>
-                                                <span className="text-[#2D2C70]">${totals.grandTotal.toFixed(2)}</span>
+                                                <span className="text-[#2D2C70]">${calculateRealtimeGrandTotal().toFixed(2)}</span>
                                             </div>
                                         </div>
 
@@ -878,7 +1109,8 @@ const ShoppingCart = () => {
 
                                             <div className="flex items-center space-x-3">
                                                 <button
-                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group 'bg-gray-400 text-gray-200 border-gray-400  bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                    onClick={() => router.push('/products')}
+                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
                                                 >
                                                     <svg
                                                         className="w-5 h-5 transition-colors duration-300 "
@@ -950,7 +1182,7 @@ const ShoppingCart = () => {
                         </div>
 
                         <p className="text-gray-600 mb-6">
-                            Are you sure you want to remove "<span className="font-semibold">{itemToRemove.product.ProductName}</span>" from your cart?
+                            Are you sure you want to remove "<span className="font-semibold">{getItemName(itemToRemove)}</span>" from your cart?
                         </p>
 
                         <div className="flex justify-end space-x-3">

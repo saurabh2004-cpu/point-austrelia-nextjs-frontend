@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo, useTransition } from "react"
 import { Search, ShoppingCart, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,8 +49,8 @@ export function Navbar() {
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const router = useRouter()
   const currentUser = useUserStore((state) => state.user);
-  const [isLoading, setIsLoading] = useState(false)
   const pathname = usePathname()
+  const [isPending, startTransition] = useTransition()
 
   const currentCartItems = useCartStore((state) => state.currentItems);
   const setCartItems = useCartStore((state) => state.setCurrentItems);
@@ -61,7 +61,6 @@ export function Navbar() {
   const [categoriesByBrand, setCategoriesByBrand] = useState({})
   const [subCategoriesByCategory, setSubCategoriesByCategory] = useState({})
   const [subCategoriesTwoBySubCategory, setSubCategoriesTwoBySubCategory] = useState({})
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadingCategories, setLoadingCategories] = useState({})
   const setFilters = useProductFiltersStore((state) => state.setFilters)
@@ -71,7 +70,6 @@ export function Navbar() {
   const [showCompanyDropDown, setShowCompanyDropDown] = useState(false)
 
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
-  const getCurrentIndex = useNavStateStore((state) => state.getCurrentIndex)
   const setUser = useUserStore((state) => state.setUser);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
   const desktopSearchRef = useClickOutside(() => {
@@ -84,10 +82,7 @@ export function Navbar() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Loading state for route transitions
-  const [isNavigating, setIsNavigating] = useState(false)
-
-  // OPTIMIZATION 1: Fetch user only once on mount, not on every render
+  // Fetch user only once on mount
   useEffect(() => {
     const fetchCurentUser = async () => {
       try {
@@ -97,19 +92,17 @@ export function Navbar() {
         }
       } catch (error) {
         console.error("Error fetching current user:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     if (currentUser === null || currentUser === undefined) {
       fetchCurentUser();
+    } else {
+      setLoading(false);
     }
-  }, []); // Empty dependency array - only run once
-
-  useEffect(() => {
-    if (currentUser !== undefined) {
-      setLoading(false); // Set this immediately
-    }
-  }, [currentUser])
+  }, []);
 
   // Use click outside hooks
   const userDropdownRef = useClickOutside(() => {
@@ -126,7 +119,6 @@ export function Navbar() {
     setHoveredSubcategory(null);
   });
 
-  // OPTIMIZATION 3: Memoize handler functions with useCallback
   const handleUserDropdownToggle = useCallback(() => {
     setShowUserDropdown(prev => !prev);
     setShowCartPopup(false);
@@ -148,23 +140,34 @@ export function Navbar() {
     setActiveDropdown(null);
   }, [setShowCartPopup]);
 
-  // OPTIMIZATION 4: Debounce search
   const handleSearch = useCallback((e) => {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
-        setIsNavigating(true);
-        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        startTransition(() => {
+          router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        });
         setIsSearchOpen(false);
       }
     }
   }, [searchQuery, router]);
 
-  // Fetch all brands on component mount
+  // Fetch brands ONCE on mount - Non-blocking
   useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await axiosInstance.get('brand/get-brands-list')
+        if (res.data.statusCode === 200) {
+          setBrands(res.data.data)
+        }
+      } catch (error) {
+        console.error("Error fetching brands:", error)
+      }
+    }
+    
+    // Don't block rendering - fetch in background
     fetchBrands()
   }, [])
 
-  // OPTIMIZATION 5: Add caching and memoization for API calls
   const fetchCategoriesForBrand = useCallback(async (brandId) => {
     if (categoriesByBrand[brandId]) return
 
@@ -219,25 +222,6 @@ export function Navbar() {
     }
   }, [subCategoriesTwoBySubCategory])
 
-  const fetchBrands = async () => {
-    try {
-      const res = await axiosInstance.get('brand/get-brands-list')
-
-      if (res.data.statusCode === 200) {
-        setBrands(res.data.data)
-        setLoading(false)
-      } else {
-        setError(res.data.message)
-        setLoading(false)
-      }
-    } catch (error) {
-      setError(error.message)
-      console.error("Error fetching brands:", error)
-      setLoading(false)
-    }
-  }
-
-  // OPTIMIZATION 6: Memoize navigation items
   const navigationItems = useMemo(() => {
     const items = [
       { label: "HOME", index: 0, link: '/' }
@@ -307,18 +291,17 @@ export function Navbar() {
     setShowCartPopup(false);
   }, [setShowCartPopup]);
 
-  // Enhanced navigation handler with loading state
   const handleNavigation = useCallback((item) => {
     if (!item.hasDropdown) {
-      setIsNavigating(true);
       setCurrentIndex(item.index)
       setActiveDropdown(null)
       setIsMenuOpen(false)
     } else {
       if (item.label === "COMPANY" || item.label === "CONTACT US") {
         if (!currentUser) {
-          setIsNavigating(true);
-          router.push('/contact-us');
+          startTransition(() => {
+            router.push('/contact-us');
+          });
           setActiveDropdown(null);
           setIsMenuOpen(false);
         } else {
@@ -327,8 +310,9 @@ export function Navbar() {
         }
       } else {
         if (!currentUser && item.brandRoute) {
-          setIsNavigating(true);
-          router.push(item.brandRoute);
+          startTransition(() => {
+            router.push(item.brandRoute);
+          });
           setActiveDropdown(null);
           setIsMenuOpen(false);
         } else if (currentUser && item.brandId) {
@@ -344,9 +328,7 @@ export function Navbar() {
     setShowCompanyDropDown(false);
   });
 
-  // Enhanced category click handler with loading state
   const handleCategoryClick = useCallback((link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
-    setIsNavigating(true);
     setActiveDropdown(null)
     setHoveredCategory(null)
     setHoveredSubcategory(null)
@@ -384,7 +366,7 @@ export function Navbar() {
 
   const fetchCustomersCart = useCallback(async () => {
     try {
-      if (!currentUser || !currentUser._id) return;
+      if (!currentUser?._id) return;
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
 
       if (response.data.statusCode === 200) {
@@ -398,7 +380,7 @@ export function Navbar() {
 
   const fetchCustomersWishList = useCallback(async () => {
     try {
-      if (!currentUser || !currentUser._id) return
+      if (!currentUser?._id) return
       const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
 
       if (response.data.statusCode === 200) {
@@ -413,39 +395,36 @@ export function Navbar() {
 
   const handleLogout = useCallback(async () => {
     try {
-      setIsNavigating(true);
       useUserStore.getState().clearUser();
       setWishlistItems(0);
       setCartItems(0);
       setShowUserDropdown(false);
 
       try {
-        const response = await axiosInstance.post('user/logout');
-        if (response.data.statusCode === 200) {
-          console.log('Logout successful');
-          setCartItems(0);
-        }
+        await axiosInstance.post('user/logout');
       } catch (error) {
         console.error('Error during logout API call:', error);
       }
 
-      router.push('/');
+      startTransition(() => {
+        router.push('/');
+      });
     } catch (error) {
       console.error('Error during logout:', error);
     }
   }, [router, setCartItems, setWishlistItems]);
 
   const handleMyAccount = useCallback(() => {
-    setIsNavigating(true);
     setShowUserDropdown(false);
-    router.push('/my-account-review');
+    startTransition(() => {
+      router.push('/my-account-review');
+    });
   }, [router]);
 
-  // OPTIMIZATION 7: Only fetch cart/wishlist once when user is available
+  // Fetch cart/wishlist once when user is available
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    // Delay these non-critical fetches
     const timer = setTimeout(() => {
       if (currentCartItems === 0) {
         fetchCustomersCart();
@@ -453,51 +432,18 @@ export function Navbar() {
       if (currentWishlistItems === 0) {
         fetchCustomersWishList();
       }
-    }, 100); // Small delay to not block navigation
+    }, 100);
 
     return () => clearTimeout(timer);
-  }, [currentUser?._id]); // Remove other dependencies
+  }, [currentUser?._id]);
 
+  // Prefetch critical pages
   useEffect(() => {
-    if (currentUser !== undefined) {
-      setLoading(false)
-    }
-  }, [currentUser])
-
-  // Handle route changes to show/hide loading bar
-  useEffect(() => {
-    const handleRouteChangeStart = () => {
-      setIsNavigating(true);
-    };
-
-    const handleRouteChangeComplete = () => {
-      setIsNavigating(false);
-    };
-
-    const handleRouteChangeError = () => {
-      setIsNavigating(false);
-    };
-
-    // Listen to route changes
-    window.addEventListener('beforeunload', handleRouteChangeStart);
-
-    // Use setTimeout to handle route completion (Next.js doesn't have built-in route events in App Router)
-    const timer = setTimeout(() => {
-      setIsNavigating(false);
-    }, 1000);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleRouteChangeStart);
-      clearTimeout(timer);
-    };
-  }, [pathname]); // Re-run when pathname changes
-
-  useEffect(() => {
-    // Prefetch login/signup pages
     router.prefetch('/login');
     router.prefetch('/sign-up');
     router.prefetch('/wishlist');
     router.prefetch('/cart');
+    router.prefetch('/contact-us');
   }, [router]);
 
   const groupCategoriesByColumn = (categories) => {
@@ -516,33 +462,13 @@ export function Navbar() {
 
   return (
     <>
-      {/* Enhanced Loading Bar with smooth animation */}
-      {isNavigating && (
-        <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200 overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-loading-bar"
-            style={{
-              animation: 'loadingBar 1.5s ease-in-out infinite'
-            }} />
+      {/* Loading indicator */}
+      {isPending && (
+        <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200">
+          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-pulse" 
+               style={{ width: '30%' }} />
         </div>
       )}
-
-      {/* Add CSS animation for the loading bar */}
-      <style jsx>{`
-        @keyframes loadingBar {
-          0% {
-            transform: translateX(-100%);
-          }
-          50% {
-            transform: translateX(0%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        .animate-loading-bar {
-          animation: loadingBar 1.5s ease-in-out infinite;
-        }
-      `}</style>
 
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         {/* Top Bar */}
@@ -570,12 +496,9 @@ export function Navbar() {
                       fill="currentColor"
                       className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
                     />
-                    {/* OPTIMIZATION 9: Add prefetch to critical links */}
                     <Link
                       href="/login"
-                      prefetch={true}
                       className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]"
-                      onClick={() => setIsNavigating(true)}
                     >
                       LOGIN
                     </Link>
@@ -583,9 +506,7 @@ export function Navbar() {
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
                   <Link
                     href="/sign-up"
-                    prefetch={true}
                     className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]"
-                    onClick={() => setIsNavigating(true)}
                   >
                     SIGN UP
                   </Link>
@@ -630,11 +551,7 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link
-                  href="/"
-                  prefetch={true}
-                  onClick={() => setIsNavigating(true)}
-                >
+                <Link href="/">
                   <Image
                     src="/logo/point-austrelia-logo.png"
                     alt="Logo"
@@ -662,12 +579,8 @@ export function Navbar() {
 
                     <Link
                       href="/wishlist"
-                      prefetch={true}
                       className="relative bg-white group p-1"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsNavigating(true);
-                      }}
+                      onClick={() => setIsMenuOpen(false)}
                     >
                       <svg
                         width="18"
@@ -686,12 +599,8 @@ export function Navbar() {
 
                     <Link
                       href="/cart"
-                      prefetch={true}
                       className="relative bg-white group p-1"
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsNavigating(true);
-                      }}
+                      onClick={() => setIsMenuOpen(false)}
                     >
                       <svg
                         width="18"
@@ -710,7 +619,7 @@ export function Navbar() {
                   </div>
                 )}
 
-                {/* Desktop icons... rest of the component remains the same */}
+                {/* Desktop icons */}
                 <div className="hidden lg:flex lg:space-x-10 items-center">
                   {currentUser && !isCheckoutPage && (
                     <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
@@ -748,16 +657,10 @@ export function Navbar() {
                     </div>
                   )}
 
-                  <div className="flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70]">
-                  </div>
-
                   {currentUser && !isCheckoutPage && (
                     <Link
                       href={'/wishlist'}
-                      prefetch={true}
                       className="relative bg-white group"
-                      data-navbar-cart-button
-                      onClick={() => setIsNavigating(true)}
                     >
                       <svg
                         width="21"
@@ -854,9 +757,7 @@ export function Navbar() {
                 {!item.hasDropdown ? (
                   <Link
                     href={item.link || '/'}
-                    prefetch={true}
                     className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
-                    onClick={() => setIsNavigating(true)}
                   >
                     {item.label}
                   </Link>
@@ -872,7 +773,7 @@ export function Navbar() {
                 {/* COMPANY Dropdown for Desktop */}
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
                   <div
-                    className="absolute top-full left-0  w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+                    className="absolute top-full left-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
                     ref={companyDropdownRef}
                   >
                     <div className="py-1">
@@ -880,11 +781,7 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          prefetch={true}
-                          onClick={() => {
-                            setShowCompanyDropDown(false);
-                            setIsNavigating(true);
-                          }}
+                          onClick={() => setShowCompanyDropDown(false)}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -892,11 +789,7 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        prefetch={true}
-                        onClick={() => {
-                          setShowCompanyDropDown(false);
-                          setIsNavigating(true);
-                        }}
+                        onClick={() => setShowCompanyDropDown(false)}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
                       >
                         Contact Us
@@ -916,11 +809,7 @@ export function Navbar() {
                   {!item.hasDropdown ? (
                     <Link
                       href={item.link || '/'}
-                      prefetch={true}
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        setIsNavigating(true);
-                      }}
+                      onClick={() => setIsMenuOpen(false)}
                       className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
                     >
                       {item.label}
@@ -931,8 +820,9 @@ export function Navbar() {
                         if (item.hasDropdown) {
                           if (item.label === "COMPANY") {
                             if (!currentUser) {
-                              setIsNavigating(true);
-                              router.push('/contact-us');
+                              startTransition(() => {
+                                router.push('/contact-us');
+                              });
                               setIsMenuOpen(false);
                             } else {
                               setActiveDropdown(activeDropdown === item.index ? null : item.index)
@@ -942,8 +832,9 @@ export function Navbar() {
                               handleBrandClick(item.brandId, item.brandSlug);
                               setIsMenuOpen(false);
                             } else if (!currentUser && item.brandRoute) {
-                              setIsNavigating(true);
-                              router.push(item.brandRoute);
+                              startTransition(() => {
+                                router.push(item.brandRoute);
+                              });
                               setIsMenuOpen(false);
                             }
                           }
@@ -967,11 +858,7 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          prefetch={true}
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            setIsNavigating(true);
-                          }}
+                          onClick={() => setIsMenuOpen(false)}
                           className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -979,11 +866,7 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        prefetch={true}
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          setIsNavigating(true);
-                        }}
+                        onClick={() => setIsMenuOpen(false)}
                         className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
                       >
                         Contact Us
@@ -999,10 +882,8 @@ export function Navbar() {
                           <div key={category.id || idx}>
                             <Link
                               href={`/${category.slug}`}
-                              prefetch={true}
                               onClick={() => {
                                 handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId);
-                                setIsNavigating(true);
                               }}
                               className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
                             >
@@ -1018,10 +899,8 @@ export function Navbar() {
                                   <Link
                                     key={subcat.id}
                                     href={`/${subcat.slug}`}
-                                    prefetch={true}
                                     onClick={() => {
                                       handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId);
-                                      setIsNavigating(true);
                                     }}
                                     className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
                                   >
@@ -1079,10 +958,8 @@ export function Navbar() {
                           >
                             <Link
                               href={`/${category.slug}`}
-                              prefetch={true}
                               onClick={() => {
                                 handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
-                                setIsNavigating(true);
                               }}
                               className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
                                 ? "text-[#E9098D] font-bold"
@@ -1116,10 +993,8 @@ export function Navbar() {
                                     >
                                       <Link
                                         href={`/${subcat.slug}`}
-                                        prefetch={true}
                                         onClick={() => {
                                           handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
-                                          setIsNavigating(true);
                                         }}
                                         className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
                                       >
@@ -1139,10 +1014,8 @@ export function Navbar() {
                                               <Link
                                                 key={subcatTwo.id}
                                                 href={`/${subcatTwo.slug}`}
-                                                prefetch={true}
                                                 onClick={() => {
                                                   handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug);
-                                                  setIsNavigating(true);
                                                 }}
                                                 className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 hover:border hover:border-2 p-1 border-black"
                                               >

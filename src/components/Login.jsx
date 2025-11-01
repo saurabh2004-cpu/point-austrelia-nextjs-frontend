@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import axiosInstance from '@/axios/axiosInstance'
 import useUserStore from '@/zustand/user'
 
@@ -16,7 +16,10 @@ export default function LoginComponent() {
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
   const [forgotPasswordError, setForgotPasswordError] = useState('')
-  const setUser = useUserStore((state) => state.setUser);
+  
+  const setUser = useUserStore((state) => state.setUser)
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -91,28 +94,29 @@ export default function LoginComponent() {
     setErrors(prev => ({ ...prev, loginError: '' }))
 
     try {
-      const res = await axiosInstance.post('user/login', formData,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+      const res = await axiosInstance.post('user/login', formData, {
+        headers: {
+          'Content-Type': 'application/json'
         }
-      )
+      })
 
       console.log("Login response:", res)
 
       if (res.data.statusCode === 200 && res.data.data.inactive == false) {
-        setIsLoading(false)
-        setUser(res.data.data);
-        window.location.href = '/my-account-review'
+        setUser(res.data.data)
+        
+        // Use startTransition for non-blocking navigation
+        startTransition(() => {
+          router.push('/my-account-review')
+        })
       } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
         setIsLoading(false)
         setErrors(prev => ({
           ...prev,
           loginError: 'Your account is inactive. Please contact support for assistance.'
         }))
-      }
-      else {
+      } else {
+        setIsLoading(false)
         setErrors(prev => ({
           ...prev,
           loginError: res.data.message || 'Login failed. Please try again.'
@@ -132,7 +136,6 @@ export default function LoginComponent() {
         ...prev,
         loginError: errorMessage
       }))
-    } finally {
       setIsLoading(false)
     }
   }
@@ -184,7 +187,9 @@ export default function LoginComponent() {
   }
 
   const handleWholesaleRegister = () => {
-    console.log('Navigate to wholesale registration')
+    startTransition(() => {
+      router.push('/sign-up')
+    })
   }
 
   const openForgotPasswordPopup = () => {
@@ -201,83 +206,31 @@ export default function LoginComponent() {
     setForgotPasswordError('')
   }
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1
-      }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.4 }
-    }
-  }
-
-  const popupVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.3 }
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.8,
-      transition: { duration: 0.2 }
-    }
-  }
-
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    exit: { opacity: 0 }
-  }
-
   return (
     <>
       <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
-        <motion.div
-          className="max-w-md w-full"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
+        <div className="max-w-md w-full animate-fade-in">
           {/* Header */}
-          <motion.div className="text-center" variants={itemVariants}>
+          <div className="text-center">
             <h2 className="text-[2rem] font-bold sm:text-4xl font-bold text-gray-900 mb-2">
               LOG <span className="text-[#E9098D]">IN</span>
             </h2>
-            <h3 className="text-[24px] font-semibold  mb-2">
+            <h3 className="text-[24px] font-semibold mb-2">
               RETURNING CUSTOMER
             </h3>
-            <p className="text-[18px]  text-[#000000]/50 font-[400]">
+            <p className="text-[18px] text-[#000000]/50 font-[400]">
               Log in below to checkout with an existing account
             </p>
-          </motion.div>
+          </div>
 
           {/* Login Form */}
-          <motion.form
-            className=" space-y-6 bg-white p-6 sm:p-8 rounded-lg "
+          <form
+            className="space-y-6 bg-white p-6 sm:p-8 rounded-lg"
             onSubmit={handleLogin}
-            variants={itemVariants}
           >
             {/* General Login Error */}
             {errors.loginError && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="rounded-md bg-red-50 p-4 border border-red-200"
-              >
+              <div className="rounded-md bg-red-50 p-4 border border-red-200 animate-slide-down">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -290,13 +243,13 @@ export default function LoginComponent() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             <div className="space-y-5 text-[1rem] font-medium">
               {/* Email Field */}
-              <motion.div variants={itemVariants}>
-                <label htmlFor="email" className="block text-[1rem] font-medium  mb-2">
+              <div>
+                <label htmlFor="email" className="block text-[1rem] font-medium mb-2">
                   Required<span className="text-red-500 ml-1">*</span>
                 </label>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -320,18 +273,14 @@ export default function LoginComponent() {
                   placeholder="Enter your email address"
                 />
                 {errors.email && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-1 text-sm text-red-600"
-                  >
+                  <p className="mt-1 text-sm text-red-600 animate-slide-down">
                     {errors.email}
-                  </motion.p>
+                  </p>
                 )}
-              </motion.div>
+              </div>
 
               {/* Password Field */}
-              <motion.div variants={itemVariants}>
+              <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                   Password<span className="text-red-500 ml-1">*</span>
                 </label>
@@ -353,36 +302,31 @@ export default function LoginComponent() {
                   placeholder="Enter your password"
                 />
                 {errors.password && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-1 text-sm text-red-600"
-                  >
+                  <p className="mt-1 text-sm text-red-600 animate-slide-down">
                     {errors.password}
-                  </motion.p>
+                  </p>
                 )}
-              </motion.div>
+              </div>
             </div>
 
             {/* Login Button */}
             <div className='space-y-3'>
-              <motion.div variants={itemVariants} className=''>
-                <motion.button
+              <div>
+                <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || isPending}
                   className="
-                  group relative w-full flex justify-center py-2 px-4 border border-black 
-                   text-sm sm:text-base font-medium rounded-md 
-                  text-white bg-[#74C7F0] hover:bg-sky-500 
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-all duration-200 text-[1rem] font-[600]
-                "
-                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                    group relative w-full flex justify-center py-2 px-4 border border-black 
+                    text-sm sm:text-base font-medium rounded-md 
+                    text-white bg-[#74C7F0] hover:bg-sky-500 
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-200 text-[1rem] font-[600]
+                    hover:scale-[1.02] active:scale-[0.98]
+                  "
                 >
-                  {isLoading ? (
-                    <div className="flex items-centerb text-[17px] font-semibold">
+                  {isLoading || isPending ? (
+                    <div className="flex items-center text-[17px] font-semibold">
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -392,68 +336,56 @@ export default function LoginComponent() {
                   ) : (
                     'Log In'
                   )}
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
 
-
-
-              <motion.div variants={itemVariants}>
-                <motion.button
+              <div>
+                <button
                   type="button"
                   onClick={openForgotPasswordPopup}
                   className="
-                  w-full flex justify-center py-2 px-4  border border-black 
-                   text-sm sm:text-base font-medium rounded-md 
-                  text-white bg-[#E799A9] hover:bg-[#E799A9]/80
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                  transition-all duration-200 text-[1rem] font-[500]
-                "
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                    w-full flex justify-center py-2 px-4 border border-black 
+                    text-sm sm:text-base font-medium rounded-md 
+                    text-white bg-[#E799A9] hover:bg-[#E799A9]/80
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                    transition-all duration-200 text-[1rem] font-[500]
+                    hover:scale-[1.02] active:scale-[0.98]
+                  "
                 >
                   Forgot password?
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
 
               {/* Wholesale Register Button */}
-              <motion.div variants={itemVariants}>
-                <motion.button
+              <div>
+                <button
                   type="button"
                   onClick={handleWholesaleRegister}
                   className="
-                  w-full flex justify-center py-2 px-4 border border-black 
-                   text-sm sm:text-base font-medium rounded-md 
-                  text-white bg-[#2D2B70] hover:[#2D2B70]/80
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
-                  transition-all duration-200 text-[1rem] font-[500]
-                "
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                    w-full flex justify-center py-2 px-4 border border-black 
+                    text-sm sm:text-base font-medium rounded-md 
+                    text-white bg-[#2D2B70] hover:bg-[#2D2B70]/80
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                    transition-all duration-200 text-[1rem] font-[500]
+                    hover:scale-[1.02] active:scale-[0.98]
+                  "
                 >
                   Register for Wholesale Access
-                </motion.button>
-              </motion.div>
+                </button>
+              </div>
             </div>
-          </motion.form>
-        </motion.div>
+          </form>
+        </div>
       </div>
 
       {/* Forgot Password Popup */}
       {showForgotPasswordPopup && (
-        <motion.div
-          className="fixed inset-0 bg-[#000000]/50 bg-opacity-50 flex items-center justify-center z-50 p-4"
-          variants={overlayVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
+        <div
+          className="fixed inset-0 bg-[#000000]/50 flex items-center justify-center z-50 p-4 animate-fade-in"
           onClick={closeForgotPasswordPopup}
         >
-          <motion.div
-            className="bg-white rounded-lg p-6 w-full max-w-md"
-            variants={popupVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+          <div
+            className="bg-white rounded-lg p-6 w-full max-w-md animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
@@ -493,23 +425,15 @@ export default function LoginComponent() {
                   placeholder="Enter your email address"
                 />
                 {forgotPasswordError && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-1 text-sm text-red-600"
-                  >
+                  <p className="mt-1 text-sm text-red-600 animate-slide-down">
                     {forgotPasswordError}
-                  </motion.p>
+                  </p>
                 )}
               </div>
 
               {/* Success Message */}
               {forgotPasswordMessage && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="rounded-md bg-green-50 p-4 border border-green-200"
-                >
+                <div className="rounded-md bg-green-50 p-4 border border-green-200 animate-slide-down">
                   <div className="flex">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -522,7 +446,7 @@ export default function LoginComponent() {
                       </p>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
 
               <div className="flex space-x-3">
@@ -553,9 +477,11 @@ export default function LoginComponent() {
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
+
+    
     </>
   )
 }

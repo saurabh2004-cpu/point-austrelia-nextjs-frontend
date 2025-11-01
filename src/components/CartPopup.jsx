@@ -305,7 +305,6 @@ const ShoppingCartPopup = () => {
     } else if (item.productGroup && item.productGroup.thumbnail) {
       return item.productGroup.thumbnail;
     }
-    return '/product-listing-images/product-1.avif';
   };
 
   const getItemSku = (item) => {

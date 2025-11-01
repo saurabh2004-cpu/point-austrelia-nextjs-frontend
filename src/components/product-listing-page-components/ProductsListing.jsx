@@ -21,7 +21,7 @@ const ProductListing = () => {
     const [selectedProductGroup, setSelectedProductGroup] = useState(null)
     const [showFilters, setShowFilters] = useState(false)
     const [showProductPopup, setShowProductPopup] = useState(false)
-    const [perpageItems, setPerpageItems] = useState('12')
+    const [perpageItems, setPerpageItems] = useState('15')
     const router = useRouter()
     const [products, setProducts] = useState([])
     const [productGroups, setProductGroups] = useState([])
@@ -256,7 +256,7 @@ const ProductListing = () => {
 
     // Get cart item for product or product group
     const getCartItem = (itemId, isProductGroup = false) => {
-        return cartItems.find(item => {
+        return cartItems?.find(item => {
             if (isProductGroup) {
                 return item.productGroup && item.productGroup._id === itemId;
             } else {
@@ -622,6 +622,7 @@ const ProductListing = () => {
     }
 
     // CORRECTED: Fetch products and product groups with filters
+    // CORRECTED: Fetch products and product groups with filters
     const fetchItems = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
         try {
             setLoading(true);
@@ -676,17 +677,20 @@ const ProductListing = () => {
             setProductGroups(productGroupsData);
             setAllItems(sortedItems);
 
-            // Use product groups pagination info (or products if product groups is empty)
-            const paginationInfo = productGroupsResponse.data.data.pagination ||
-                productsResponse.data.data.pagination || {
+            // CORRECTED: Use the correct pagination info from products response
+            const productsPagination = productsResponse.data.data?.pagination;
+            const productGroupsPagination = productGroupsResponse.data.data?.pagination;
+
+            // Use products pagination as primary (since getAllProducts returns products pagination)
+            const paginationInfo = productsPagination || productGroupsPagination || {
                 currentPage: 1,
                 totalPages: 1,
-                totalItems: 0
+                totalProducts: 0
             };
 
-            setCurrentPage(paginationInfo.currentPage);
-            setTotalPages(paginationInfo.totalPages);
-            setTotalItems(paginationInfo.totalProductGroups || paginationInfo.totalProducts || 0);
+            setCurrentPage(paginationInfo.currentPage || 1);
+            setTotalPages(paginationInfo.totalPages || 1);
+            setTotalItems(paginationInfo.totalProducts || paginationInfo.totalProductGroups || 0);
 
             // Initialize quantities and selected units for products
             const initialQuantities = {};
@@ -717,6 +721,8 @@ const ProductListing = () => {
             setProductGroups([]);
             setAllItems([]);
             setTotalItems(0);
+            setCurrentPage(1);
+            setTotalPages(1);
         } finally {
             setLoading(false);
         }
@@ -782,7 +788,7 @@ const ProductListing = () => {
 
             console.log("Cart items:", response.data);
             if (response.data.statusCode === 200) {
-                const cartData = response.data.data || [];
+                const cartData = response.data.data.cartItems || response.data.data || [];
                 setCartItems(cartData);
                 setCartItemsCount(cartData.length);
 
@@ -1271,6 +1277,7 @@ const ProductListing = () => {
     }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
 
     // Generate pagination buttons
+    // Generate pagination buttons
     const renderPaginationButtons = () => {
         const buttons = []
         const maxVisibleButtons = 5
@@ -1288,12 +1295,12 @@ const ProductListing = () => {
                 key="prev"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 rounded-lg border ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50'
+                className={`px-4 py-2 rounded-lg border font-medium transition-colors ${currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                     }`}
             >
-                Previous
+                &larr; Previous
             </button>
         )
 
@@ -1303,14 +1310,14 @@ const ProductListing = () => {
                 <button
                     key={1}
                     onClick={() => handlePageChange(1)}
-                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50"
+                    className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors"
                 >
                     1
                 </button>
             )
             if (startPage > 2) {
                 buttons.push(
-                    <span key="ellipsis1" className="px-2 py-2">
+                    <span key="ellipsis1" className="px-3 py-2 text-gray-500 font-medium">
                         ...
                     </span>
                 )
@@ -1323,9 +1330,9 @@ const ProductListing = () => {
                 <button
                     key={i}
                     onClick={() => handlePageChange(i)}
-                    className={`px-3 py-2 rounded-lg border ${currentPage === i
-                        ? 'bg-[#2D2C70] text-white'
-                        : 'bg-white text-black hover:bg-gray-50'
+                    className={`px-4 py-2 rounded-lg border font-medium transition-colors ${currentPage === i
+                        ? 'bg-[#2D2C70] text-white border-[#2D2C70]'
+                        : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                         }`}
                 >
                     {i}
@@ -1337,7 +1344,7 @@ const ProductListing = () => {
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
                 buttons.push(
-                    <span key="ellipsis2" className="px-2 py-2">
+                    <span key="ellipsis2" className="px-3 py-2 text-gray-500 font-medium">
                         ...
                     </span>
                 )
@@ -1346,7 +1353,7 @@ const ProductListing = () => {
                 <button
                     key={totalPages}
                     onClick={() => handlePageChange(totalPages)}
-                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50"
+                    className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors"
                 >
                     {totalPages}
                 </button>
@@ -1359,12 +1366,12 @@ const ProductListing = () => {
                 key="next"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 rounded-lg border ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50'
+                className={`px-4 py-2 rounded-lg border font-medium transition-colors ${currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300'
+                    : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400'
                     }`}
             >
-                Next
+                Next &rarr;
             </button>
         )
 
@@ -1673,10 +1680,11 @@ const ProductListing = () => {
                                                             focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                             appearance-none  w-[135px]"
                                                 >
-                                                    <option value="12" className="text-[15px] font-medium">12 Per Page</option>
-                                                    <option value="16" className="text-[15px] font-medium">16 Per Page</option>
+                                                    <option value="10" className="text-[15px] font-medium">10 Per Page</option>
+                                                    <option value="15" className="text-[15px] font-medium">15 Per Page</option>
                                                     <option value="20" className="text-[15px] font-medium">20 Per Page</option>
-                                                    <option value="24" className="text-[15px] font-medium">24 Per Page</option>
+                                                    <option value="25" className="text-[15px] font-medium">25 Per Page</option>
+                                                    <option value="30" className="text-[15px] font-medium">30 Per Page</option>
                                                 </select>
 
                                                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
@@ -1755,9 +1763,18 @@ const ProductListing = () => {
                                             </div>
 
                                             {/* Pagination */}
+                                            {/* Pagination */}
                                             {totalPages > 1 && (
-                                                <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
-                                                    {renderPaginationButtons()}
+                                                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 mb-4">
+                                                    {/* Items count and page info */}
+                                                    <div className="text-sm text-gray-600 font-spartan">
+                                                        Showing {((currentPage - 1) * parseInt(perpageItems)) + 1} to {Math.min(currentPage * parseInt(perpageItems), totalItems)} of {totalItems} items
+                                                    </div>
+
+                                                    {/* Pagination buttons */}
+                                                    <div className="flex items-center space-x-2 flex-wrap justify-center">
+                                                        {renderPaginationButtons()}
+                                                    </div>
                                                 </div>
                                             )}
                                         </>

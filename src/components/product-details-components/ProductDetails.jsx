@@ -144,7 +144,6 @@ export default function ProductDetail() {
 
 
   // FIXED: Handle image structure properly for both products and product groups
-  // FIXED: Handle image structure properly for both products and product groups
   const getItemImages = (item) => {
     if (!item) return [];
 
@@ -192,9 +191,6 @@ export default function ProductDetail() {
 
     return [];
   };
-
-
-
 
   // Get current item (product or product group)
   const getCurrentItem = () => {
@@ -1704,6 +1700,7 @@ export default function ProductDetail() {
         <div className="bg-gray-300 min-w-[90vw] h-[1px] flex my-8 relative lg:right-34"></div>
 
         {/* Related Items Section */}
+        {/* Related Items Section */}
         <div className="space-y-8 lg:space-y-12 pb-18">
           <h2 className="text-xl sm:text-2xl lg:text-[2rem] font-medium text-center text-[#2E2F7F]">
             Related Items
@@ -1733,13 +1730,13 @@ export default function ProductDetail() {
                 const itemImages = getItemImages(item);
 
                 return (
-                  <div key={item._id} className="bg-white rounded-lg p-4 border border-gray-200">
-                    {/* Wishlist Icon */}
-                    <div className="relative">
+                  <div key={item._id} className="bg-white rounded-lg p-4 border border-gray-200 flex flex-col h-full">
+                    {/* Wishlist Icon & Badge Container */}
+                    <div className="relative mb-3">
                       <button
                         onClick={() => handleRelatedAddToWishList(item._id, isProductGroup)}
                         disabled={isWishlistLoading}
-                        className="absolute top-2 right-2 z-10"
+                        className="absolute top-0 right-0 z-10"
                       >
                         <div className="h-8 w-8 bg-[#D9D9D940] p-2 flex items-center justify-center rounded-full transition-colors cursor-pointer">
                           {isWishlistLoading ? (
@@ -1756,7 +1753,7 @@ export default function ProductDetail() {
 
                       {/* Product Group Badge */}
                       {isProductGroup && (
-                        <div className="absolute top-2 left-2 z-10">
+                        <div className="absolute top-0 left-0 z-10">
                           <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">
                             BUNDLE
                           </div>
@@ -1764,9 +1761,9 @@ export default function ProductDetail() {
                       )}
                     </div>
 
-                    {/* Item Image */}
+                    {/* Item Image - Fixed Height Container */}
                     <div
-                      className="relative flex justify-center py-6 mb-4 border border-gray-200 rounded-xl cursor-pointer bg-gray-50"
+                      className="relative flex justify-center items-center py-6 mb-4 border border-gray-200 rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
                       onClick={() => handleRelatedItemClick(
                         isProductGroup ? item.name : item.ProductName,
                         item._id,
@@ -1776,14 +1773,14 @@ export default function ProductDetail() {
                       <img
                         src={itemImages[0] || "/placeholder.svg"}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="h-[10.0625rem] object-contain"
+                        className="max-h-[140px] w-auto object-contain"
                       />
                     </div>
 
-                    {/* Item Info */}
-                    <div className="font-spartan text-[14px] font-medium">
+                    {/* Item Info - Flex column that grows to fill space */}
+                    <div className="flex flex-col flex-grow">
                       <h3
-                        className="text-gray-900 text-sm mb-1 line-clamp-2 hover:text-[#E9098D] cursor-pointer"
+                        className="text-gray-900 text-sm mb-2 line-clamp-2 hover:text-[#E9098D] cursor-pointer min-h-[40px] flex items-start"
                         onClick={() => handleRelatedItemClick(
                           isProductGroup ? item.name : item.ProductName,
                           item._id,
@@ -1792,161 +1789,165 @@ export default function ProductDetail() {
                       >
                         {isProductGroup ? item.name : item.ProductName}
                       </h3>
-                      <p className="mb-2 text-xs text-gray-600">SKU: {item.sku}</p>
 
-                      {/* Product Group Info */}
-                      {isProductGroup && item.products && item.products.length > 0 && (
-                        <div className="mb-2 text-xs text-blue-600">
-                          Includes {item.products.length} product(s)
-                        </div>
-                      )}
+                      <div className="font-spartan text-[14px] font-medium flex-grow">
+                        <p className="mb-2 text-xs text-gray-600">SKU: {item.sku}</p>
 
-                      {/* Stock Status */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className={`flex items-center space-x-1 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
-                          <svg className={`w-3 h-3 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          <span className={`text-xs font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
-                            {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="flex items-center space-x-2 mb-3">
-                        <span className="text-[#2D2C70] text-[16px] font-semibold">
-                          ${discountedPrice.toFixed(2)}
-                        </span>
-                        {hasItemDiscount && item.eachPrice && discountedPrice < item.eachPrice && (
-                          <span className="text-xs text-gray-500 line-through">
-                            ${item.eachPrice.toFixed(2)}
-                          </span>
-                        )}
-                        {discountPercentage && discountPercentage > 0 && (
-                          <span className="text-xs text-green-600 font-semibold">
-                            ({discountPercentage}% OFF)
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Stock Error Message */}
-                      {stockError && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs mb-2">
-                          {stockError}
-                        </div>
-                      )}
-
-                      {/* Units Dropdown - Only for products */}
-                      {!isProductGroup && (
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Units</label>
-                          <div className="relative w-full">
-                            <select
-                              value={relatedItemsSelectedUnits[item._id] || ''}
-                              onChange={(e) => handleRelatedUnitChange(item._id, e.target.value, item)}
-                              disabled={isOutOfStock}
-                              className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-xs 
-                                      focus:outline-none focus:ring-1 focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                      appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            >
-                              {item.typesOfPacks && item.typesOfPacks.length > 0 ? (
-                                item.typesOfPacks.map((pack) => (
-                                  <option key={pack._id} value={pack._id}>
-                                    {pack.name}
-                                  </option>
-                                ))
-                              ) : (
-                                <option value="">No packs available</option>
-                              )}
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                              <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
+                        {/* Product Group Info */}
+                        {isProductGroup && item.products && item.products.length > 0 && (
+                          <div className="mb-2 text-xs text-blue-600">
+                            Includes {item.products.length} product(s)
                           </div>
-                        </div>
-                      )}
-
-                      {/* Quantity Controls */}
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-700">Quantity</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            className="w-6 h-6 bg-black text-white rounded flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            onClick={() => handleRelatedQuantityChange(item._id, -1, isProductGroup)}
-                            disabled={(relatedItemsQuantities[item._id] || 1) <= 1}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-sm font-medium min-w-[1.5rem] text-center">
-                            {relatedItemsQuantities[item._id] || 1}
-                          </span>
-                          <button
-                            className="w-6 h-6 bg-black text-white rounded flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            onClick={() => handleRelatedQuantityChange(item._id, 1, isProductGroup)}
-                            disabled={isOutOfStock}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Add to Cart Button - Show when NOT in cart */}
-
-                      <button
-                        className={`flex w-full items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
-                          ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                          : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
-                          }`}
-                        onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
-                        disabled={isOutOfStock || isCartLoading || !!stockError}
-                      >
-                        {isCartLoading ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" viewBox="0 0 21 21" fill="currentColor">
-                              <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                            </svg>
-                            Add to Cart
-                          </>
                         )}
-                      </button>
 
-                      {/* Action Buttons Row - Only show when item is in cart */}
-                      {isInCart && (
-                        <div className="flex space-x-2 mt-1">
-                          <button
-                            className="flex-1 space-x-1 border border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-                            disabled
-                          >
-                            <span>Added</span>
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        {/* Stock Status */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`flex items-center space-x-1 px-2 py-1 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
+                            <svg className={`w-3 h-3 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
-                          </button>
-                          <div className="w-px bg-gray-300 h-6 my-auto"></div>
-                          <button
-                            className={`flex-1 border rounded-lg py-2 text-xs font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
-                              ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                              : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
-                              }`}
-                            onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
-                            disabled={isOutOfStock || isCartLoading || !!stockError}
-                          >
-                            {isCartLoading ? 'Updating...' : 'Update'}
-                          </button>
+                            <span className={`text-xs font-semibold font-spartan ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                              {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                            </span>
+                          </div>
                         </div>
-                      )}
 
-                      {/* Cart Quantity Info */}
-                      {isInCart && cartItem && (
-                        <div className="mt-2 text-xs font-medium text-black hover:text-[#E9098D] text-start">
-                          In Cart: {cartItem.unitsQuantity} ({cartItem.packType})
+                        {/* Price */}
+                        <div className="flex items-center space-x-2 mb-3">
+                          <span className="text-[#2D2C70] text-[16px] font-semibold">
+                            ${discountedPrice.toFixed(2)}
+                          </span>
+                          {hasItemDiscount && item.eachPrice && discountedPrice < item.eachPrice && (
+                            <span className="text-xs text-gray-500 line-through">
+                              ${item.eachPrice.toFixed(2)}
+                            </span>
+                          )}
+                          {discountPercentage && discountPercentage > 0 && (
+                            <span className="text-xs text-green-600 font-semibold">
+                              ({discountPercentage}% OFF)
+                            </span>
+                          )}
                         </div>
-                      )}
+
+                        {/* Stock Error Message */}
+                        {stockError && (
+                          <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs mb-3">
+                            {stockError}
+                          </div>
+                        )}
+
+                        {/* Units Dropdown - Only for products */}
+                        {!isProductGroup && (
+                          <div className="mb-3">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Units</label>
+                            <div className="relative w-full">
+                              <select
+                                value={relatedItemsSelectedUnits[item._id] || ''}
+                                onChange={(e) => handleRelatedUnitChange(item._id, e.target.value, item)}
+                                disabled={isOutOfStock}
+                                className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-xs 
+                                focus:outline-none focus:ring-1 focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                                appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              >
+                                {item.typesOfPacks && item.typesOfPacks.length > 0 ? (
+                                  item.typesOfPacks.map((pack) => (
+                                    <option key={pack._id} value={pack._id}>
+                                      {pack.name}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option value="">No packs available</option>
+                                )}
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Quantity Controls */}
+                        <div className="mb-4 flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-700">Quantity</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              className="w-6 h-6 bg-black text-white rounded flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                              onClick={() => handleRelatedQuantityChange(item._id, -1, isProductGroup)}
+                              disabled={(relatedItemsQuantities[item._id] || 1) <= 1}
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-sm font-medium min-w-[1.5rem] text-center">
+                              {relatedItemsQuantities[item._id] || 1}
+                            </span>
+                            <button
+                              className="w-6 h-6 bg-black text-white rounded flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                              onClick={() => handleRelatedQuantityChange(item._id, 1, isProductGroup)}
+                              disabled={isOutOfStock}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Add to Cart Button Area */}
+                        <div className="mt-auto">
+                          {/* Add to Cart Button - Show when NOT in cart */}
+                          {!isInCart && (
+                            <button
+                              className={`flex w-full items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
+                                ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                }`}
+                              onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
+                              disabled={isOutOfStock || isCartLoading || !!stockError}
+                            >
+                              {isCartLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              ) : (
+                                <>
+                                  <svg className="w-4 h-4" viewBox="0 0 21 21" fill="currentColor">
+                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                  </svg>
+                                  Add to Cart
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Action Buttons Row - Only show when item is in cart */}
+                          {isInCart && (
+                            <div className="flex space-x-2">
+                              <button
+                                className="flex-1 border border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                disabled
+                              >
+                                <span>Added</span>
+                                <Check className="ml-1 h-3 w-3" />
+                              </button>
+                              <button
+                                className={`flex-1 border rounded-lg py-2 text-xs font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
+                                  ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                                  : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                  }`}
+                                onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
+                                disabled={isOutOfStock || isCartLoading || !!stockError}
+                              >
+                                {isCartLoading ? 'Updating...' : 'Update'}
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Cart Quantity Info */}
+                          {isInCart && cartItem && (
+                            <div className="mt-2 text-xs font-medium text-black hover:text-[#E9098D] text-center">
+                              In Cart: {cartItem.unitsQuantity} ({cartItem.packType})
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

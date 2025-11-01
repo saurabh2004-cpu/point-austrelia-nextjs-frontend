@@ -233,14 +233,11 @@ export default function SignUpComponent() {
 
   return (
     <div className="bg-white flex items-center justify-center px-3 sm:px-4 md:px-6 lg:px-8 font-spartan">
-      <motion.div
+      <div
         className="max-w-4xl w-full space-y-6 sm:space-y-8 py-12"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
       >
         {/* Header */}
-        <motion.div className="text-center px-2" variants={itemVariants}>
+        <div className="text-center px-2">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2rem] font-bold text-gray-900 mb-2">
             SIGN <span className="text-[#E9098D]">UP</span>
           </h2>
@@ -253,27 +250,26 @@ export default function SignUpComponent() {
           <p className="text-sm sm:text-base md:text-lg lg:text-[18px] text-[#000000]/50 font-[400] px-2 sm:px-4">
             Please complete the form for request access to become a wholesale customer
           </p>
-        </motion.div>
+        </div>
 
         {/* Sign Up Form */}
-        <motion.form
+        <form
           className="space-y-4 sm:space-y-6 bg-white px-4 sm:px-6 lg:px-8 rounded-lg"
           onSubmit={handleSubmit}
-          variants={itemVariants}
         >
           <div className="space-y-4 sm:space-y-5 text-sm sm:text-base lg:text-[1rem] font-medium">
 
             {/* Required Label */}
-            <motion.div variants={itemVariants}>
+            <div >
               <label className="block text-sm sm:text-base lg:text-[1rem] font-medium mb-2 sm:mb-4">
                 Required<span className="text-red-500 ml-1">*</span>
               </label>
-            </motion.div>
+            </div>
 
 
 
             {/* Customer Name & Contact Name Row */}
-            <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="customerName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Customer Name<span className="text-red-500 ml-1">*</span>
@@ -320,10 +316,10 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactName}</p>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Contact Email & Customer Email Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="contactEmail" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Contact Email<span className="text-red-500 ml-1">*</span>
@@ -370,10 +366,10 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.customerEmail}</p>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Customer Phone & Store Name Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="CustomerPhoneNo" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Customer Phone<span className="text-red-500 ml-1">*</span>
@@ -420,10 +416,10 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.storeName}</p>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* ABN & Type of Business Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="abn" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   ABN<span className="text-red-500 ml-1">*</span>
@@ -482,11 +478,11 @@ export default function SignUpComponent() {
                 )}
               </div>
 
-            </motion.div>
+            </div>
 
             {/* Custom Business Type (shown only when "Other" is selected) */}
             {formData.category === 'Other' && (
-              <motion.div
+              <div
                 className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22"
                 variants={itemVariants}
                 initial={{ opacity: 0, height: 0 }}
@@ -518,11 +514,11 @@ export default function SignUpComponent() {
                     <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.customCategory}</p>
                   )}
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Address 1 & Address 2 Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="address1" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Address 1<span className="text-red-500 ml-1">*</span>
@@ -565,10 +561,10 @@ export default function SignUpComponent() {
                   "
                 />
               </div>
-            </motion.div>
+            </div>
 
             {/* Suburb & Country Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="suburb" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Suburb<span className="text-red-500 ml-1">*</span>
@@ -618,10 +614,10 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.country}</p>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* State & Post Code Row */}
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="state" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   State<span className="text-red-500 ml-1">*</span>
@@ -679,9 +675,9 @@ export default function SignUpComponent() {
                 )}
               </div>
 
-            </motion.div>
+            </div>
 
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Password<span className="text-red-500 ml-1">*</span>
@@ -705,21 +701,21 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.password}</p>
                 )}
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* Submit Error */}
           {
             errors.submit && (
-              <motion.div variants={itemVariants} className="text-center">
+              <div variants={itemVariants} className="text-center">
                 <p className="text-red-600 text-sm">{errors.submit}</p>
-              </motion.div>
+              </div>
             )
           }
 
           {/* Submit Button */}
-          <motion.div variants={itemVariants} className="pt-2 sm:pt-4 justify-center flex">
-            <motion.button
+          <div variants={itemVariants} className="pt-2 sm:pt-4 justify-center flex">
+            <button
               type="submit"
               disabled={isLoading}
               className="
@@ -744,11 +740,11 @@ export default function SignUpComponent() {
               ) : (
                 'Submit Request'
               )}
-            </motion.button>
-          </motion.div>
+            </button>
+          </div>
           {successMessage && <div className="text-green-500 mb-4 w-full flex mx-auto justify-center">{successMessage}</div>}
-        </motion.form >
-      </motion.div >
+        </form >
+      </div >
     </div >
   )
 }

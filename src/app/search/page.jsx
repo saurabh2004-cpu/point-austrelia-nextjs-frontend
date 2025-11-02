@@ -28,7 +28,7 @@ const SearchPage = () => {
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
     const [loading, setLoading] = useState(false)
-    const [perpageItems, setPerpageItems] = useState('12')
+    const [perpageItems, setPerpageItems] = useState('10')
     const [cartItems, setCartItems] = useState([])
     const [stockErrors, setStockErrors] = useState({})
     const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
@@ -276,7 +276,7 @@ const SearchPage = () => {
 
         // For product groups, we don't have typesOfPacks, so use default pack quantity of 1
         const packQuantity = isProductGroup ? 1 :
-            (getPackTypes(item).find(pack => pack._id === packIdToUse) ? 
+            (getPackTypes(item).find(pack => pack._id === packIdToUse) ?
                 parseInt(getPackTypes(item).find(pack => pack._id === packIdToUse).quantity) : 1);
 
         return packQuantity * unitsToUse;
@@ -440,7 +440,7 @@ const SearchPage = () => {
 
             // For product groups, we don't have typesOfPacks, so use default values
             const packQuantity = isProductGroup ? 1 :
-                (getPackTypes(item).find(pack => pack._id === selectedUnits[itemId]) ? 
+                (getPackTypes(item).find(pack => pack._id === selectedUnits[itemId]) ?
                     parseInt(getPackTypes(item).find(pack => pack._id === selectedUnits[itemId]).quantity) : 1);
 
             const unitsQuantity = quantitiesState[itemId] || 1;
@@ -450,7 +450,7 @@ const SearchPage = () => {
             const discountedPrice = calculateDiscountedPrice(item, isProductGroup);
 
             // Calculate total amount using the discounted price
-            const totalAmount =  discountedPrice;
+            const totalAmount = discountedPrice;
 
             // Determine discount type and percentage
             let discountType = "";
@@ -564,8 +564,8 @@ const SearchPage = () => {
                 setWishlistItemsCount(response.data.data?.wishlistItems?.length || response.data.data?.length || 0);
 
                 // Show wishlist notification
-                const item = isProductGroup ? 
-                    productGroups.find(p => p._id === itemId) : 
+                const item = isProductGroup ?
+                    productGroups.find(p => p._id === itemId) :
                     products.find(p => p._id === itemId);
                 const itemName = isProductGroup ? item?.name : item?.ProductName;
                 const action = isItemInWishlist(itemId, isProductGroup) ? "removed from" : "added to";
@@ -1024,8 +1024,39 @@ const SearchPage = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center ">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU {isProductGroup ? item.sku : item.sku}
+                            SKU : {isProductGroup ? item.sku : item.sku}
                         </p>
+
+                        {/* Stock Status
+                        <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
+                            {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>}
+                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                                {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                            </span>
+                        </div> */}
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex justify-between">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                                ${discountedPrice.toFixed(2)}
+                            </span>
+                            {/* Show original price with line-through ONLY if discounted price is less than original price */}
+                            {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && (
+                                <span className="text-sm text-gray-500 line-through">
+                                    ${isProductGroup ? (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00') : (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00')}
+                                </span>
+                            )}
+                            {/* Show discount percentage ONLY if discounted price is less than original price */}
+                            {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && discountPercentage && discountPercentage > 0 && (
+                                <span className="text-sm text-green-600 font-semibold">
+                                    {discountPercentage}% OFF
+                                </span>
+                            )}
+                        </div>
 
                         {/* Stock Status */}
                         <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
@@ -1036,25 +1067,6 @@ const SearchPage = () => {
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                             </span>
                         </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className="flex items-center space-x-2">
-                        <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
-                            ${discountedPrice.toFixed(2)}
-                        </span>
-                        {/* Show original price with line-through ONLY if discounted price is less than original price */}
-                        {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && (
-                            <span className="text-sm text-gray-500 line-through">
-                                ${isProductGroup ? (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00') : (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00')}
-                            </span>
-                        )}
-                        {/* Show discount percentage ONLY if discounted price is less than original price */}
-                        {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && discountPercentage && discountPercentage > 0 && (
-                            <span className="text-sm text-green-600 font-semibold">
-                                {discountPercentage}% OFF
-                            </span>
-                        )}
                     </div>
 
                     {/* Product Group Info */}
@@ -1292,10 +1304,10 @@ const SearchPage = () => {
                                                         focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                         appearance-none  w-[135px]"
                                             >
-                                                <option value="12" className="text-[15px] font-medium">12 Per Page</option>
-                                                <option value="16" className="text-[15px] font-medium">16 Per Page</option>
+                                                <option value="10" className="text-[15px] font-medium">10 Per Page</option>
+                                                <option value="15" className="text-[15px] font-medium">15 Per Page</option>
                                                 <option value="20" className="text-[15px] font-medium">20 Per Page</option>
-                                                <option value="24" className="text-[15px] font-medium">24 Per Page</option>
+                                                <option value="25" className="text-[15px] font-medium">25 Per Page</option>
                                             </select>
 
                                             <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">

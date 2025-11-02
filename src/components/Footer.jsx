@@ -2,6 +2,7 @@
 'use client'
 import axiosInstance from "@/axios/axiosInstance";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function Footer() {
@@ -81,9 +82,9 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-600 hover:text-[#E9098D] transition-colors">
+                <Link href="/sales-rep-login" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Sales Rep Login
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="/contact-us" className="text-gray-600 hover:text-[#E9098D] transition-colors">

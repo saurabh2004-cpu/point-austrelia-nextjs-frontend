@@ -16,6 +16,7 @@ import useWishlistStore from "@/zustand/wishList"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
+import { nav } from "framer-motion/client"
 
 // Custom hook for click outside detection
 const useClickOutside = (callback) => {
@@ -87,8 +88,10 @@ export function Navbar() {
     const fetchCurentUser = async () => {
       try {
         const response = await axiosInstance.get('user/get-current-user');
-        if (response.data.statusCode === 200) {
+        if (response.data.statusCode === 200 && response.data.data.inactive == false) {
           setUser(response.data.data);
+        }else{
+          navigate('/login');
         }
       } catch (error) {
         console.error("Error fetching current user:", error);
@@ -163,7 +166,7 @@ export function Navbar() {
         console.error("Error fetching brands:", error)
       }
     }
-    
+
     // Don't block rendering - fetch in background
     fetchBrands()
   }, [])
@@ -465,8 +468,8 @@ export function Navbar() {
       {/* Loading indicator */}
       {isPending && (
         <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200">
-          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-pulse" 
-               style={{ width: '30%' }} />
+          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-pulse"
+            style={{ width: '30%' }} />
         </div>
       )}
 
@@ -672,8 +675,13 @@ export function Navbar() {
                       >
                         <path d="M14.8633 0.526367C17.9009 0.526367 20.3633 3.02637 20.3633 6.52637C20.3633 13.5264 12.8633 17.5264 10.3633 19.0264C7.86328 17.5264 0.363281 13.5264 0.363281 6.52637C0.363281 3.02637 2.86328 0.526367 5.86328 0.526367C7.72325 0.526367 9.36328 1.52637 10.3633 2.52637C11.3633 1.52637 13.0033 0.526367 14.8633 0.526367ZM11.2972 16.1302C12.1788 15.5749 12.9733 15.0219 13.7182 14.4293C16.697 12.0594 18.3633 9.46987 18.3633 6.52637C18.3633 4.16713 16.8263 2.52637 14.8633 2.52637C13.7874 2.52637 12.6226 3.09548 11.7775 3.94058L10.3633 5.3548L8.94908 3.94058C8.10396 3.09548 6.93918 2.52637 5.86328 2.52637C3.92234 2.52637 2.36328 4.18287 2.36328 6.52637C2.36328 9.46987 4.02955 12.0594 7.00842 14.4293C7.75328 15.0219 8.54778 15.5749 9.42938 16.1302C9.72788 16.3183 10.0244 16.4993 10.3633 16.7016C10.7022 16.4993 10.9987 16.3183 11.2972 16.1302Z" />
                       </svg>
-                      <span className="absolute -top-1 -right-2 h-4 w-4 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">
-                        {currentWishlistItems || 0}
+                      <span className={`
+                          absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs 
+                          bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200
+                          ${(currentWishlistItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'}
+                          ${(currentWishlistItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}
+                        `}>
+                        {currentWishlistItems > 999 ? '999+' : currentWishlistItems || 0}
                       </span>
                     </Link>
                   )}
@@ -693,9 +701,14 @@ export function Navbar() {
                       >
                         <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                       </svg>
-                      <Badge className="absolute -top-1 -right-2 h-4 w-4 p-0 text-xs bg-[#2d2c70] group-hover:bg-[#E9098D]">
-                        {currentCartItems || 0}
-                      </Badge>
+                      <span className={`
+                          absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs 
+                          bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200
+                          ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'}
+                          ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}
+                        `}>
+                        {currentCartItems > 999 ? '999+' : currentCartItems || 0}
+                      </span>
                     </button>
                   )}
                 </div>

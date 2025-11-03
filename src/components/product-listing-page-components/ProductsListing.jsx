@@ -266,10 +266,22 @@ const ProductListing = () => {
 
     // Get cart item for product or product group
     const getCartItem = (itemId, isProductGroup = false) => {
+
+        
+
         return cartItems?.find(item => {
             if (isProductGroup) {
+
+                if (!item.productGroup) {
+                    return false;
+                }
+
                 return item.productGroup && item.productGroup._id === itemId;
             } else {
+
+                if (!item.product) {
+                    return false;
+                }
                 return item.product && item.product._id === itemId;
             }
         });
@@ -798,7 +810,7 @@ const ProductListing = () => {
 
             console.log("Cart items:", response.data);
             if (response.data.statusCode === 200) {
-                const cartData = response.data.data.cartItems || response.data.data || [];
+                const cartData = response.data.data.items || response.data.data || [];
                 setCartItems(cartData);
                 setCartItemsCount(cartData.length);
 

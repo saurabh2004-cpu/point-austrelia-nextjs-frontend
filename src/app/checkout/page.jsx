@@ -260,6 +260,7 @@ const CheckoutComponent = () => {
         addressData: null,
         addressId: null
     });
+    const [totalTax, setTotalTax] = useState(0);
 
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -643,7 +644,7 @@ const CheckoutComponent = () => {
         });
 
         const shippingAmount = parseFloat(currentUser?.defaultShippingRate || 0);
-        const totalAmount = subtotalAmount + gstAmount + shippingAmount ;
+        const totalAmount = subtotalAmount + totalTax + shippingAmount;
 
         return {
             subtotal: subtotalAmount,
@@ -730,9 +731,13 @@ const CheckoutComponent = () => {
             setLoading(true);
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
+            console.log("custtomers cart in checkout page ", response)
+
             if (response.data.statusCode === 200) {
-                const items = response.data.data || [];
+                const items = response.data.data.items || [];
                 setCartItems(items);
+
+                setTotalTax(response.data.data.totals.tax || 0);
 
                 const quantities = {};
                 const packs = {};
@@ -1033,7 +1038,7 @@ const CheckoutComponent = () => {
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-[#000000]/80">GST</span>
-                                            <span>${totals.gst.toFixed(2)}</span>
+                                            <span>${totalTax.toFixed(2)}</span>
                                         </div>
                                     </div>
                                     <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">

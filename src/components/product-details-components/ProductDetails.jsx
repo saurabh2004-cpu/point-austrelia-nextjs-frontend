@@ -1235,9 +1235,9 @@ export default function ProductDetail() {
 
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
-      console.log("Cart items:", response.data.data);
+      // console.log("Cart items:", response.data.data.items);
       if (response.data.statusCode === 200) {
-        setCartItems(response.data.data || []);
+        setCartItems(response.data.data.items || []);
       }
     } catch (error) {
       console.error('Error fetching customer cart:', error);

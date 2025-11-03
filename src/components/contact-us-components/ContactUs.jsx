@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { House, Mail, MapPin, Phone } from "lucide-react"
 import Image from "next/image"
+import axios from "axios"
+import axiosInstance from "@/axios/axiosInstance"
 
 export default function ContactUs() {
     const [formData, setFormData] = useState({
@@ -16,16 +18,56 @@ export default function ContactUs() {
         address: "",
         message: "",
     })
+    const [loading, setLoading] = useState(false)
+    const [submitStatus, setSubmitStatus] = useState(null) // null, 'success', 'error'
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
         setFormData((prev) => ({ ...prev, [name]: value }))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        console.log("Form submitted:", formData)
-        // Handle form submission here
+        setLoading(true)
+        setSubmitStatus(null)
+
+        try {
+            // Prepare data for API (matching the schema field names)
+            const submitData = {
+                FullName: formData.fullName,
+                Company: formData.company,
+                Email: formData.email,
+                PhoneNumber: formData.phoneNumber,
+                Address: formData.address,
+                Message: formData.message,
+            }
+
+            const response = await axiosInstance.post('contact-us-data/create-contact-us', submitData, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            if (response.data.statusCode === 201 || response.data.statusCode === 200) {
+                setSubmitStatus('success')
+                // Reset form
+                setFormData({
+                    fullName: "",
+                    company: "",
+                    email: "",
+                    phoneNumber: "",
+                    address: "",
+                    message: "",
+                })
+            } else {
+                setSubmitStatus('error')
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error)
+            setSubmitStatus('error')
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
@@ -49,7 +91,7 @@ export default function ContactUs() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Image src='/icons/home-icon-1.png' width={18} height={16} />
+                            <Image src={'/icons/home-icon-1.png' || '' } width={18} height={16} />
                             <span className="text-gray-900 text-sm md:text-base">25 Jade Drive, Molendinar QLD 4214</span>
                         </div>
 
@@ -73,21 +115,15 @@ export default function ContactUs() {
 
                     {/* Map */}
                     <div className="w-full h-48 md:w-[465px] md:h-[281px] bg-gray-200 rounded-lg overflow-hidden">
-                        {/* <img
-                            src="/map-showing-location-in-molendinar-qld-australia.jpg"
-                            alt="Map showing location at 25 Jade Drive, Molendinar QLD 4214"
-                            className="w-full h-full object-cover"
-                        /> */}
-
                         <iframe
                             src="https://www.google.com/maps?q=Mumbai,India&z=12&output=embed"
                             width="600"
                             height="450"
                             style={{ border: 0 }}
-                            allowFullScreen   // ✅ React version
+                            allowFullScreen
                             loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade" // ✅ React version
-                            title="Google Maps"  // ✅ Always add a title for accessibility
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Google Maps"
                         />
                     </div>
                 </div>
@@ -98,6 +134,23 @@ export default function ContactUs() {
                         <h2 className="text-[1.8rem]  font-medium ">We'd love to hear from you!</h2>
                         <p className="text-[#E9098D] text-[1.8rem]  font-medium ">Let's get in touch</p>
                     </div>
+
+                    {/* Status Messages */}
+                    {submitStatus === 'success' && (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-green-800 text-sm font-medium">
+                                Thank you for your message! We'll get back to you soon.
+                            </p>
+                        </div>
+                    )}
+
+                    {submitStatus === 'error' && (
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <p className="text-red-800 text-sm font-medium">
+                                Sorry, there was an error sending your message. Please try again.
+                            </p>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -113,6 +166,7 @@ export default function ContactUs() {
                                     value={formData.fullName}
                                     onChange={handleInputChange}
                                     className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                                    disabled={loading}
                                 />
                             </div>
 
@@ -128,6 +182,7 @@ export default function ContactUs() {
                                     value={formData.company}
                                     onChange={handleInputChange}
                                     className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -145,6 +200,7 @@ export default function ContactUs() {
                                     value={formData.email}
                                     onChange={handleInputChange}
                                     className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                                    disabled={loading}
                                 />
                             </div>
 
@@ -160,6 +216,7 @@ export default function ContactUs() {
                                     value={formData.phoneNumber}
                                     onChange={handleInputChange}
                                     className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                                    disabled={loading}
                                 />
                             </div>
                         </div>
@@ -176,6 +233,7 @@ export default function ContactUs() {
                                 value={formData.address}
                                 onChange={handleInputChange}
                                 className="w-full bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                                disabled={loading}
                             />
                         </div>
 
@@ -195,21 +253,21 @@ export default function ContactUs() {
                                     name="message"
                                     required
                                     rows={4}
-                                    placeholder="" // remove placeholder text since label is used
+                                    placeholder=""
                                     value={formData.message}
                                     onChange={handleInputChange}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-md text-[15px] pt-10 px-3 focus:border-blue-500 focus:ring-blue-500 resize-none"
+                                    disabled={loading}
                                 />
                             </div>
-
-
                         </div>
 
                         <Button
                             type="submit"
-                            className="w-full border border-black bg-[#2D2C70] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg hover:bg-[#2D2C70]/5 transition-colors"
+                            disabled={loading}
+                            className="w-full border border-black bg-[#2D2C70] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg  transition-colors disabled:cursor-not-allowed"
                         >
-                            Send Message
+                            {loading ? "Sending..." : "Send Message"}
                         </Button>
                     </form>
                 </div>

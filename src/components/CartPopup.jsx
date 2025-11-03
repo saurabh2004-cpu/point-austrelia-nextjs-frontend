@@ -29,7 +29,7 @@ const ShoppingCartPopup = () => {
       console.log("get cart by customer id ", response)
 
       if (response.data.statusCode === 200) {
-        const items = response.data.data || [];
+        const items = response.data.data.items || [];
         setCartItems(items);
         const quantities = {};
         const packs = {};
@@ -75,10 +75,10 @@ const ShoppingCartPopup = () => {
       setError("Please login to remove cart items");
       return;
     }
-    
+
     const itemId = productId || productGroupId;
     setUpdatingItems(prev => ({ ...prev, [itemId]: true }));
-    
+
     try {
       const response = await axiosInstance.put(`cart/remove-from-cart/${customerId}`, {
         productId: productId || null,
@@ -128,7 +128,7 @@ const ShoppingCartPopup = () => {
   // Check if requested quantity exceeds stock level
   const exceedsStockLevel = (item) => {
     const totalQuantity = calculateDisplayTotalQuantity(item);
-    
+
     if (item.product) {
       // For individual products
       return totalQuantity > item.product.stockLevel;
@@ -137,7 +137,7 @@ const ShoppingCartPopup = () => {
       const minStock = Math.min(...item.productGroup.products.map(p => p.stockLevel || 0));
       return totalQuantity > minStock;
     }
-    
+
     return false;
   };
 
@@ -328,7 +328,7 @@ const ShoppingCartPopup = () => {
 
   const isItemModified = (item) => {
     const currentUnits = localQuantities[item._id];
-    
+
     if (item.product) {
       const selectedPackId = selectedPacks[item._id];
       const availablePacks = packDetails[item._id] || item.product.typesOfPacks || [];
@@ -339,7 +339,7 @@ const ShoppingCartPopup = () => {
       // For product groups, only check quantity changes
       return currentUnits !== item.unitsQuantity;
     }
-    
+
     return false;
   };
 

@@ -502,7 +502,7 @@ export default function ProductPopup({
             if (!currentUser?._id) return
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
             if (response.data.statusCode === 200) {
-                setCartItems(response.data.data || [])
+                setCartItems(response.data.data.items || [])
             }
         } catch (error) {
             console.error("Error fetching customer cart:", error)

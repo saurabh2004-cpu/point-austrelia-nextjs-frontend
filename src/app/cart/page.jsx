@@ -32,6 +32,9 @@ const ShoppingCart = () => {
         totalQuantity: 0,
         totalItems: 0
     });
+    const [brandWiseTotals, setBrandWiseTotals] = useState([]);
+
+
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -142,7 +145,7 @@ const ShoppingCart = () => {
             console.log("customer cart cart ", response.data.data)
 
             if (response.data.statusCode === 200) {
-                const { items, pagination: paginationData, totals: totalsData } = response.data.data;
+                const { items, pagination: paginationData, totals: totalsData, brandWiseTotals } = response.data.data;
                 setTotals(totalsData || {
                     subtotal: 0,
                     tax: 0,
@@ -150,6 +153,8 @@ const ShoppingCart = () => {
                     totalQuantity: 0,
                     totalItems: 0
                 });
+
+                setBrandWiseTotals(brandWiseTotals || {});
 
                 if (isLoadMore) {
                     // Append new items for infinite scroll
@@ -998,10 +1003,10 @@ const ShoppingCart = () => {
                                         <div className="text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-[1rem] font-[400]">
-                                                    <span className='text-[20px] font-medium'>Subtotal</span> ({calculateRealtimeTotalQuantity()} Items)
+                                                    <span className='text-[20px] font-medium'>Subtotal</span> ({totals.totalQuantity} Items)
                                                 </span>
                                                 <span className="text-[20px] font-medium text-[#2D2C70]">
-                                                    ${calculateRealtimeSubtotal().toFixed(2)}
+                                                    ${totals?.subtotal.toFixed(2)}
                                                 </span>
                                             </div>
                                             <div className="text-[14px] text-[400] text-gray-600">
@@ -1010,18 +1015,19 @@ const ShoppingCart = () => {
                                         </div>
 
                                         {/* Brand-wise Pricing - Real-time */}
-                                        {Object.entries(calculateBrandWisePricing()).map(([brandName, total]) => (
-                                            <div key={brandName} className="flex justify-between text-sm">
-                                                <span className="text-[14px] text-[500] text-[#000000]/80">{brandName}</span>
-                                                <span className="text-[14px] font-medium">${total.toFixed(2)}</span>
+
+                                        {brandWiseTotals?.map((brand) =>
+                                            <div key={brand.brandName} className="flex justify-between text-sm">
+                                                <span className="text-[14px] text-[500] text-[#000000]/80">{brand.brandName}</span>
+                                                <span className="text-[14px] font-medium">${brand.totalAmount?.toFixed(2)}</span>
                                             </div>
-                                        ))}
+                                        )}
 
                                         {/* Tax Breakdown */}
                                         {calculateRealtimeTax() > 0 && (
                                             <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
                                                 <span className="text-[14px] text-[500] text-[#000000]/80">Tax</span>
-                                                <span className="text-[14px] font-medium">${calculateRealtimeTax().toFixed(2)}</span>
+                                                <span className="text-[14px] font-medium">${totals.tax.toFixed(2)}</span>
                                             </div>
                                         )}
 
@@ -1029,7 +1035,7 @@ const ShoppingCart = () => {
                                         <div className="border-t border-gray-200 pt-4">
                                             <div className="flex justify-between text-lg font-semibold mb-2">
                                                 <span>Total</span>
-                                                <span className="text-[#2D2C70]">${calculateRealtimeGrandTotal().toFixed(2)}</span>
+                                                <span className="text-[#2D2C70]">${totals.grandTotal.toFixed(2)}</span>
                                             </div>
                                         </div>
 

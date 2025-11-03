@@ -17,10 +17,12 @@ export default function LoginComponent() {
     const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
     const [forgotPasswordError, setForgotPasswordError] = useState('')
     const [customers, setCustomers] = useState([])
+    const [allCustomers, setAllCustomers] = useState([]) // For master sales rep
     const [selectedCustomer, setSelectedCustomer] = useState('')
     const [showCustomerSelection, setShowCustomerSelection] = useState(false)
     const [salesRepData, setSalesRepData] = useState(null)
     const [isContinueLoading, setIsContinueLoading] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
     const setUser = useUserStore((state) => state.setUser)
     const router = useRouter()
@@ -90,6 +92,7 @@ export default function LoginComponent() {
         return true
     }
 
+    // Fetch assigned customers for regular sales rep
     const fetchCustomers = async (salesRepId) => {
         try {
             const response = await axiosInstance.get(`sales-rep/get-sales-rep-customers/${salesRepId}`)
@@ -106,6 +109,44 @@ export default function LoginComponent() {
             }
         } catch (error) {
             console.error('Error fetching customers:', error)
+            return []
+        }
+    }
+
+    // Fetch all customers for master sales rep
+    const fetchAllCustomers = async () => {
+        try {
+            const response = await axiosInstance.get('/admin/get-all-users')
+            console.log("all customers response", response.data)
+
+            if (response.data.statusCode === 200) {
+                const customersData = response.data.data?.docs || response.data.data || response.data
+                
+                // Filter out duplicates based on _id
+                const getUniqueCustomers = (customers) => {
+                    if (!Array.isArray(customers)) return []
+
+                    const uniqueCustomers = []
+                    const seenIds = new Set()
+
+                    customers.forEach(customer => {
+                        if (customer._id && !seenIds.has(customer._id)) {
+                            seenIds.add(customer._id)
+                            uniqueCustomers.push(customer)
+                        }
+                    })
+
+                    return uniqueCustomers
+                }
+
+                const uniqueCustomers = getUniqueCustomers(customersData)
+                setAllCustomers(uniqueCustomers)
+                setCustomers(uniqueCustomers) // Set both for consistency
+                return uniqueCustomers
+            }
+            return []
+        } catch (error) {
+            console.error('Error fetching all customers:', error)
             return []
         }
     }
@@ -130,19 +171,37 @@ export default function LoginComponent() {
             if (res.data.statusCode === 200) {
                 setSalesRepData(res.data.data)
 
-                // Fetch customers for this sales rep
-                const customersData = await fetchCustomers(res.data.data._id)
+                // Check if sales rep is master sales rep
+                const isMasterSalesRep = res.data.data.role === "Master-Sales-Rep"
 
-                if (customersData && customersData.length > 0) {
-                    // Show customer selection screen
-                    setShowCustomerSelection(true)
-                    setIsLoading(false)
+                if (isMasterSalesRep) {
+                    // Fetch all customers for master sales rep
+                    const customersData = await fetchAllCustomers()
+                    
+                    if (customersData && customersData.length > 0) {
+                        setShowCustomerSelection(true)
+                        setIsLoading(false)
+                    } else {
+                        setIsLoading(false)
+                        setErrors(prev => ({
+                            ...prev,
+                            loginError: 'No customers found in the system.'
+                        }))
+                    }
                 } else {
-                    setIsLoading(false)
-                    setErrors(prev => ({
-                        ...prev,
-                        loginError: 'No customers assigned to this sales representative.'
-                    }))
+                    // Fetch assigned customers for regular sales rep
+                    const customersData = await fetchCustomers(res.data.data._id)
+
+                    if (customersData && customersData.length > 0) {
+                        setShowCustomerSelection(true)
+                        setIsLoading(false)
+                    } else {
+                        setIsLoading(false)
+                        setErrors(prev => ({
+                            ...prev,
+                            loginError: 'No customers assigned to this sales representative.'
+                        }))
+                    }
                 }
 
             } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
@@ -176,6 +235,17 @@ export default function LoginComponent() {
         }
     }
 
+    // Filter customers based on search query
+    const filteredCustomers = customers.filter(customer => {
+        if (!searchQuery.trim()) return true
+        
+        const query = searchQuery.toLowerCase()
+        const customerName = (customer.customerName || customer.name || '').toLowerCase()
+        const email = (customer.email || '').toLowerCase()
+        
+        return customerName.includes(query) || email.includes(query)
+    })
+
     const handleCustomerSelection = (customerId) => {
         setSelectedCustomer(customerId)
         // Clear customer error when selection changes
@@ -185,6 +255,10 @@ export default function LoginComponent() {
                 customerError: ''
             }))
         }
+    }
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value)
     }
 
     const handleContinue = async () => {
@@ -212,10 +286,10 @@ export default function LoginComponent() {
                 return
             }
 
-            const response = await axiosInstance.get(`sales-rep/get-current-user/${customer._id}`);
+            const response = await axiosInstance.get(`sales-rep/get-current-user/${customer._id}`)
 
             if (response.data.statusCode === 200) {
-                setUser(response.data.data);
+                setUser(response.data.data)
                 
                 startTransition(() => {
                     router.push('/')
@@ -244,7 +318,9 @@ export default function LoginComponent() {
         setShowCustomerSelection(false)
         setSelectedCustomer('')
         setCustomers([])
+        setAllCustomers([])
         setSalesRepData(null)
+        setSearchQuery('')
         setErrors({})
     }
 
@@ -316,20 +392,60 @@ export default function LoginComponent() {
 
     // Customer Selection Screen
     if (showCustomerSelection) {
+        const isMasterSalesRep = salesRepData?.role === "Master-Sales-Rep"
+        
         return (
             <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan min-h-screen">
-                <div className="max-w-md w-full animate-fade-in">
+                <div className="max-w-2xl w-full animate-fade-in">
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                             SALES REP <span className="text-[#E9098D]">LOGIN</span>
                         </h2>
-                        <p className="text-lg text-gray-600">
+                        <p className="text-lg text-gray-600 mb-2">
                             Log in below to checkout with a customer's account
                         </p>
+                        {isMasterSalesRep && (
+                            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 inline-block">
+                                <p className="text-blue-800 font-medium text-sm">
+                                    👑 Master Sales Rep - Access to all customers
+                                </p>
+                            </div>
+                        )}
+                        {!isMasterSalesRep && (
+                            <p className="text-sm text-gray-500">
+                                Showing your assigned customers ({filteredCustomers.length} of {customers.length})
+                            </p>
+                        )}
                     </div>
 
                     <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm">
+                        {/* Search Bar */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Search Customers
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                    placeholder="Search by customer name or email..."
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                />
+                                <div className="absolute inset-y-0 right-3 flex items-center">
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            {searchQuery && (
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Found {filteredCustomers.length} customer(s) matching "{searchQuery}"
+                                </p>
+                            )}
+                        </div>
+
                         <div className="mb-6">
                             <label className="block text-base font-semibold text-gray-900 mb-1">
                                 Required <span className="text-red-500">*</span>
@@ -339,25 +455,66 @@ export default function LoginComponent() {
                             </label>
 
                             {/* Customer List */}
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                                {customers.map((customer) => (
-                                    <label
-                                        key={customer._id}
-                                        className="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                                    >
-                                        <input
-                                            type="radio"
-                                            name="customer"
-                                            value={customer._id}
-                                            checked={selectedCustomer === customer._id}
-                                            onChange={() => handleCustomerSelection(customer._id)}
-                                            className="h-4 w-4 text-[#74C7F0] focus:ring-[#74C7F0] border-gray-300"
-                                        />
-                                        <span className="ml-3 text-sm font-medium text-gray-900">
-                                            {customer.customerName || customer.name || customer.email}
-                                        </span>
-                                    </label>
-                                ))}
+                            <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                                {filteredCustomers.length > 0 ? (
+                                    filteredCustomers.map((customer) => (
+                                        <label
+                                            key={customer._id}
+                                            className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="customer"
+                                                value={customer._id}
+                                                checked={selectedCustomer === customer._id}
+                                                onChange={() => handleCustomerSelection(customer._id)}
+                                                className="h-4 w-4 text-[#74C7F0] focus:ring-[#74C7F0] border-gray-300"
+                                            />
+                                            <div className="ml-3 flex-1">
+                                                <span className="text-sm font-medium text-gray-900 block">
+                                                    {customer.customerName || customer.name || 'Unnamed Customer'}
+                                                </span>
+                                                <span className="text-xs text-gray-500 block mt-1">
+                                                    {customer.email}
+                                                </span>
+                                                {customer.phone && (
+                                                    <span className="text-xs text-gray-500 block">
+                                                        📞 {customer.phone}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        {searchQuery ? (
+                                            <div>
+                                                <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <p className="text-sm">No customers found matching "{searchQuery}"</p>
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                >
+                                                    Clear search
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                </svg>
+                                                <p className="text-sm">
+                                                    {isMasterSalesRep 
+                                                        ? 'No customers found in the system' 
+                                                        : 'No customers assigned to your account'
+                                                    }
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Error Message */}
@@ -403,6 +560,7 @@ export default function LoginComponent() {
         )
     }
 
+    // Rest of the login form remains the same...
     return (
         <>
             <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
@@ -420,7 +578,7 @@ export default function LoginComponent() {
                         </p>
                     </div>
 
-                    {/* Login Form */}
+                    {/* Login Form - Same as before */}
                     <form
                         className="space-y-6 bg-white p-6 sm:p-8 rounded-lg"
                         onSubmit={handleLogin}
@@ -557,7 +715,7 @@ export default function LoginComponent() {
                 </div>
             </div>
 
-            {/* Forgot Password Popup */}
+            {/* Forgot Password Popup - Same as before */}
             {showForgotPasswordPopup && (
                 <div
                     className="fixed inset-0 bg-[#000000]/50 flex items-center justify-center z-50 p-4 animate-fade-in"

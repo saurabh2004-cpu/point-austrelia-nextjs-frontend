@@ -447,7 +447,7 @@ const ShoppingCartPopup = () => {
                             type="button"
                             onClick={() => removeCartItem(currentUser._id, item.product?._id, item.productGroup?._id)}
                             disabled={isLoading}
-                            className="flex items-center justify-center h-8 w-8 p-1.5 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
+                            className="flex items-center ml-6 justify-center h-8 w-8 p-1.5 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
                           >
                             <Image
                               src="/icons/dustbin-1.png"

@@ -316,11 +316,11 @@ const CheckoutComponent = () => {
             });
 
             const responses = await Promise.all([
-                productIds.length > 0 ? 
-                    axiosInstance.post('products/check-bulk-stock', { ids: productIds }) : 
+                productIds.length > 0 ?
+                    axiosInstance.post('products/check-bulk-stock', { ids: productIds }) :
                     Promise.resolve({ data: { data: { outOfStock: [] } } }),
-                productGroupIds.length > 0 ? 
-                    axiosInstance.post('product-group/check-bulk-stock', { ids: productGroupIds }) : 
+                productGroupIds.length > 0 ?
+                    axiosInstance.post('product-group/check-bulk-stock', { ids: productGroupIds }) :
                     Promise.resolve({ data: { data: { outOfStock: [] } } })
             ]);
 
@@ -606,7 +606,7 @@ const CheckoutComponent = () => {
                         productGroup: item.productGroup._id
                     };
                 }
-                
+
                 return baseItem;
             });
 
@@ -623,8 +623,8 @@ const CheckoutComponent = () => {
         let gstAmount = 0;
 
         cartItems.forEach(item => {
-            subtotalAmount += item.amount;
-            
+            subtotalAmount += item.amount * item.totalQuantity;
+
             // Handle tax calculation for both products and product groups
             let taxable = false;
             let taxPercentages = 0;
@@ -638,12 +638,12 @@ const CheckoutComponent = () => {
             }
 
             if (taxable && taxPercentages) {
-                gstAmount += (item.amount * taxPercentages) / 100;
+                gstAmount += (item.amount * taxPercentages) / 100 * item.totalQuantity;
             }
         });
 
         const shippingAmount = parseFloat(currentUser?.defaultShippingRate || 0);
-        const totalAmount = subtotalAmount + gstAmount + shippingAmount;
+        const totalAmount = subtotalAmount + gstAmount + shippingAmount ;
 
         return {
             subtotal: subtotalAmount,
@@ -1097,7 +1097,7 @@ const CheckoutComponent = () => {
                                             const isOutOfStock = outOfStockItems.some(outOfStockItem =>
                                                 outOfStockItem._id === item._id
                                             );
-                                            
+
                                             // Determine if it's a product or product group
                                             const isProductGroup = !!item.productGroup;
                                             const itemData = isProductGroup ? item.productGroup : item.product;

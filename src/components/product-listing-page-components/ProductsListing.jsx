@@ -122,6 +122,11 @@ const ProductListing = () => {
 
     // Check if item is in wishlist (for both products and product groups)
     const isItemInWishlist = (itemId, isProductGroup = false) => {
+
+        if (!wishListItems || !Array.isArray(wishListItems)) {
+            return false;
+        }
+
         return wishListItems.some(item => {
             if (isProductGroup) {
                 return item.productGroup?._id === itemId;
@@ -245,6 +250,11 @@ const ProductListing = () => {
 
     // Check if item is in cart (for both products and product groups)
     const isItemInCart = (itemId, isProductGroup = false) => {
+
+        if (!cartItems || !Array.isArray(cartItems)) {
+            return false;
+        }
+
         return cartItems?.some(item => {
             if (isProductGroup) {
                 return item.productGroup && item.productGroup._id === itemId;
@@ -1055,9 +1065,9 @@ const ProductListing = () => {
 
                         {/* Stock Status */}
                         <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
-                            {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                            {/* {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>}
+                            </svg>} */}
                             <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                             </span>

@@ -483,6 +483,11 @@ export default function ProductDetail() {
 
   // Check if related item is in wishlist
   const isRelatedItemInWishlist = (itemId, isProductGroup = false) => {
+
+    if (!wishListItems || !Array.isArray(wishListItems)) {
+      return false;
+    }
+
     return wishListItems.some(item => {
       if (isProductGroup) {
         return item.productGroup?._id === itemId;
@@ -494,6 +499,11 @@ export default function ProductDetail() {
 
   // Check if related item is in cart
   const isRelatedItemInCart = (itemId, isProductGroup = false) => {
+
+    if (!cartItems || !Array.isArray(cartItems)) {
+      return false;
+    }
+
     return cartItems.some(item => {
       if (isProductGroup) {
         return item.productGroup?._id === itemId;
@@ -505,6 +515,10 @@ export default function ProductDetail() {
 
   // Get cart item for related item
   const getRelatedCartItem = (itemId, isProductGroup = false) => {
+    if (!cartItems || !Array.isArray(cartItems)) {
+      return false;
+    }
+
     return cartItems.find(item => {
       if (isProductGroup) {
         return item.productGroup?._id === itemId;
@@ -900,6 +914,10 @@ export default function ProductDetail() {
     const item = getCurrentItem();
     if (!item) return null;
 
+    if (!cartItems || !Array.isArray(cartItems)) {
+      return false;
+    }
+
     if (itemType === 'product') {
       return cartItems.find(cartItem => cartItem.product?._id === item._id);
     } else {
@@ -911,9 +929,21 @@ export default function ProductDetail() {
     const item = getCurrentItem();
     if (!item) return false;
 
+
+
     if (itemType === 'product') {
+
+      if (!cartItems || !Array.isArray(cartItems)) {
+        return false;
+      }
+
       return cartItems.some(cartItem => cartItem.product?._id === item._id);
     } else {
+
+      if (!cartItems || !Array.isArray(cartItems)) {
+        return false;
+      }
+
       return cartItems.some(cartItem => cartItem.productGroup?._id === item._id);
     }
   };
@@ -1309,6 +1339,10 @@ export default function ProductDetail() {
   const isInWishlist = (itemId = null) => {
     const targetItemId = itemId || (getCurrentItem()?._id);
     if (!targetItemId) return false;
+
+    if (!wishListItems || !Array.isArray(wishListItems)) {
+      return false;
+    }
 
     return wishListItems.some(item => {
       if (itemType === 'product') {
@@ -1763,7 +1797,7 @@ export default function ProductDetail() {
 
                     {/* Item Image - Fixed Height Container */}
                     <div
-                      className="relative flex justify-center items-center py-6 mb-4 border border-gray-200 rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
+                      className="relative flex justify-center items-center py-6 mb-4  rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
                       onClick={() => handleRelatedItemClick(
                         isProductGroup ? item.name : item.ProductName,
                         item._id,
@@ -1895,27 +1929,26 @@ export default function ProductDetail() {
                         {/* Add to Cart Button Area */}
                         <div className="mt-auto">
                           {/* Add to Cart Button - Show when NOT in cart */}
-                          {!isInCart && (
-                            <button
-                              className={`flex w-full items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
-                                ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
-                                }`}
-                              onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
-                              disabled={isOutOfStock || isCartLoading || !!stockError}
-                            >
-                              {isCartLoading ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              ) : (
-                                <>
-                                  <svg className="w-4 h-4" viewBox="0 0 21 21" fill="currentColor">
-                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                                  </svg>
-                                  Add to Cart
-                                </>
-                              )}
-                            </button>
-                          )}
+
+                          <button
+                            className={`flex w-full  mb-2 items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
+                              ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
+                              : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                              }`}
+                            onClick={() => handleRelatedAddToCart(item._id, isProductGroup)}
+                            disabled={isOutOfStock || isCartLoading || !!stockError}
+                          >
+                            {isCartLoading ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" viewBox="0 0 21 21" fill="currentColor">
+                                  <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                </svg>
+                                Add to Cart
+                              </>
+                            )}
+                          </button>
 
                           {/* Action Buttons Row - Only show when item is in cart */}
                           {isInCart && (
@@ -1942,7 +1975,7 @@ export default function ProductDetail() {
 
                           {/* Cart Quantity Info */}
                           {isInCart && cartItem && (
-                            <div className="mt-2 text-xs font-medium text-black hover:text-[#E9098D] text-center">
+                            <div className="mt-2 text-xs font-medium text-black hover:text-[#E9098D] text-start">
                               In Cart: {cartItem.unitsQuantity} ({cartItem.packType})
                             </div>
                           )}

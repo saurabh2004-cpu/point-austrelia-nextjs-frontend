@@ -378,6 +378,10 @@ export default function ProductPopup({
         const item = getCurrentItem();
         if (!item) return false;
 
+        if (!cartItems || !Array.isArray(cartItems)) {
+            return false;
+        }
+
         if (itemType === 'product') {
             return cartItems.some(cartItem => cartItem.product?._id === item._id);
         } else {
@@ -389,6 +393,10 @@ export default function ProductPopup({
     const getCartItem = () => {
         const item = getCurrentItem();
         if (!item) return null;
+
+        if (!cartItems || !Array.isArray(cartItems)) {
+            return false;
+        }
 
         if (itemType === 'product') {
             return cartItems.find(cartItem => cartItem.product?._id === item._id);
@@ -690,6 +698,10 @@ export default function ProductPopup({
     const isInWishlist = () => {
         const item = getCurrentItem();
         if (!item) return false;
+
+        if (!wishListItems || !Array.isArray(wishListItems)) {
+            return false;
+        }
 
         return wishListItems.some(wishlistItem => {
             if (itemType === 'product') {

@@ -100,6 +100,12 @@ const SearchPage = () => {
 
     // Check if item is in wishlist (for both products and product groups)
     const isItemInWishlist = (itemId, isProductGroup = false) => {
+
+        if (!wishListItems || !Array.isArray(wishListItems)) {
+            return false;
+        }
+
+
         return wishListItems.some(item => {
             if (isProductGroup) {
                 return item.productGroup?._id === itemId;
@@ -227,7 +233,12 @@ const SearchPage = () => {
 
     // Check if item is in cart (for both products and product groups)
     const isItemInCart = (itemId, isProductGroup = false) => {
-        return cartItems.some(item => {
+
+        if (!cartItems || !Array.isArray(cartItems)) {
+            return false;
+        }
+
+        return cartItems?.some(item => {
             if (isProductGroup) {
                 return item.productGroup && item.productGroup._id === itemId;
             } else {
@@ -238,6 +249,11 @@ const SearchPage = () => {
 
     // Get cart item for product or product group
     const getCartItem = (itemId, isProductGroup = false) => {
+
+        if (!cartItems || !Array.isArray(cartItems)) {
+            return false;
+        }
+
         return cartItems.find(item => {
             if (isProductGroup) {
                 return item.productGroup && item.productGroup._id === itemId;

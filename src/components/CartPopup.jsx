@@ -358,8 +358,8 @@ const ShoppingCartPopup = () => {
 
   return (
     <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto">
-        <div className="flex flex-col items-center justify-between px-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto flex flex-col">
+        <div className="flex flex-col items-center justify-between px-4 pt-4">
           <div className="w-full flex justify-end">
             <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 transition-colors">
               <X className="w-5 h-5" />
@@ -393,16 +393,41 @@ const ShoppingCartPopup = () => {
               </div>
             </div>
           )}
+        </div>
 
-          <div className="flex-1 overflow-y-auto hide-scrollbar max-h-110">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
-              </div>
-            ) : cartItems.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">Your cart is empty</div>
-            ) : (
-              cartItems.map((item) => {
+        {/* Scrollable Cart Items Section */}
+        <div className="flex-1 overflow-y-auto max-h-[60vh] px-4">
+          {/* Custom scrollbar styling */}
+          <style jsx>{`
+            .scroll-container {
+              scrollbar-width: thin;
+              scrollbar-color: #cbd5e0 #f7fafc;
+            }
+            .scroll-container::-webkit-scrollbar {
+              width: 6px;
+            }
+            .scroll-container::-webkit-scrollbar-track {
+              background: #f7fafc;
+              border-radius: 3px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb {
+              background: #cbd5e0;
+              border-radius: 3px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb:hover {
+              background: #a0aec0;
+            }
+          `}</style>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
+            </div>
+          ) : cartItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Your cart is empty</div>
+          ) : (
+            <div className="scroll-container space-y-4 py-2">
+              {cartItems.map((item) => {
                 const isLoading = updatingItems[item._id];
                 const outOfStock = isOutOfStock(item);
                 const displayQuantity = getDisplayQuantity(item);
@@ -414,15 +439,15 @@ const ShoppingCartPopup = () => {
                 const isProductGroup = !!item.productGroup;
 
                 return (
-                  <div key={item._id} className="px-4 border-b border-gray-100">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-6 mb-3">
+                  <div key={item._id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-4">
                       <div className="flex-shrink-0 flex justify-center sm:justify-start mb-3 sm:mb-0">
                         <img
                           src={getItemImage(item)}
                           alt={getItemName(item)}
-                          width={96}
-                          height={96}
-                          className="object-contain"
+                          width={80}
+                          height={80}
+                          className="object-contain rounded-lg"
                           onError={(e) => {
                             e.target.src = '/product-listing-images/product-1.avif';
                           }}
@@ -447,32 +472,32 @@ const ShoppingCartPopup = () => {
                             type="button"
                             onClick={() => removeCartItem(currentUser._id, item.product?._id, item.productGroup?._id)}
                             disabled={isLoading}
-                            className="flex items-center ml-6 justify-center h-8 w-8 p-1.5 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
+                            className="flex items-center ml-4 justify-center h-7 w-7 p-1 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
                           >
                             <Image
                               src="/icons/dustbin-1.png"
                               alt="Remove item"
-                              width={16}
-                              height={16}
+                              width={14}
+                              height={14}
                               className="object-contain"
                             />
                           </button>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="text-[#2D2C70] font-semibold text-[20px] sm:text-[24px]">${item?.amount?.toFixed(2)}</span>
+                          <span className="text-[#2D2C70] font-semibold text-[18px]">${item?.amount?.toFixed(2)}</span>
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${outOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
                             <Check className="w-3 h-3 mr-1" />
                             {outOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                           </div>
                         </div>
 
-                        {/* Available Stock Display */}
+                        {/* Available Stock Display
                         {!outOfStock && (
                           <p className="text-[12px] text-gray-600 mb-1">
                             Available: {stockLevel} units
                           </p>
-                        )}
+                        )} */}
 
                         {/* Exceeds Stock Warning for Item */}
                         {exceedsStock && !outOfStock && (
@@ -486,7 +511,7 @@ const ShoppingCartPopup = () => {
                           </div>
                         )}
 
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                           <div>
                             <span className="block text-xs font-medium mb-1">Quantity</span>
                             <div className="flex items-center">
@@ -512,20 +537,20 @@ const ShoppingCartPopup = () => {
                           {/* Units Dropdown (only for products, not product groups) */}
                           {item.product && availablePacks.length > 0 && (
                             <div className="w-full sm:w-auto">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Units</label>
                               <div className="relative">
                                 <select
                                   value={selectedPacks[item._id] || ''}
                                   onChange={(e) => handlePackChange(item._id, e.target.value)}
                                   disabled={outOfStock}
-                                  className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                  className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-xs focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 >
                                   {availablePacks.map((pack) => (
                                     <option key={pack._id} value={pack._id}>{pack.name}</option>
                                   ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </div>
@@ -548,9 +573,9 @@ const ShoppingCartPopup = () => {
                     </div>
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
 
         <div className="border-t bg-gray-50">

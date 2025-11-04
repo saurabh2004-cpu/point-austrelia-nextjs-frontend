@@ -9,6 +9,7 @@ import useWishlistStore from '@/zustand/wishList';
 import useCartStore from '@/zustand/cartPopup';
 import { Navbar } from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
+import { withAuth } from '@/components/withAuth';
 
 const ProductCard = ({
     item,
@@ -32,14 +33,17 @@ const ProductCard = ({
 
     const isLoading = loadingProducts[productId];
 
+
+
     // ✅ Check if product/group is already in cart
-    const isItemInCart = cartItems.some(cartItem => 
-        isProductGroup 
+    const isItemInCart = cartItems?.some(cartItem =>
+
+        isProductGroup
             ? cartItem.productGroup?._id === productId
             : cartItem.product?._id === productId
     );
-    const cartItem = cartItems.find(cartItem => 
-        isProductGroup 
+    const cartItem = cartItems.find(cartItem =>
+        isProductGroup
             ? cartItem.productGroup?._id === productId
             : cartItem.product?._id === productId
     );
@@ -340,11 +344,11 @@ const ProductCard = ({
                     </div>
 
                     {/* Available Stock Display */}
-                    {!isOutOfStock && (
+                    {/* {!isOutOfStock && (
                         <p className="text-[12px] text-gray-600 mb-1">
                             Available: {stockLevel} {isProductGroup ? 'groups' : 'units'}
                         </p>
-                    )}
+                    )} */}
 
                     {/* Out of Stock Warning */}
                     {isOutOfStock && (
@@ -590,7 +594,7 @@ const Page = () => {
                 items.forEach(item => {
                     const isProductGroup = !!item.productGroup;
                     const itemId = isProductGroup ? item.productGroup._id : item.product._id;
-                    
+
                     initialQuantities[itemId] = item.unitsQuantity || 1;
 
                     // Only set pack types for individual products
@@ -627,11 +631,11 @@ const Page = () => {
 
     // Get pack quantity from selected unit (only for individual products)
     const getPackQuantity = (productId, selectedUnitId) => {
-        const item = wishListItems.find(item => 
-            (item.product && item.product._id === productId) || 
+        const item = wishListItems.find(item =>
+            (item.product && item.product._id === productId) ||
             (item.productGroup && item.productGroup._id === productId)
         );
-        
+
         // If it's a product group or no product found, return 1
         if (!item || item.productGroup) return 1;
 
@@ -676,8 +680,8 @@ const Page = () => {
         setLoadingProducts(prev => ({ ...prev, [productId]: true }));
 
         try {
-            const item = wishListItems.find(item => 
-                isProductGroup 
+            const item = wishListItems.find(item =>
+                isProductGroup
                     ? item.productGroup?._id === productId
                     : item.product?._id === productId
             );
@@ -691,15 +695,15 @@ const Page = () => {
             if (!isProductGroup) {
                 const selectedPackId = selectedUnits[productId];
                 packQuantity = getPackQuantity(productId, selectedPackId);
-                
+
                 // Get pack type name for individual products
                 if (productData.typesOfPacks && productData.typesOfPacks.length > 0) {
                     const selectedPack = productData.typesOfPacks.find(pack =>
                         (typeof pack === 'string' ? pack : pack._id) === selectedPackId
                     );
                     if (selectedPack) {
-                        packType = typeof selectedPack === 'string' 
-                            ? `Pack of ${selectedPack}` 
+                        packType = typeof selectedPack === 'string'
+                            ? `Pack of ${selectedPack}`
                             : selectedPack.name || `Pack of ${selectedPack.quantity || 1}`;
                     }
                 }
@@ -710,7 +714,7 @@ const Page = () => {
             const totalQuantity = isProductGroup ? unitsQuantity : packQuantity * unitsQuantity;
 
             // Check stock level before adding to cart
-            const stockLevel = isProductGroup 
+            const stockLevel = isProductGroup
                 ? Math.min(...productData.products.map(p => p.stockLevel || 0))
                 : productData.stockLevel || 0;
 
@@ -863,8 +867,8 @@ const Page = () => {
             const res = await axiosInstance.put(`wishlist/remove-from-wishlist`, requestBody);
 
             if (res.data.statusCode === 200) {
-                setWishlistItems(prev => prev.filter(item => 
-                    isProductGroup 
+                setWishlistItems(prev => prev.filter(item =>
+                    isProductGroup
                         ? item.productGroup?._id !== productId
                         : item.product?._id !== productId
                 ));
@@ -889,7 +893,7 @@ const Page = () => {
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
             if (response.data.statusCode === 200) {
-                const items = response.data.data || [];
+                const items = response.data.data.items || [];
                 setCartItems(items);
                 setCartItemsCount(items.length);
             } else {
@@ -1011,4 +1015,4 @@ const Page = () => {
     );
 };
 
-export default Page;
+export default withAuth(Page);

@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import axiosInstance from '@/axios/axiosInstance'
 import Cookies from 'js-cookie'
+import { withAuth } from '@/components/withAuth'
 
-export default function ResetPasswordPage() {
+ function ResetPasswordPage() {
   const [formData, setFormData] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -389,3 +390,6 @@ export default function ResetPasswordPage() {
     </div>
   )
 }
+
+
+export default withAuth(ResetPasswordPage);

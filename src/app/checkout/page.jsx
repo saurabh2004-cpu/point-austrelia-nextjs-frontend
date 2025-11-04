@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
+import { withAuth } from '@/components/withAuth';
 
 // Out of Stock Warning Component
 const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
@@ -1198,4 +1199,4 @@ const CheckoutComponent = () => {
     );
 };
 
-export default CheckoutComponent;
+export default withAuth(CheckoutComponent);

@@ -10,6 +10,7 @@ import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
 import { set } from 'nprogress';
 import { Navbar } from '@/components/Navbar';
+import { withAuth } from '@/components/withAuth';
 
 const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -803,11 +804,11 @@ const ShoppingCart = () => {
                                                                 )}
 
                                                                 {/* Available Stock Display */}
-                                                                {!outOfStock && (
+                                                                {/* {!outOfStock && (
                                                                     <p className="text-[12px] text-gray-600 mb-1">
                                                                         Available: {stockLevel} units
                                                                     </p>
-                                                                )}
+                                                                )} */}
 
                                                                 {/* Price */}
                                                                 <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
@@ -1115,7 +1116,7 @@ const ShoppingCart = () => {
 
                                             <div className="flex items-center space-x-3">
                                                 <button
-                                                    onClick={() => router.push('/products')}
+                                                    onClick={() => router.push('/')}
                                                     className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
                                                 >
                                                     <svg
@@ -1212,4 +1213,4 @@ const ShoppingCart = () => {
     );
 };
 
-export default ShoppingCart;
+export default withAuth(ShoppingCart);

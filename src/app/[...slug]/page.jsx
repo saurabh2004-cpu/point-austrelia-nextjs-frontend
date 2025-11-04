@@ -2,6 +2,7 @@
 import ShoppingCartPopup from '@/components/CartPopup';
 import { Navbar } from '@/components/Navbar'
 import ProductListing from '@/components/product-listing-page-components/ProductsListing'
+import { withAuth } from '@/components/withAuth';
 import { useCartPopupStateStore } from '@/zustand/cartPopupState';
 import React, { useEffect } from 'react'
 
@@ -47,4 +48,4 @@ const page = () => {
   )
 }
 
-export default page
+export default withAuth(page);

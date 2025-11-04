@@ -3,8 +3,9 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import axiosInstance from '@/axios/axiosInstance'
 import useUserStore from '@/zustand/user'
+import { withAuth } from '@/components/withAuth'
 
-export default function LoginComponent() {
+function LoginComponent() {
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -121,7 +122,7 @@ export default function LoginComponent() {
 
             if (response.data.statusCode === 200) {
                 const customersData = response.data.data?.docs || response.data.data || response.data
-                
+
                 // Filter out duplicates based on _id
                 const getUniqueCustomers = (customers) => {
                     if (!Array.isArray(customers)) return []
@@ -177,7 +178,7 @@ export default function LoginComponent() {
                 if (isMasterSalesRep) {
                     // Fetch all customers for master sales rep
                     const customersData = await fetchAllCustomers()
-                    
+
                     if (customersData && customersData.length > 0) {
                         setShowCustomerSelection(true)
                         setIsLoading(false)
@@ -238,11 +239,11 @@ export default function LoginComponent() {
     // Filter customers based on search query
     const filteredCustomers = customers.filter(customer => {
         if (!searchQuery.trim()) return true
-        
+
         const query = searchQuery.toLowerCase()
         const customerName = (customer.customerName || customer.name || '').toLowerCase()
         const email = (customer.email || '').toLowerCase()
-        
+
         return customerName.includes(query) || email.includes(query)
     })
 
@@ -290,7 +291,7 @@ export default function LoginComponent() {
 
             if (response.data.statusCode === 200) {
                 setUser(response.data.data)
-                
+
                 startTransition(() => {
                     router.push('/')
                 })
@@ -393,7 +394,7 @@ export default function LoginComponent() {
     // Customer Selection Screen
     if (showCustomerSelection) {
         const isMasterSalesRep = salesRepData?.role === "Master-Sales-Rep"
-        
+
         return (
             <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan min-h-screen">
                 <div className="max-w-2xl w-full animate-fade-in">
@@ -506,8 +507,8 @@ export default function LoginComponent() {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
                                                 </svg>
                                                 <p className="text-sm">
-                                                    {isMasterSalesRep 
-                                                        ? 'No customers found in the system' 
+                                                    {isMasterSalesRep
+                                                        ? 'No customers found in the system'
                                                         : 'No customers assigned to your account'
                                                     }
                                                 </p>
@@ -820,3 +821,5 @@ export default function LoginComponent() {
         </>
     )
 }
+
+export default withAuth(LoginComponent);

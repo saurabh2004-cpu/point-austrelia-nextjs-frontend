@@ -1,6 +1,7 @@
 'use client'
 import { Navbar } from '@/components/Navbar'
 import SignUpComponent from '@/components/SignUp'
+import { withGuest } from '@/components/withAuth'
 import useUserStore from '@/zustand/user'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -28,4 +29,4 @@ const SignUpPage = () => {
   )
 }
 
-export default SignUpPage;
+export default withGuest(SignUpPage);

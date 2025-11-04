@@ -257,7 +257,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
               ))}
 
               {showProducts && products.map((product, index) => (
-                <tr key={product._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                <tr key={product.sku} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                   <td className="py-4 px-4 border-r">{index + 1}</td>
                   <td className="py-4 px-4 border-r flex justify-center">
                     <img 
@@ -316,7 +316,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             </thead>
             <tbody>
               {orders.map((order, index) => (
-                <tr key={order._id} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
+                <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
                   <td className="py-3 px-3 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
                   <td className="py-3 px-3 border-r flex items-center space-x-3">
                     <img
@@ -349,7 +349,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       <div className="block md:hidden px-2 sm:px-4 py-4 space-y-3 sm:space-y-4">
         {orders.map((order, index) => (
           <div
-            key={order._id}
+            key={index}
             className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
           >
             <div className="flex items-start sm:items-center gap-3 sm:gap-4">

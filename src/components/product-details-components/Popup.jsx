@@ -735,6 +735,19 @@ export default function ProductPopup({
         onClose();
     }
 
+    // Navigation functions for image carousel
+    const nextImage = () => {
+        if (itemImages.length > 0) {
+            setSelectedImage((prev) => (prev + 1) % itemImages.length);
+        }
+    };
+
+    const prevImage = () => {
+        if (itemImages.length > 0) {
+            setSelectedImage((prev) => (prev - 1 + itemImages.length) % itemImages.length);
+        }
+    };
+
     // Render product group badge
     const renderProductGroupBadge = () => {
         if (itemType !== 'productGroup') return null;
@@ -790,7 +803,7 @@ export default function ProductPopup({
                                     )}
 
                                     <div className="relative">
-                                        <div className="rounded-lg p-4 bg-[#FAFAFA]">
+                                        <div className="rounded-lg p-4 bg-[#FAFAFA] relative">
                                             {/* Product Badge */}
                                             {itemType === 'product' && getCurrentItem().badge && (
                                                 <div className="absolute top-2 left-4 sm:left-6 z-10">
@@ -808,6 +821,30 @@ export default function ProductPopup({
 
                                             {/* Product Group Badge */}
                                             {renderProductGroupBadge()}
+
+                                            {/* Navigation Arrows */}
+                                            {itemImages.length > 1 && (
+                                                <>
+                                                    <button
+                                                        onClick={prevImage}
+                                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                                        aria-label="Previous image"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={nextImage}
+                                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                                        aria-label="Next image"
+                                                    >
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </button>
+                                                </>
+                                            )}
 
                                             <img
                                                 src={itemImages[selectedImage] || "/placeholder.svg"}

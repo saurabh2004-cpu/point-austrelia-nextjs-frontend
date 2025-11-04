@@ -10,6 +10,7 @@ import useCartStore from "@/zustand/cartPopup"
 import Notification from "@/components/Notification"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import ProductPopup from "@/components/product-details-components/Popup" // Add this import
+import { withAuth } from "@/components/withAuth"
 
 const SearchPage = () => {
     const [sortBy, setSortBy] = useState("Newest")
@@ -1043,15 +1044,15 @@ const SearchPage = () => {
                             SKU : {isProductGroup ? item.sku : item.sku}
                         </p>
 
-                        {/* Stock Status
+                        {/* Stock Status */}
                         <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
-                            {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
+                            {/* {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>}
+                            </svg>} */}
                             <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                             </span>
-                        </div> */}
+                        </div>
                     </div>
 
                     {/* Price */}
@@ -1074,15 +1075,7 @@ const SearchPage = () => {
                             )}
                         </div>
 
-                        {/* Stock Status */}
-                        <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
-                            {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>}
-                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
-                                {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
-                            </span>
-                        </div>
+                        
                     </div>
 
                     {/* Product Group Info */}
@@ -1497,4 +1490,4 @@ const SearchPage = () => {
     )
 }
 
-export default SearchPage
+export default withAuth(SearchPage);

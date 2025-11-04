@@ -1,6 +1,7 @@
 
 'use client'
 import axiosInstance from "@/axios/axiosInstance";
+import useUserStore from "@/zustand/user";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ export function Footer() {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const user = useUserStore((state) => state.user);
 
   const fetchBrands = async () => {
     try {
@@ -71,16 +73,16 @@ export function Footer() {
           <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[200px] relative md:right-0 lg:right-20">
             <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
             <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
-              <li>
+              {!user && <li>
                 <a href="/login" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Login
                 </a>
-              </li>
-              <li>
+              </li>}
+              {!user && <li>
                 <a href="/sign-up" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Register for wholesale access
                 </a>
-              </li>
+              </li>}
               <li>
                 <Link href="/sales-rep-login" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Sales Rep Login

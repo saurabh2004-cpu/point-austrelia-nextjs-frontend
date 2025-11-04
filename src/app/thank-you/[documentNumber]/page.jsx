@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import axiosInstance from '@/axios/axiosInstance';
 import useUserStore from '@/zustand/user';
+import { withAuth } from '@/components/withAuth';
 
 const OrderConfirmationUI = () => {
     const [orderData, setOrderData] = useState([]); // Changed to array to hold multiple items
@@ -251,4 +252,4 @@ const OrderConfirmationUI = () => {
     );
 };
 
-export default OrderConfirmationUI;
+export default withAuth(OrderConfirmationUI);

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, useMemo, useTransition } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { Search, ShoppingCart, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,19 @@ import useWishlistStore from "@/zustand/wishList"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
-import { nav } from "framer-motion/client"
+
+// Debounce utility
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
 
 // Custom hook for click outside detection
 const useClickOutside = (callback) => {
@@ -51,7 +63,6 @@ export function Navbar() {
   const router = useRouter()
   const currentUser = useUserStore((state) => state.user);
   const pathname = usePathname()
-  const [isPending, startTransition] = useTransition()
 
   const currentCartItems = useCartStore((state) => state.currentItems);
   const setCartItems = useCartStore((state) => state.setCurrentItems);
@@ -83,16 +94,15 @@ export function Navbar() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Fetch user only once on mount
+  // Optimized user fetch - non-blocking
   useEffect(() => {
-    const fetchCurentUser = async () => {
+    const fetchCurrentUser = async () => {
       try {
         const response = await axiosInstance.get('user/get-current-user');
         if (response.data.statusCode === 200 && response.data.data.inactive == false) {
           setUser(response.data.data);
-        }else{
-          navigate('/login');
         }
+        // Removed automatic redirect to prevent conflicts
       } catch (error) {
         console.error("Error fetching current user:", error);
       } finally {
@@ -101,11 +111,11 @@ export function Navbar() {
     };
 
     if (currentUser === null || currentUser === undefined) {
-      fetchCurentUser();
+      fetchCurrentUser();
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [setUser]); // Only depend on setUser
 
   // Use click outside hooks
   const userDropdownRef = useClickOutside(() => {
@@ -121,6 +131,19 @@ export function Navbar() {
     setHoveredCategory(null);
     setHoveredSubcategory(null);
   });
+
+  // Optimized navigation handler
+  const handleFastNavigation = useCallback((path) => {
+    // Close all open states first (instant)
+    setIsMenuOpen(false);
+    setShowUserDropdown(false);
+    setShowCartPopup(false);
+    setActiveDropdown(null);
+    setShowCompanyDropDown(false);
+    
+    // Use regular router push for immediate navigation
+    router.push(path);
+  }, [router, setShowCartPopup]);
 
   const handleUserDropdownToggle = useCallback(() => {
     setShowUserDropdown(prev => !prev);
@@ -146,13 +169,11 @@ export function Navbar() {
   const handleSearch = useCallback((e) => {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
-        startTransition(() => {
-          router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        });
+        handleFastNavigation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
         setIsSearchOpen(false);
       }
     }
-  }, [searchQuery, router]);
+  }, [searchQuery, handleFastNavigation]);
 
   // Fetch brands ONCE on mount - Non-blocking
   useEffect(() => {
@@ -167,64 +188,74 @@ export function Navbar() {
       }
     }
 
-    // Don't block rendering - fetch in background
     fetchBrands()
   }, [])
 
-  const fetchCategoriesForBrand = useCallback(async (brandId) => {
-    if (categoriesByBrand[brandId]) return
+  // Debounced category fetching
+  const fetchCategoriesForBrand = useCallback(
+    debounce(async (brandId) => {
+      if (categoriesByBrand[brandId]) return
 
-    try {
-      setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
-      const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
+      try {
+        setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
+        const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
 
-      if (res.data.statusCode === 200) {
-        setCategoriesByBrand(prev => ({
-          ...prev,
-          [brandId]: res.data.data
-        }))
+        if (res.data.statusCode === 200) {
+          setCategoriesByBrand(prev => ({
+            ...prev,
+            [brandId]: res.data.data
+          }))
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      } finally {
+        setLoadingCategories(prev => ({ ...prev, [brandId]: false }))
       }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    } finally {
-      setLoadingCategories(prev => ({ ...prev, [brandId]: false }))
-    }
-  }, [categoriesByBrand])
+    }, 200),
+    [categoriesByBrand]
+  );
 
-  const fetchSubCategoriesForCategory = useCallback(async (categoryId) => {
-    if (subCategoriesByCategory[categoryId]) return
+  const fetchSubCategoriesForCategory = useCallback(
+    debounce(async (categoryId) => {
+      if (subCategoriesByCategory[categoryId]) return
 
-    try {
-      const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
+      try {
+        const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
 
-      if (res.data.statusCode === 200) {
-        setSubCategoriesByCategory(prev => ({
-          ...prev,
-          [categoryId]: res.data.data
-        }))
+        if (res.data.statusCode === 200) {
+          setSubCategoriesByCategory(prev => ({
+            ...prev,
+            [categoryId]: res.data.data
+          }))
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories:', error)
       }
-    } catch (error) {
-      console.error('Error fetching subcategories:', error)
-    }
-  }, [subCategoriesByCategory])
+    }, 150),
+    [subCategoriesByCategory]
+  );
 
-  const fetchSubCategoriesTwoForSubCategory = useCallback(async (subCategoryId) => {
-    if (subCategoriesTwoBySubCategory[subCategoryId]) return
+  const fetchSubCategoriesTwoForSubCategory = useCallback(
+    debounce(async (subCategoryId) => {
+      if (subCategoriesTwoBySubCategory[subCategoryId]) return
 
-    try {
-      const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
+      try {
+        const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
 
-      if (res.data.statusCode === 200) {
-        setSubCategoriesTwoBySubCategory(prev => ({
-          ...prev,
-          [subCategoryId]: res.data.data
-        }))
+        if (res.data.statusCode === 200) {
+          setSubCategoriesTwoBySubCategory(prev => ({
+            ...prev,
+            [subCategoryId]: res.data.data
+          }))
+        }
+      } catch (error) {
+        console.error('Error fetching subcategories two:', error)
       }
-    } catch (error) {
-      console.error('Error fetching subcategories two:', error)
-    }
-  }, [subCategoriesTwoBySubCategory])
+    }, 150),
+    [subCategoriesTwoBySubCategory]
+  );
 
+  // Optimized navigation items with minimal dependencies
   const navigationItems = useMemo(() => {
     const items = [
       { label: "HOME", index: 0, link: '/' }
@@ -294,30 +325,22 @@ export function Navbar() {
     setShowCartPopup(false);
   }, [setShowCartPopup]);
 
+  // Optimized navigation handler
   const handleNavigation = useCallback((item) => {
     if (!item.hasDropdown) {
       setCurrentIndex(item.index)
-      setActiveDropdown(null)
-      setIsMenuOpen(false)
+      handleFastNavigation(item.link);
     } else {
       if (item.label === "COMPANY" || item.label === "CONTACT US") {
         if (!currentUser) {
-          startTransition(() => {
-            router.push('/contact-us');
-          });
-          setActiveDropdown(null);
-          setIsMenuOpen(false);
+          handleFastNavigation('/contact-us');
         } else {
           setShowCompanyDropDown(prev => !prev);
           setActiveDropdown(null);
         }
       } else {
         if (!currentUser && item.brandRoute) {
-          startTransition(() => {
-            router.push(item.brandRoute);
-          });
-          setActiveDropdown(null);
-          setIsMenuOpen(false);
+          handleFastNavigation(item.brandRoute);
         } else if (currentUser && item.brandId) {
           handleBrandClick(item.brandId, item.brandSlug);
           setActiveDropdown(null);
@@ -325,7 +348,7 @@ export function Navbar() {
         }
       }
     }
-  }, [currentUser, router, setCurrentIndex, handleBrandClick]);
+  }, [currentUser, handleFastNavigation, setCurrentIndex, handleBrandClick]);
 
   const companyDropdownRef = useClickOutside(() => {
     setShowCompanyDropDown(false);
@@ -348,7 +371,8 @@ export function Navbar() {
       brandId: brandId,
       brandSlug: brandSlug
     })
-  }, [brandId, brandSlug, setFilters, setShowCartPopup]);
+    handleFastNavigation(link);
+  }, [brandId, brandSlug, setFilters, setShowCartPopup, handleFastNavigation]);
 
   const handleBrandHover = useCallback((brandId, index, brandSlug) => {
     if (currentUser) {
@@ -409,44 +433,39 @@ export function Navbar() {
         console.error('Error during logout API call:', error);
       }
 
-      startTransition(() => {
-        router.push('/');
-      });
+      handleFastNavigation('/');
     } catch (error) {
       console.error('Error during logout:', error);
     }
-  }, [router, setCartItems, setWishlistItems]);
+  }, [handleFastNavigation, setCartItems, setWishlistItems]);
 
   const handleMyAccount = useCallback(() => {
     setShowUserDropdown(false);
-    startTransition(() => {
-      router.push('/my-account-review');
-    });
-  }, [router]);
+    handleFastNavigation('/my-account-review');
+  }, [handleFastNavigation]);
 
-  // Fetch cart/wishlist once when user is available
+  // Optimized cart/wishlist fetching
   useEffect(() => {
     if (!currentUser?._id) return;
 
-    const timer = setTimeout(() => {
+    const fetchData = async () => {
       if (currentCartItems === 0) {
-        fetchCustomersCart();
+        await fetchCustomersCart();
       }
       if (currentWishlistItems === 0) {
-        fetchCustomersWishList();
+        await fetchCustomersWishList();
       }
-    }, 100);
+    };
 
-    return () => clearTimeout(timer);
-  }, [currentUser?._id]);
+    fetchData();
+  }, [currentUser?._id, currentCartItems, currentWishlistItems, fetchCustomersCart, fetchCustomersWishList]);
 
   // Prefetch critical pages
   useEffect(() => {
-    router.prefetch('/login');
-    router.prefetch('/sign-up');
-    router.prefetch('/wishlist');
-    router.prefetch('/cart');
-    router.prefetch('/contact-us');
+    const prefetchPages = ['/login', '/sign-up', '/wishlist', '/cart', '/contact-us'];
+    prefetchPages.forEach(page => {
+      router.prefetch(page);
+    });
   }, [router]);
 
   const groupCategoriesByColumn = (categories) => {
@@ -465,14 +484,6 @@ export function Navbar() {
 
   return (
     <>
-      {/* Loading indicator */}
-      {isPending && (
-        <div className="fixed top-0 left-0 w-full h-1 z-50 bg-gray-200">
-          <div className="h-full bg-gradient-to-r from-[#E9098D] to-[#2d2c70] animate-pulse"
-            style={{ width: '30%' }} />
-        </div>
-      )}
-
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         {/* Top Bar */}
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
@@ -501,6 +512,11 @@ export function Navbar() {
                     />
                     <Link
                       href="/login"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/login');
+                      }}
                       className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]"
                     >
                       LOGIN
@@ -509,6 +525,11 @@ export function Navbar() {
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
                   <Link
                     href="/sign-up"
+                    prefetch={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleFastNavigation('/sign-up');
+                    }}
                     className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]"
                   >
                     SIGN UP
@@ -554,7 +575,14 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link href="/">
+                <Link 
+                  href="/"
+                  prefetch={true}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleFastNavigation('/');
+                  }}
+                >
                   <Image
                     src="/logo/point-austrelia-logo.png"
                     alt="Logo"
@@ -582,8 +610,13 @@ export function Navbar() {
 
                     <Link
                       href="/wishlist"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/wishlist');
+                        setIsMenuOpen(false);
+                      }}
                       className="relative bg-white group p-1"
-                      onClick={() => setIsMenuOpen(false)}
                     >
                       <svg
                         width="18"
@@ -602,8 +635,13 @@ export function Navbar() {
 
                     <Link
                       href="/cart"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/cart');
+                        setIsMenuOpen(false);
+                      }}
                       className="relative bg-white group p-1"
-                      onClick={() => setIsMenuOpen(false)}
                     >
                       <svg
                         width="18"
@@ -663,6 +701,11 @@ export function Navbar() {
                   {currentUser && !isCheckoutPage && (
                     <Link
                       href={'/wishlist'}
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/wishlist');
+                      }}
                       className="relative bg-white group"
                     >
                       <svg
@@ -770,6 +813,11 @@ export function Navbar() {
                 {!item.hasDropdown ? (
                   <Link
                     href={item.link || '/'}
+                    prefetch={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleFastNavigation(item.link || '/');
+                    }}
                     className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
                   >
                     {item.label}
@@ -794,7 +842,12 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          onClick={() => setShowCompanyDropDown(false)}
+                          prefetch={true}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleFastNavigation(`/brand/${brand.slug}`);
+                            setShowCompanyDropDown(false);
+                          }}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -802,7 +855,12 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        onClick={() => setShowCompanyDropDown(false)}
+                        prefetch={true}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleFastNavigation('/contact-us');
+                          setShowCompanyDropDown(false);
+                        }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
                       >
                         Contact Us
@@ -822,7 +880,12 @@ export function Navbar() {
                   {!item.hasDropdown ? (
                     <Link
                       href={item.link || '/'}
-                      onClick={() => setIsMenuOpen(false)}
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation(item.link || '/');
+                        setIsMenuOpen(false);
+                      }}
                       className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
                     >
                       {item.label}
@@ -833,9 +896,7 @@ export function Navbar() {
                         if (item.hasDropdown) {
                           if (item.label === "COMPANY") {
                             if (!currentUser) {
-                              startTransition(() => {
-                                router.push('/contact-us');
-                              });
+                              handleFastNavigation('/contact-us');
                               setIsMenuOpen(false);
                             } else {
                               setActiveDropdown(activeDropdown === item.index ? null : item.index)
@@ -845,9 +906,7 @@ export function Navbar() {
                               handleBrandClick(item.brandId, item.brandSlug);
                               setIsMenuOpen(false);
                             } else if (!currentUser && item.brandRoute) {
-                              startTransition(() => {
-                                router.push(item.brandRoute);
-                              });
+                              handleFastNavigation(item.brandRoute);
                               setIsMenuOpen(false);
                             }
                           }
@@ -871,7 +930,12 @@ export function Navbar() {
                         <Link
                           key={brand._id}
                           href={`/brand/${brand.slug}`}
-                          onClick={() => setIsMenuOpen(false)}
+                          prefetch={true}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleFastNavigation(`/brand/${brand.slug}`);
+                            setIsMenuOpen(false);
+                          }}
                           className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
                         >
                           {brand.name}
@@ -879,7 +943,12 @@ export function Navbar() {
                       ))}
                       <Link
                         href="/contact-us"
-                        onClick={() => setIsMenuOpen(false)}
+                        prefetch={true}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleFastNavigation('/contact-us');
+                          setIsMenuOpen(false);
+                        }}
                         className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
                       >
                         Contact Us
@@ -895,7 +964,9 @@ export function Navbar() {
                           <div key={category.id || idx}>
                             <Link
                               href={`/${category.slug}`}
-                              onClick={() => {
+                              prefetch={true}
+                              onClick={(e) => {
+                                e.preventDefault();
                                 handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId);
                               }}
                               className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
@@ -912,7 +983,9 @@ export function Navbar() {
                                   <Link
                                     key={subcat.id}
                                     href={`/${subcat.slug}`}
-                                    onClick={() => {
+                                    prefetch={true}
+                                    onClick={(e) => {
+                                      e.preventDefault();
                                       handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId);
                                     }}
                                     className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
@@ -971,7 +1044,9 @@ export function Navbar() {
                           >
                             <Link
                               href={`/${category.slug}`}
-                              onClick={() => {
+                              prefetch={true}
+                              onClick={(e) => {
+                                e.preventDefault();
                                 handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
                               }}
                               className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
@@ -1006,7 +1081,9 @@ export function Navbar() {
                                     >
                                       <Link
                                         href={`/${subcat.slug}`}
-                                        onClick={() => {
+                                        prefetch={true}
+                                        onClick={(e) => {
+                                          e.preventDefault();
                                           handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
                                         }}
                                         className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
@@ -1027,7 +1104,9 @@ export function Navbar() {
                                               <Link
                                                 key={subcatTwo.id}
                                                 href={`/${subcatTwo.slug}`}
-                                                onClick={() => {
+                                                prefetch={true}
+                                                onClick={(e) => {
+                                                  e.preventDefault();
                                                   handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug);
                                                 }}
                                                 className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 hover:border hover:border-2 p-1 border-black"

@@ -19,7 +19,7 @@ const Notification = ({ message, type = 'success', isVisible, onHide }) => {
 
     return (
         <div className={`
-      fixed top-4 right-4 z-50 max-w-sm w-full
+      fixed top-2 left-4 z-50 max-w-sm w-full
       transform transition-all duration-500 ease-in-out
       ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
     `}>

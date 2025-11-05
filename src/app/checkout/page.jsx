@@ -701,6 +701,8 @@ const CheckoutComponent = () => {
                 orderData
             );
 
+            console.log("create sales order response", response)
+
             if (response.data.statusCode === 200) {
                 const docNumber = response.data.data.documentNumber;
                 setCartItemsCount(0);
@@ -804,7 +806,7 @@ const CheckoutComponent = () => {
     }, [router]);
 
     useEffect(() => {
-        if (outOfStockItems.length > 0) {
+        if (outOfStockItems?.length > 0) {
             window.scrollTo({
                 top: 0,
                 behavior: 'smooth'

@@ -114,8 +114,6 @@ const ProductListing = () => {
         productGroupId
     } = useProductFiltersStore()
 
-    console.log("product group id in product listing ", productGroupId)
-    console.log("product id  product listing ", productID)
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
@@ -359,7 +357,6 @@ const ProductListing = () => {
 
     const handleProductClick = (itemName, itemId, isProductGroup = false) => {
 
-        console.log("is product group", isProductGroup, itemId)
 
         setFilters({
             categorySlug: categorySlug,
@@ -424,7 +421,6 @@ const ProductListing = () => {
         const selectedPack = product.typesOfPacks.find(pack => pack._id === unitId)
         setSelectedPackType(selectedPack.name)
 
-        console.log("selected pack on unit change", selectedPack)
 
         // Update selected unit
         setSelectedUnits(prev => ({
@@ -601,7 +597,6 @@ const ProductListing = () => {
                 productGroupId: isProductGroup ? itemId : null
             });
 
-            console.log("Wishlist response:", response.data);
 
             if (response.data.statusCode === 200) {
                 // Refresh the wishlist to get updated data
@@ -665,16 +660,12 @@ const ProductListing = () => {
             if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId;
             if (brandId) queryParams.brandId = brandId;
 
-            console.log("Fetching items with params:", queryParams);
 
             // Fetch both products and product groups in parallel
             const [productsResponse, productGroupsResponse] = await Promise.all([
                 axiosInstance.get('products/get-products-by-filters', { params: queryParams }),
                 axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
             ]);
-
-            console.log("Products response:", productsResponse.data);
-            console.log("Product groups response:", productGroupsResponse.data);
 
             let productsData = [];
             let productGroupsData = [];
@@ -790,8 +781,6 @@ const ProductListing = () => {
             setLoadingCategories(true);
             const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`);
 
-            console.log("categories by brand = ", res.data.data);
-
             if (res.data.statusCode === 200) {
                 setCategories(res.data.data || []);
             }
@@ -809,7 +798,6 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
 
-            console.log("Cart items:", response.data);
             if (response.data.statusCode === 200) {
                 const cartData = response.data.data.items || response.data.data || [];
                 setCartItems(cartData);
@@ -831,7 +819,6 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`);
 
-            console.log("pricing groups discounts by userid ", response);
 
             if (response.data.statusCode === 200) {
                 setCustomerGroupsDiscounts(response.data.data || []);
@@ -848,7 +835,6 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
 
-            console.log("item based discounts", response);
 
             if (response.data.statusCode === 200) {
                 setItemBasedDiscounts(response.data.data || []);
@@ -864,7 +850,6 @@ const ProductListing = () => {
 
             const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`);
 
-            console.log("customers wishlist response:", response.data);
 
             if (response.data.statusCode === 200) {
                 // Set the wishlist items from response.data.data
@@ -1290,7 +1275,11 @@ const ProductListing = () => {
         if (currentUser && currentUser._id) {
             fetchCustomersCart()
         }
-    }, [currentUser, currentCartItems])
+    }, [currentUser])
+
+    window.addEventListener('cartUpdated', () => {
+        fetchCustomersCart()
+    });
 
     useEffect(() => {
         if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
@@ -1408,7 +1397,6 @@ const ProductListing = () => {
         try {
             const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
 
-            console.log("subCategories by categoryId:", res.data.data)
             if (res.data.statusCode === 200) {
                 setSubCategoriesByCategory(prev => ({
                     ...prev,
@@ -1425,9 +1413,8 @@ const ProductListing = () => {
         if (subCategoriesTwoBySubCategory[subCategoryId]) return // Already fetched
 
         try {
-            const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-subcategory-id/${subCategoryId}`)
+            const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
 
-            console.log("subCategoriesTwo by subCategoryId:", res.data.data)
 
             if (res.data.statusCode === 200) {
                 setSubCategoriesTwoBySubCategory(prev => ({
@@ -1486,7 +1473,6 @@ const ProductListing = () => {
     }
 
     const handleMinCategoryClick = (categorySlug, categoryId) => {
-        console.log("main categoryyyyyyyyyyyyyyyyyyy", categorySlug)
 
         router.replace(`/${categorySlug}`)
         setFilters({
@@ -1573,12 +1559,13 @@ const ProductListing = () => {
                         {brandId && (
                             <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
                                 <h1 className="px-2 text-lg font-bold ">{categorySlug?.split('/').pop().split('-').join(' ').toUpperCase()}</h1>
+                                {/* Categories Section */}
                                 {loadingCategories ? (
                                     <div className="py-2 text-sm text-gray-500">Loading categories...</div>
                                 ) : categories.length > 0 ? (
                                     categories.map((category) => {
                                         // Check if category has subcategories (either already fetched or we need to fetch them)
-                                        const hasSubcategories = subCategoriesByCategory[category._id]?.length > 0;
+                                        const hasSubcategories = category.hasChild;
 
                                         return (
                                             <div
@@ -1600,7 +1587,7 @@ const ProductListing = () => {
                                                     }}
                                                     className={`flex justify-between items-center py-1 px-2 hover:text-[#e9098d]/70 cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                                 >
-                                                    <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}`}>
+                                                    <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black"} truncate max-w-[180px]`}>
                                                         {category.name}
                                                     </span>
                                                     {/* Show arrow only if category has subcategories */}
@@ -1619,9 +1606,9 @@ const ProductListing = () => {
                                                 {/* Subcategories - Displayed as nested list */}
                                                 {hoveredCategory === category._id && hasSubcategories && (
                                                     <div className="ml-4 mt-1 space-y-1 pb-2">
-                                                        {subCategoriesByCategory[category._id].map((subCategory) => {
-                                                            // Check if subcategory has subcategories two
-                                                            const hasSubcategoriesTwo = subCategoriesTwoBySubCategory[subCategory._id]?.length > 0;
+                                                        {subCategoriesByCategory[category._id]?.map((subCategory) => {
+                                                            // Use the hasChild field from API response
+                                                            const hasSubcategoriesTwo = subCategory.hasChild;
 
                                                             return (
                                                                 <div
@@ -1634,15 +1621,15 @@ const ProductListing = () => {
                                                                             handleSubCategoryClick(subCategory.slug, subCategory._id);
                                                                         }}
                                                                         onMouseEnter={() => {
-                                                                            // Only fetch subcategories two if they haven't been fetched yet
-                                                                            if (!subCategoriesTwoBySubCategory[subCategory._id]) {
+                                                                            // Only fetch subcategories two if they haven't been fetched yet and hasChild is true
+                                                                            if (!subCategoriesTwoBySubCategory[subCategory._id] && hasSubcategoriesTwo) {
                                                                                 fetchSubCategoriesTwoForSubCategory(subCategory._id);
                                                                             }
                                                                             setHoveredSubCategory(subCategory._id);
                                                                         }}
                                                                         className={`flex justify-between items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
                                                                     >
-                                                                        <span className="text-base">{subCategory.name}</span>
+                                                                        <span className="text-base truncate max-w-[160px]">{subCategory.name}</span>
                                                                         {/* Show arrow only if subcategory has subcategories two */}
                                                                         {hasSubcategoriesTwo && (
                                                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1654,7 +1641,7 @@ const ProductListing = () => {
                                                                     {/* Subcategories Two - Displayed as nested list */}
                                                                     {hoveredSubCategory === subCategory._id && hasSubcategoriesTwo && (
                                                                         <div className="ml-4 mt-1 space-y-1">
-                                                                            {subCategoriesTwoBySubCategory[subCategory._id].map((subCategoryTwo) => (
+                                                                            {subCategoriesTwoBySubCategory[subCategory._id]?.map((subCategoryTwo) => (
                                                                                 <div
                                                                                     key={subCategoryTwo._id}
                                                                                     onClick={(e) => {
@@ -1663,7 +1650,7 @@ const ProductListing = () => {
                                                                                     }}
                                                                                     className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
                                                                                 >
-                                                                                    {subCategoryTwo.name}
+                                                                                    <span className="truncate max-w-[140px] block">{subCategoryTwo.name}</span>
                                                                                 </div>
                                                                             ))}
                                                                         </div>

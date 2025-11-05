@@ -78,6 +78,7 @@ export function Navbar() {
   const setFilters = useProductFiltersStore((state) => state.setFilters)
   const [brandId, setBrandId] = useState(null)
   const [brandSlug, setBrandSlug] = useState(null)
+  const [loadingSubCategoriesTwo, setLoadingSubCategoriesTwo] = useState({});
 
   const [showCompanyDropDown, setShowCompanyDropDown] = useState(false)
 
@@ -140,7 +141,7 @@ export function Navbar() {
     setShowCartPopup(false);
     setActiveDropdown(null);
     setShowCompanyDropDown(false);
-    
+
     // Use regular router push for immediate navigation
     router.push(path);
   }, [router, setShowCartPopup]);
@@ -222,6 +223,8 @@ export function Navbar() {
       try {
         const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
 
+
+
         if (res.data.statusCode === 200) {
           setSubCategoriesByCategory(prev => ({
             ...prev,
@@ -242,14 +245,25 @@ export function Navbar() {
       try {
         const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
 
-        if (res.data.statusCode === 200) {
+        if (res.data.statusCode === 200 && res.data.data) {
           setSubCategoriesTwoBySubCategory(prev => ({
             ...prev,
             [subCategoryId]: res.data.data
           }))
+        } else {
+          // Handle case where no subcategories two are found
+          setSubCategoriesTwoBySubCategory(prev => ({
+            ...prev,
+            [subCategoryId]: [] // Set empty array to prevent repeated API calls
+          }))
         }
       } catch (error) {
         console.error('Error fetching subcategories two:', error)
+        // Set empty array on error too
+        setSubCategoriesTwoBySubCategory(prev => ({
+          ...prev,
+          [subCategoryId]: []
+        }))
       }
     }, 150),
     [subCategoriesTwoBySubCategory]
@@ -292,6 +306,7 @@ export function Navbar() {
               brandSlug: brand.slug,
               link: `/${subCatTwo.slug}`
             }))
+
           }))
         }
       })
@@ -575,7 +590,7 @@ export function Navbar() {
 
               {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link 
+                <Link
                   href="/"
                   prefetch={true}
                   onClick={(e) => {
@@ -1094,7 +1109,6 @@ export function Navbar() {
                                         )}
                                       </Link>
 
-                                      {/* SubcategoryTwo Popup */}
                                       {subCategoriesTwoBySubCategory[subcat.id] && hoveredSubcategory === subcat.id && (
                                         <div
                                           className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
@@ -1102,16 +1116,24 @@ export function Navbar() {
                                           <div className="p-4 space-y-2">
                                             {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
                                               <Link
-                                                key={subcatTwo.id}
+                                                key={subcatTwo._id} // Use _id from API response
                                                 href={`/${subcatTwo.slug}`}
                                                 prefetch={true}
                                                 onClick={(e) => {
                                                   e.preventDefault();
-                                                  handleCategoryClick(subcatTwo.link, null, null, subcatTwo.id, null, subcatTwo.slug);
+                                                  handleCategoryClick(
+                                                    `/${subcatTwo.slug}`,
+                                                    null,
+                                                    null,
+                                                    subcatTwo._id,
+                                                    null,
+                                                    null,
+                                                    subcatTwo.slug
+                                                  );
                                                 }}
-                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 hover:border hover:border-2 p-1 border-black"
+                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200"
                                               >
-                                                {subcatTwo.label}
+                                                {subcatTwo.name} {/* Use name from API response */}
                                               </Link>
                                             ))}
                                           </div>

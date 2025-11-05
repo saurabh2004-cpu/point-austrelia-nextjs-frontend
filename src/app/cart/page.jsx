@@ -141,7 +141,7 @@ const ShoppingCart = () => {
                 setLoading(true);
             }
 
-            const response = await axiosInstance.get(`cart/get-paginated-cart-by-customer-id/${currentUser._id}?page=${page}&limit=2`)
+            const response = await axiosInstance.get(`cart/get-paginated-cart-by-customer-id/${currentUser._id}?page=${page}&limit=10`)
 
             console.log("customer cart cart ", response.data.data)
 

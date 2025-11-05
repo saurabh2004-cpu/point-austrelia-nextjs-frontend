@@ -11,7 +11,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Notification from "../Notification"
 
-export default function ProductDetail() {
+function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [selectedUnitId, setSelectedUnitId] = useState("")
@@ -1998,3 +1998,5 @@ export default function ProductDetail() {
     </>
   );
 }
+
+export default ProductDetail;

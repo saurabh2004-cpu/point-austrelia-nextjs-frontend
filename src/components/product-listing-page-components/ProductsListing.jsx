@@ -13,6 +13,7 @@ import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import ProductDetail from '@/components/product-details-components/ProductDetails'
 import { sub } from "framer-motion/client"
 import Notification from "../Notification"
+import { withAuth } from "../withAuth"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Newest")
@@ -267,7 +268,7 @@ const ProductListing = () => {
     // Get cart item for product or product group
     const getCartItem = (itemId, isProductGroup = false) => {
 
-        
+
 
         return cartItems?.find(item => {
             if (isProductGroup) {
@@ -1841,4 +1842,4 @@ const ProductListing = () => {
     )
 }
 
-export default ProductListing
+export default ProductListing; 

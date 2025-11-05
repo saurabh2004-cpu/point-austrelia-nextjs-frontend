@@ -38,12 +38,6 @@ const page = () => {
     <>
       {/* <Navbar /> */}
       <ProductListing />
-
-      {/* {showCartPopup && (
-        <div data-cart-popup>
-          <ShoppingCartPopup onClose={() => setShowCartPopup(false)} />
-        </div>
-      )} */}
     </>
   )
 }

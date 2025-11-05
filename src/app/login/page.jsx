@@ -3,26 +3,19 @@ import { metadataService } from '@/utils/metadataService';
 
 // ✅ Run on server
 export async function generateMetadata() {
-  const res = await metadataService.getMetadataByPage('login');
+  try {
+    const res = await metadataService.getMetadataByPage('login');
 
-  if (res.success && res.data) {
-    return {
-      title: res.data.title,
-      description: res.data.description,
-      keywords: res.data.keywords,
-      openGraph: {
+    if (res.success && res.data) {
+      return {
         title: res.data.title,
         description: res.data.description,
-        type: 'website',
-      },
-      twitter: {
-        title: res.data.title,
-        description: res.data.description,
-      },
-    };
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching metadata for page login:', err.message);
   }
 
-  // fallback if API fails
   return {
     title: 'Login | My Website',
     description: 'Default description for login page',

@@ -1,32 +1,45 @@
-'use client'
-import { Navbar } from '@/components/Navbar'
 import SignUpComponent from '@/components/SignUp'
-import { withGuest } from '@/components/withAuth'
-import useUserStore from '@/zustand/user'
-import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { metadataService } from '@/utils/metadataService';
 
-const SignUpPage = () => {
-  const currentUser = useUserStore((state) => state.user);
-  const router = useRouter()
-  const [loading, setLoading] = useState(false);
+export async function generateMetadata() {
 
-  
+  try {
+    const res = await metadataService.getMetadataByPage('sign-up');
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div>Loading...</div>
-      </div>
-    );
+    if (res.success && res.data) {
+      return {
+        title: res.data.title || `Sign Up | My Website`,
+        description: res.data.description || `Create an account to enjoy our services.`,
+        keywords: res.data.keywords || 'sign up, register, create account',
+        openGraph: {
+          title: res.data.title,
+          description: res.data.description,
+          type: 'website',
+          url: `https://yourdomain.com/sign-up`,
+        },
+        twitter: {
+          title: res.data.title,
+          description: res.data.description,
+        },
+      };
+    }
+  } catch (err) {
+    console.error(`Error fetching metadata for contact-us:`, err);
   }
 
+  return {
+    title: `${slug} | My Website`,
+    description: `Discover the best ${slug} products.`,
+  };
+}
+
+const SignUpPage = () => {
   return (
     <>
-      {/* <Navbar /> */}
       <SignUpComponent />
     </>
   )
 }
 
-export default withGuest(SignUpPage);
+export default SignUpPage;

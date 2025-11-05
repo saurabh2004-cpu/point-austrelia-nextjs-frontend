@@ -1,3 +1,5 @@
+
+'use client';
 import useBrandStore from '@/zustand/BrandPage';
 import Image from 'next/image';
 import React, { useEffect } from 'react';

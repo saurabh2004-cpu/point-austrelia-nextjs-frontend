@@ -11,6 +11,10 @@ export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef(null);
   const intervalRef = useRef(null);
+  const params = useParams();
+  const slug = params.slug
+  const setBrandPage = useBrandStore((state) => state.setBrandPage);
+
 
   // Auto-scroll functionality
   useEffect(() => {
@@ -18,7 +22,7 @@ export default function HeroSection() {
 
     const startAutoScroll = () => {
       intervalRef.current = setInterval(() => {
-        setCurrentSlide((prev) => 
+        setCurrentSlide((prev) =>
           prev === brandPage.heroCarouselImages.length - 1 ? 0 : prev + 1
         );
       }, 4000); // Change slide every 4 seconds
@@ -43,7 +47,7 @@ export default function HeroSection() {
     // Restart auto-scroll after manual interaction
     setTimeout(() => {
       intervalRef.current = setInterval(() => {
-        setCurrentSlide((prev) => 
+        setCurrentSlide((prev) =>
           prev === brandPage.heroCarouselImages.length - 1 ? 0 : prev + 1
         );
       }, 4000);
@@ -61,6 +65,31 @@ export default function HeroSection() {
       currentSlide === 0 ? brandPage.heroCarouselImages.length - 1 : currentSlide - 1
     );
   };
+
+
+
+
+  const fetchBrandPageBySlug = async (slug, setBrandPage) => {
+    try {
+      const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
+
+      console.log("brand page by brand slug ", response)
+
+      if (response.data.statusCode === 200) {
+        setBrandPage(response.data.data);
+      } else {
+        setBrandPage(null);
+      }
+    } catch (error) {
+      console.error("Error fetching brand page:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (slug && !brandPage) {
+      fetchBrandPageBySlug(slug, setBrandPage);
+    }
+  }, [slug, setBrandPage, params]);
 
   if (!brandPage?.heroCarouselImages?.length) {
     return (
@@ -121,12 +150,12 @@ export default function HeroSection() {
       {/* Carousel Section */}
       <div className="relative w-full mt-16">
         {/* Carousel Container */}
-        <div 
+        <div
           ref={carouselRef}
           className="relative overflow-hidden"
         >
           <div className="flex transition-transform duration-500 ease-in-out"
-               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {brandPage.heroCarouselImages.map((image, index) => (
               <div key={index} className="w-full flex-shrink-0">
@@ -154,7 +183,7 @@ export default function HeroSection() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            
+
             <button
               onClick={goToNextSlide}
               className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-300 hidden sm:block"
@@ -174,11 +203,10 @@ export default function HeroSection() {
               <button
                 key={index}
                 onClick={() => handleSlideChange(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
-                    ? 'bg-white scale-125' 
-                    : 'bg-white/50 hover:bg-white/80'
-                }`}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
+                  ? 'bg-white scale-125'
+                  : 'bg-white/50 hover:bg-white/80'
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}

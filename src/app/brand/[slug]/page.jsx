@@ -1,50 +1,51 @@
-'use client'
-import BrandsGrid from '@/components/metador-page-components/BrandsGrid'
-import TrustedByCarousel from '@/components/metador-page-components/Carousel'
-import CategoriesGrid from '@/components/metador-page-components/CategoriesGrid'
-import HeroSection from '@/components/metador-page-components/Hero'
-import axiosInstance from '@/axios/axiosInstance'
-import { useParams } from 'next/navigation'
-import React, { useEffect } from 'react'
-import { Navbar } from '@/components/Navbar'
-import useBrandStore from '@/zustand/BrandPage'
+import BrandsGrid from '@/components/metador-page-components/BrandsGrid';
+import TrustedByCarousel from '@/components/metador-page-components/Carousel';
+import CategoriesGrid from '@/components/metador-page-components/CategoriesGrid';
+import HeroSection from '@/components/metador-page-components/Hero';
+import { metadataService } from '@/utils/metadataService';
 
-const Page = () => {
-    const params = useParams();
-    const slug = params.slug
-    const setBrandPage = useBrandStore((state) => state.setBrandPage);
+// ✅ Dynamic metadata using slug
+export async function generateMetadata({ params }) {
+  const { slug } = params;
 
-    const fetchBrandPageBySlug = async (slug, setBrandPage) => {
-        try {
-            const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
+  try {
+    const res = await metadataService.getMetadataByPage(slug);
 
-            console.log("brand page by brand slug ", response)
-
-            if (response.data.statusCode === 200) {
-                setBrandPage(response.data.data);
-            }else{
-                setBrandPage(null);
-            }
-        } catch (error) {
-            console.error("Error fetching brand page:", error);
-        }
+    if (res.success && res.data) {
+      return {
+        title: res.data.title || `${slug} | My Website`,
+        description: res.data.description || `Explore ${slug} products on My Website.`,
+        keywords: res.data.keywords || slug,
+        openGraph: {
+          title: res.data.title,
+          description: res.data.description,
+          type: 'website',
+          url: `https://yourdomain.com/brand/${slug}`,
+        },
+        twitter: {
+          title: res.data.title,
+          description: res.data.description,
+        },
+      };
     }
+  } catch (err) {
+    console.error(`Error fetching metadata for ${slug}:`, err);
+  }
 
-    useEffect(() => {
-        if (slug) {
-            fetchBrandPageBySlug(slug, setBrandPage);
-        }
-    }, [slug, setBrandPage, params]);
-
-    return (
-        <>
-            {/* <Navbar /> */}
-            <HeroSection />
-            <CategoriesGrid />
-            <BrandsGrid />
-            <TrustedByCarousel />
-        </>
-    )
+  // ✅ fallback metadata
+  return {
+    title: `${slug} | My Website`,
+    description: `Discover the best ${slug} products.`,
+  };
 }
 
-export default  Page
+export default function BrandPage() {
+  return (
+    <>
+      <HeroSection />
+      <CategoriesGrid />
+      <BrandsGrid />
+      <TrustedByCarousel />
+    </>
+  );
+}

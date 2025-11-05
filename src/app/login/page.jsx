@@ -1,23 +1,34 @@
-'use client'
-import LoginComponent from '@/components/Login'
-import { Navbar } from '@/components/Navbar'
-import { withGuest } from '@/components/withAuth'
-import useUserStore from '@/zustand/user'
-import { useRouter } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import LoginComponent from '@/components/Login';
+import { metadataService } from '@/utils/metadataService';
 
-const LoginPage = () => {
-    const currentUser = useUserStore((state) => state.user);
+// ✅ Run on server
+export async function generateMetadata() {
+  const res = await metadataService.getMetadataByPage('login');
 
-    const router = useRouter()
-    const [loading, setLoading] = useState(true);
+  if (res.success && res.data) {
+    return {
+      title: res.data.title,
+      description: res.data.description,
+      keywords: res.data.keywords,
+      openGraph: {
+        title: res.data.title,
+        description: res.data.description,
+        type: 'website',
+      },
+      twitter: {
+        title: res.data.title,
+        description: res.data.description,
+      },
+    };
+  }
 
-    return (
-        <>
-            {/* <Navbar /> */}
-            <LoginComponent />
-        </>
-    )
+  // fallback if API fails
+  return {
+    title: 'Login | My Website',
+    description: 'Default description for login page',
+  };
 }
 
-export default withGuest(LoginPage);
+export default function LoginPage() {
+  return <LoginComponent />;
+}

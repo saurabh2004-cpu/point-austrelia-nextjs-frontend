@@ -1,12 +1,13 @@
 // services/metadataService.js
-// import axiosInstance from '@/axios/axiosInstance';
+import axiosInstance from '@/axios/axiosInstance';
 import axios from 'axios';
 
 export const metadataService = {
     // Fetch metadata for a specific page via your API route
     async getMetadataByPage(page) {
         try {
-            const response = await axios.get(`/api/meta-data/${page}`);
+            const response = await axios.get(`https://app.thesocio.in//api/meta-data/${page}`);
+
             console.log("get metadata by page response", response)
 
             if (response.data.success === true) {

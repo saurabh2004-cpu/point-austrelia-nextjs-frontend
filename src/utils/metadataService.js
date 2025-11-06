@@ -5,7 +5,7 @@ export const metadataService = {
     // Fetch metadata for a specific page via your API route
     async getMetadataByPage(page) {
         try {
-            const response = await axiosInstance.get(`http://app.thesocio.in//api/meta-data/${page}`);
+            const response = await axiosInstance.get(`/api/meta-data/${page}`);
 
             console.log("get metadata by page response", response)
 

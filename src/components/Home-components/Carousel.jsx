@@ -2,6 +2,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useCartPopupStateStore } from '@/zustand/cartPopupState';
 
 const Carousel = () => {
   // Array of carousel images - add more images here to see auto-scroll
@@ -16,8 +17,35 @@ const Carousel = () => {
       src: "/home-images/carousel-img.avif", // Replace with your actual image path
       alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
     }
-   
+
   ];
+
+  const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
+
+  // Global click outside handler for cart popup
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const cartPopup = document.querySelector('[data-cart-popup]');
+      const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
+
+      if (showCartPopup &&
+        cartPopup &&
+        !cartPopup.contains(event.target) &&
+        (!navbarCartButton || !navbarCartButton.contains(event.target))) {
+        setShowCartPopup(false);
+      }
+    };
+
+    if (showCartPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showCartPopup, setShowCartPopup]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(carouselImages.length > 1);
@@ -27,7 +55,7 @@ const Carousel = () => {
     if (!isAutoScrolling || carouselImages.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex(prevIndex => 
+      setCurrentIndex(prevIndex =>
         prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
       );
     }, 3000); // Change slide every 3 seconds
@@ -51,21 +79,20 @@ const Carousel = () => {
 
   return (
     <div className="w-full max-w-8xl mx-auto p-4 md:py-4 xl:pb-12">
-      <div 
+      <div
         className="relative w-full overflow-hidden rounded-lg  "
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        // style={{
-        //   height: '40rem' // Adjust height based on your image proportions
-        // }}
+      // style={{
+      //   height: '40rem' // Adjust height based on your image proportions
+      // }}
       >
         {/* Carousel Container */}
-        <div 
-          className={`flex transition-transform duration-2000 ease-in-out h-full ${
-            carouselImages.length === 1 ? '' : 'animate-none'
-          }`}
+        <div
+          className={`flex transition-transform duration-2000 ease-in-out h-full ${carouselImages.length === 1 ? '' : 'animate-none'
+            }`}
           style={{
-            transform: `translateX(-${currentIndex * (100)/ carouselImages.length}%)`,
+            transform: `translateX(-${currentIndex * (100) / carouselImages.length}%)`,
             width: `${carouselImages.length * 100}%`
           }}
         >
@@ -79,9 +106,9 @@ const Carousel = () => {
                 src={image.src}
                 alt={image.alt}
                 className='h-[80%]'
-                // className="object-contain" // Use object-contain to maintain aspect ratio
-                // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                
+              // className="object-contain" // Use object-contain to maintain aspect ratio
+              // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+
               />
             </div>
           ))}
@@ -105,7 +132,7 @@ const Carousel = () => {
           </div>
         )} */}
 
-        
+
       </div>
 
       {/* Responsive adjustments */}

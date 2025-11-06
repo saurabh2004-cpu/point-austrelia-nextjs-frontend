@@ -223,6 +223,8 @@ export function Navbar() {
       try {
         const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
 
+        console.log("Subcategories fetched:", res.data)
+
 
 
         if (res.data.statusCode === 200) {
@@ -270,6 +272,7 @@ export function Navbar() {
   );
 
   // Optimized navigation items with minimal dependencies
+  // Optimized navigation items with minimal dependencies
   const navigationItems = useMemo(() => {
     const items = [
       { label: "HOME", index: 0, link: '/' }
@@ -283,6 +286,9 @@ export function Navbar() {
         const itemsPerColumn = Math.ceil(categories.length / 5)
         const column = Math.floor(catIdx / itemsPerColumn) + 1
 
+        // Check if category has children (subcategories)
+        const hasSubcategories = cat.hasChild || (subCategoriesByCategory[cat._id] && subCategoriesByCategory[cat._id].length > 0);
+
         return {
           id: cat._id,
           label: cat.name,
@@ -291,23 +297,30 @@ export function Navbar() {
           brandSlug: brand.slug,
           link: `/${cat.slug}`,
           column: column,
-          subcategories: subCategoriesByCategory[cat._id]?.map(subCat => ({
-            id: subCat._id,
-            label: subCat.name,
-            slug: subCat.slug,
-            brandId: brand._id,
-            brandSlug: brand.slug,
-            link: `/${subCat.slug}`,
-            subcategoriesTwo: subCategoriesTwoBySubCategory[subCat._id]?.map(subCatTwo => ({
-              id: subCatTwo._id,
-              label: subCatTwo.name,
-              slug: subCatTwo.slug,
+          hasChild: hasSubcategories, // Add hasChild field
+          subcategories: subCategoriesByCategory[cat._id]?.map(subCat => {
+            // Check if subcategory has children (subcategoriesTwo)
+            const hasSubcategoriesTwo = subCat.hasChild || (subCategoriesTwoBySubCategory[subCat._id] && subCategoriesTwoBySubCategory[subCat._id].length > 0);
+
+            return {
+              id: subCat._id,
+              label: subCat.name,
+              slug: subCat.slug,
               brandId: brand._id,
               brandSlug: brand.slug,
-              link: `/${subCatTwo.slug}`
-            }))
-
-          }))
+              link: `/${subCat.slug}`,
+              hasChild: hasSubcategoriesTwo, // Add hasChild field for subcategories
+              subcategoriesTwo: subCategoriesTwoBySubCategory[subCat._id]?.map(subCatTwo => ({
+                id: subCatTwo._id,
+                label: subCatTwo.name,
+                slug: subCatTwo.slug,
+                brandId: brand._id,
+                brandSlug: brand.slug,
+                link: `/${subCatTwo.slug}`,
+                hasChild: false // SubcategoriesTwo don't have further children
+              }))
+            }
+          })
         }
       })
 
@@ -802,11 +815,11 @@ export function Navbar() {
         {/* Main Navigation */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative">
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center justify-center space-x-[36px] h-14" ref={desktopDropdownRef}>
+          <div className="hidden lg:flex items-center justify-center  space-x-[36px] h-14" ref={desktopDropdownRef}>
             {navigationItems.map((item) => (
               <div
                 key={item.index}
-                className="relative h-full flex items-center hover:border hover:border-1 border-black px-2"
+                className="relative h-full flex items-center  px-2"
                 onMouseEnter={() => {
                   if (item.hasDropdown && currentUser) {
                     if (item.brandId) {
@@ -833,14 +846,14 @@ export function Navbar() {
                       e.preventDefault();
                       handleFastNavigation(item.link || '/');
                     }}
-                    className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                    className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
                   >
                     {item.label}
                   </Link>
                 ) : (
                   <button
                     onClick={() => handleNavigation(item)}
-                    className="text-[1rem] font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
+                    className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
                   >
                     {item.label}
                   </button>
@@ -932,7 +945,7 @@ export function Navbar() {
                       className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
                     >
                       {item.label}
-                      {item.hasDropdown && currentUser && (
+                      {item.hasChild && currentUser && (
                         <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
                       )}
                     </button>
@@ -1046,13 +1059,13 @@ export function Navbar() {
                         columnCategories.map((category, catIdx) => (
                           <div
                             key={category.id || catIdx}
-                            className="relative hover:border hover:border-2 p-2 border-black"
+                            className="relative p-2"
                             onMouseEnter={() => {
-                              if (category.subcategories) {
+                              if (category.hasChild) {
                                 setHoveredCategory(`${colIdx}-${catIdx}`)
-                              } else if (category.id) {
-                                handleCategoryHover(category.id)
-                                setHoveredCategory(`${colIdx}-${catIdx}`)
+                                if (category.id) {
+                                  handleCategoryHover(category.id)
+                                }
                               }
                             }}
                             onMouseLeave={() => setHoveredCategory(null)}
@@ -1064,30 +1077,32 @@ export function Navbar() {
                                 e.preventDefault();
                                 handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
                               }}
-                              className={`text-left text-sm font-medium transition-colors duration-200 flex items-center justify-between w-full group ${category.label === "NEW!" || category.label === "SALE"
-                                ? "text-[#E9098D] font-bold"
-                                : "text-[#2d2c70] hover:text-[#E9098D]"
+                              className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-2 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE"
+                                  ? "text-[#E9098D] font-bold"
+                                  : "text-[#2d2c70] hover:text-[#E9098D]"
+                                } ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''
                                 }`}
                             >
                               <span>{category.label}</span>
-                              {(category.subcategories || subCategoriesByCategory[category.id]) && (
+                              {/* Only show chevron if category has children */}
+                              {category.hasChild && (
                                 <ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />
                               )}
                             </Link>
 
-                            {/* Subcategory Popup */}
-                            {(category.subcategories || subCategoriesByCategory[category.id]) && hoveredCategory === `${colIdx}-${catIdx}` && (
+                            {/* Subcategory Popup - Only show if category has children */}
+                            {category.hasChild && hoveredCategory === `${colIdx}-${catIdx}` && (
                               <div
                                 className="absolute left-2/3 top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
                                 onMouseEnter={() => setHoveredCategory(`${colIdx}-${catIdx}`)}
                               >
-                                <div className="p-4 space-y-2 ">
+                                <div className="p-4 space-y-2">
                                   {(category.subcategories || subCategoriesByCategory[category.id] || []).map((subcat) => (
                                     <div
                                       key={subcat.id}
-                                      className="relative hover:border hover:border-2 p-1 border-black"
+                                      className="relative p-1"
                                       onMouseEnter={() => {
-                                        if (subcat.id) {
+                                        if (subcat.hasChild) {
                                           handleSubCategoryHover(subcat.id)
                                           setHoveredSubcategory(subcat.id)
                                         }
@@ -1101,22 +1116,27 @@ export function Navbar() {
                                           e.preventDefault();
                                           handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
                                         }}
-                                        className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 flex items-center justify-between group"
+                                        className={`block w-full text-left text-sm py-2 px-3 rounded transition-colors duration-200 flex items-center justify-between group cursor-pointer ${hoveredSubcategory === subcat.id
+                                            ? 'bg-gray-100 text-[#E9098D]'
+                                            : 'text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50'
+                                          }`}
                                       >
                                         <span>{subcat.label}</span>
-                                        {subCategoriesTwoBySubCategory[subcat.id] && (
+                                        {/* Only show chevron if subcategory has children */}
+                                        {subcat.hasChild && (
                                           <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         )}
                                       </Link>
 
-                                      {subCategoriesTwoBySubCategory[subcat.id] && hoveredSubcategory === subcat.id && (
+                                      {/* SubcategoryTwo Popup - Only show if subcategory has children */}
+                                      {subcat.hasChild && subCategoriesTwoBySubCategory[subcat.id]?.length > 0 && hoveredSubcategory === subcat.id && (
                                         <div
                                           className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
                                         >
                                           <div className="p-4 space-y-2">
                                             {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
                                               <Link
-                                                key={subcatTwo._id} // Use _id from API response
+                                                key={subcatTwo._id}
                                                 href={`/${subcatTwo.slug}`}
                                                 prefetch={true}
                                                 onClick={(e) => {
@@ -1131,9 +1151,9 @@ export function Navbar() {
                                                     subcatTwo.slug
                                                   );
                                                 }}
-                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200"
+                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
                                               >
-                                                {subcatTwo.name} {/* Use name from API response */}
+                                                {subcatTwo.name}
                                               </Link>
                                             ))}
                                           </div>

@@ -107,7 +107,7 @@ export default function LoginComponent() {
         
         // Use startTransition for non-blocking navigation
         startTransition(() => {
-          router.push('/my-account-review')
+          router.push('/')
         })
       } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
         setIsLoading(false)

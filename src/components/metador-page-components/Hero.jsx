@@ -15,7 +15,6 @@ export default function HeroSection() {
   const slug = params.slug
   const setBrandPage = useBrandStore((state) => state.setBrandPage);
 
-
   // Auto-scroll functionality
   useEffect(() => {
     if (!brandPage?.heroCarouselImages?.length) return;
@@ -66,9 +65,6 @@ export default function HeroSection() {
     );
   };
 
-
-
-
   const fetchBrandPageBySlug = async (slug, setBrandPage) => {
     try {
       const response = await axiosInstance.get(`brand-page/get-brand-page-by-brand-slug/${slug}`);
@@ -86,11 +82,27 @@ export default function HeroSection() {
   }
 
   useEffect(() => {
-    if (slug ) {
+    if (slug) {
       fetchBrandPageBySlug(slug, setBrandPage);
     }
   }, [slug]);
 
+  // Loading state
+  if (!brandPage) {
+    return (
+      <div className="h-full mx-auto pb-0 pt-8 font-spartan">
+        <div className="flex px-4 w-full lg:w-6xl mx-auto flex-col lg:flex-row items-center gap-6 lg:gap-6">
+          <div className="flex-shrink-0 w-64 h-32 bg-gray-200 animate-pulse rounded"></div>
+          <div className="flex-1">
+            <div className="h-8 bg-gray-200 animate-pulse rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No carousel images state
   if (!brandPage?.heroCarouselImages?.length) {
     return (
       <div className="h-full mx-auto pb-0 pt-8 font-spartan">
@@ -109,10 +121,16 @@ export default function HeroSection() {
 
           {/* Heading + Description */}
           <div className="flex-1">
-            <h2 className="text-xl sm:text-2xl font-semibold text-[#2D2C70] lg:mb-2">
+            <h2 
+              className="text-xl sm:text-2xl font-semibold lg:mb-2" 
+              style={{ color: brandPage?.brandTitleColor || '#2D2C70' }}
+            >
               {brandPage?.brandTitle}
             </h2>
-            <p className={`text-[18px] font-medium text-${brandPage?.brandDescriptionColor} tracking-relaxed`}>
+            <p 
+              className="text-[18px] font-medium tracking-relaxed"
+              style={{ color: brandPage?.brandDescriptionColor || '#000000' }}
+            >
               {brandPage?.brandDescription || ''}
             </p>
           </div>
@@ -138,10 +156,16 @@ export default function HeroSection() {
 
         {/* Heading + Description */}
         <div className="flex-1">
-          <h2 className="text-xl sm:text-2xl font-semibold text-[#2D2C70] lg:mb-2">
+          <h2 
+            className="text-xl sm:text-2xl font-semibold lg:mb-2" 
+            style={{ color: brandPage?.brandTitleColor || '#2D2C70' }}
+          >
             {brandPage?.brandTitle}
           </h2>
-          <p className={`text-[18px] font-medium text-${brandPage?.brandDescriptionColor} tracking-relaxed`}>
+          <p 
+            className="text-[18px] font-medium tracking-relaxed"
+            style={{ color: brandPage?.brandDescriptionColor || '#000000' }}
+          >
             {brandPage?.brandDescription || ''}
           </p>
         </div>

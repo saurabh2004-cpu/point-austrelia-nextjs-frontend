@@ -7,7 +7,7 @@ export const metadataService = {
     async getMetadataByPage(page) {
         try {
             const response = await axios.get(
-                `https://api.thesocio.in/api/v1/meta-data/get-meta-data-by-page/${page}`
+                `https://app.thesocio.in/api/v1/meta-data/get-meta-data-by-page/${page}`
             );
 
             console.log("get metadata by page response", response)

@@ -86,10 +86,10 @@ export default function HeroSection() {
   }
 
   useEffect(() => {
-    if (slug && !brandPage) {
+    if (slug ) {
       fetchBrandPageBySlug(slug, setBrandPage);
     }
-  }, [slug, setBrandPage, params]);
+  }, [slug]);
 
   if (!brandPage?.heroCarouselImages?.length) {
     return (

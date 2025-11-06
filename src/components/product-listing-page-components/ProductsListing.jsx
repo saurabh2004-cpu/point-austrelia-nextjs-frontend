@@ -14,6 +14,7 @@ import ProductDetail from '@/components/product-details-components/ProductDetail
 import { sub } from "framer-motion/client"
 import Notification from "../Notification"
 import { withAuth } from "../withAuth"
+import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 
 const ProductListing = () => {
     const [sortBy, setSortBy] = useState("Newest")
@@ -60,6 +61,31 @@ const ProductListing = () => {
     const [hoveredSubCategory, setHoveredSubCategory] = useState(null)
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
     const [customerSpecificAmountGroups, setCustomerSpecificAmountGroups] = useState({})
+
+    const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
+
+    // Global click outside handler for cart popup
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const cartPopup = document.querySelector('[data-cart-popup]');
+            const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
+
+            if (showCartPopup &&
+                cartPopup &&
+                !cartPopup.contains(event.target) &&
+                (!navbarCartButton || !navbarCartButton.contains(event.target))) {
+                setShowCartPopup(false);
+            }
+        };
+
+        if (showCartPopup) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showCartPopup, setShowCartPopup]);
 
     const handleClosePopup = () => {
         setShowProductPopup(false);

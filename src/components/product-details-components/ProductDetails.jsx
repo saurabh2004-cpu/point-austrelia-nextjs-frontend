@@ -177,11 +177,11 @@ function ProductDetail() {
           });
         }
 
-        console.log("Product group images for", item.name, ":", {
-          thumbnail: item.thumbnail,
-          additionalImages: item.images,
-          totalImages: allImages.length
-        });
+        // console.log("Product group images for", item.name, ":", {
+        //   thumbnail: item.thumbnail,
+        //   additionalImages: item.images,
+        //   totalImages: allImages.length
+        // });
 
         return allImages;
       }
@@ -201,13 +201,13 @@ function ProductDetail() {
     const item = getCurrentItem();
     if (!item) return;
 
-    console.log("=== IMAGE DEBUG INFO ===");
-    console.log("Item Type:", itemType);
-    console.log("Item:", item);
-    console.log("Thumbnail:", item.thumbnail);
-    console.log("Images Array:", item.images);
-    console.log("getItemImages result:", getItemImages(item));
-    console.log("=== END DEBUG INFO ===");
+    // console.log("=== IMAGE DEBUG INFO ===");
+    // console.log("Item Type:", itemType);
+    // console.log("Item:", item);
+    // console.log("Thumbnail:", item.thumbnail);
+    // console.log("Images Array:", item.images);
+    // console.log("getItemImages result:", getItemImages(item));
+    // console.log("=== END DEBUG INFO ===");
   };
 
   // Call this in your useEffect when item loads
@@ -422,7 +422,7 @@ function ProductDetail() {
       if (subCategoryId) queryParams.subCategoryId = subCategoryId;
       if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId;
 
-      console.log("Fetching related items with params:", queryParams);
+      // console.log("Fetching related items with params:", queryParams);
 
       // Fetch both products and product groups
       const [productsResponse, productGroupsResponse] = await Promise.all([
@@ -430,7 +430,7 @@ function ProductDetail() {
         axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
       ]);
 
-      console.log("products groups response", productGroupsResponse)
+      // console.log("products groups response", productGroupsResponse)
 
       let productsData = [];
       let productGroupsData = [];
@@ -1041,7 +1041,7 @@ function ProductDetail() {
         discountPercentages: discountPercentages
       };
 
-      console.log("Sending cart data:", cartData);
+      // console.log("Sending cart data:", cartData);
 
       const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
@@ -1155,7 +1155,7 @@ function ProductDetail() {
         discountPercentages: discountPercentages
       };
 
-      console.log("Updating cart data:", cartData);
+      // console.log("Updating cart data:", cartData);
 
       const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
@@ -1183,7 +1183,7 @@ function ProductDetail() {
       setLoading(true);
       const response = await axiosInstance(`products/get-product/${productID}`);
 
-      console.log("response product details", response);
+      // console.log("response product details", response);
 
       if (response.data.statusCode === 200) {
         const productData = response.data.data;
@@ -1210,7 +1210,7 @@ function ProductDetail() {
       setLoading(true);
       const response = await axiosInstance(`product-group/get-product-group/${productGroupId}`);
 
-      console.log("response product group details", response);
+      // console.log("response product group details", response);
 
       if (response.data.statusCode === 200) {
         const productGroupData = response.data.data;
@@ -1251,7 +1251,7 @@ function ProductDetail() {
 
       const response = await axiosInstance.get(`pricing-groups-discount/get-pricing-group-discounts-by-customer-id/${currentUser._id}`);
 
-      console.log("Customer groups discounts:", response.data.data);
+      // console.log("Customer groups discounts:", response.data.data);
 
       if (response.data.statusCode === 200) {
         setCustomerGroupsDiscounts(response.data.data || []);
@@ -1268,7 +1268,7 @@ function ProductDetail() {
 
       const response = await axiosInstance.get(`item-based-discount/get-items-based-discount-by-customer-id/${currentUser.customerId}`);
 
-      console.log("customers item based discounts:", response.data.data);
+      // console.log("customers item based discounts:", response.data.data);
 
       if (response.data.statusCode === 200) {
         setItemBasedDiscounts(response.data.data || []);
@@ -1298,7 +1298,7 @@ function ProductDetail() {
         productGroupId: itemType === 'productGroup' ? targetItemId : null
       })
 
-      console.log("Wishlist response:", response.data)
+      // console.log("Wishlist response:", response.data)
 
       if (response.data.statusCode === 200) {
         await fetchCustomersWishList();
@@ -1324,7 +1324,7 @@ function ProductDetail() {
 
       const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
 
-      console.log("customers wishlist response:", response.data)
+      // console.log("customers wishlist response:", response.data)
 
       if (response.data.statusCode === 200) {
         setWishlistItems(response.data.data || [])

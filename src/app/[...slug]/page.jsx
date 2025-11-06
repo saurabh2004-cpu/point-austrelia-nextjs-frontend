@@ -1,45 +1,38 @@
-'use client'
-import ShoppingCartPopup from '@/components/CartPopup';
-import { Navbar } from '@/components/Navbar'
+
 import ProductListing from '@/components/product-listing-page-components/ProductsListing'
-import { withAuth } from '@/components/withAuth';
-import { useCartPopupStateStore } from '@/zustand/cartPopupState';
-import React, { useEffect } from 'react'
+import { metadataService } from '@/utils/metadataService';
+
+//  Run on server
+export async function generateMetadata() {
+  try {
+    const res = await metadataService.getMetadataByPage('product-listing');
+
+    if (res.success && res.data) {
+      return {
+        title: res.data.title,
+        description: res.data.description,
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching metadata for page login:', err.message);
+  }
+
+  return {
+    title: 'Login | My Website',
+    description: 'Default description for login page',
+  };
+}
+
 
 const page = () => {
 
-  const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
-
-  // Global click outside handler for cart popup
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const cartPopup = document.querySelector('[data-cart-popup]');
-      const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
-
-      if (showCartPopup &&
-        cartPopup &&
-        !cartPopup.contains(event.target) &&
-        (!navbarCartButton || !navbarCartButton.contains(event.target))) {
-        setShowCartPopup(false);
-      }
-    };
-
-    if (showCartPopup) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showCartPopup, setShowCartPopup]);
 
 
   return (
     <>
-      {/* <Navbar /> */}
       <ProductListing />
     </>
   )
 }
 
-export default withAuth(page);
+export default page;

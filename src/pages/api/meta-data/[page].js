@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   console.log("Fetching metadata for page:", page);
 
   try {
-    const response = await axios.get(`/api/v1/meta-data/get-meta-data-by-page/${page}`);
+    const response = await axios.get(`https://localhost:3000/api/v1/meta-data/get-meta-data-by-page/${page}`);
     
     console.log("Backend response:", response.data); // Debug log
 

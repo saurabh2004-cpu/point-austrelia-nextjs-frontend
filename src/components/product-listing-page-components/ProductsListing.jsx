@@ -666,7 +666,6 @@ const ProductListing = () => {
     }
 
     // CORRECTED: Fetch products and product groups with filters
-    // CORRECTED: Fetch products and product groups with filters
     const fetchItems = async (page = currentPage, itemsPerPage = perpageItems, sortOption = sortBy) => {
         try {
             setLoading(true);
@@ -692,6 +691,8 @@ const ProductListing = () => {
                 axiosInstance.get('products/get-products-by-filters', { params: queryParams }),
                 axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
             ]);
+
+            console.log("products response", productsResponse)
 
             let productsData = [];
             let productGroupsData = [];
@@ -769,6 +770,7 @@ const ProductListing = () => {
     }
 
     // NEW: Client-side sorting function for combined items
+    // UPDATED: Client-side sorting function for combined items
     const applyClientSideSorting = (items, sortOption) => {
         const sortedItems = [...items];
 
@@ -787,15 +789,10 @@ const ProductListing = () => {
                     return priceB - priceA;
                 });
 
+            // For "Newest" and default, don't re-sort as sequence takes priority
             case "Newest":
-                return sortedItems.sort((a, b) => {
-                    const dateA = new Date(a.createdAt || 0);
-                    const dateB = new Date(b.createdAt || 0);
-                    return dateB - dateA;
-                });
-
             default:
-                return sortedItems;
+                return sortedItems; // Return as-is (already sequenced)
         }
     }
 
@@ -935,9 +932,28 @@ const ProductListing = () => {
 
     // Get page title based on current filter
     const getPageTitle = () => {
-        if (subCategoryTwoSlug) return `${brandSlug}/${subCategoryTwoSlug?.split('/')[2]}`;
-        if (subCategorySlug) return `${subCategorySlug}`;
-        if (categorySlug) return categorySlug?.split('-').join(' ').toUpperCase();
+        if (subCategoryTwoSlug)
+            return subCategoryTwoSlug
+                .split('-')
+                .join(' ')
+                .replaceAll('/', ' / ')
+                .toUpperCase();
+
+        if (subCategorySlug)
+            return subCategorySlug
+                .split('-')
+                .join(' ')
+                .replaceAll('/', ' / ')
+                .toUpperCase();
+
+
+        if (categorySlug)
+            return categorySlug
+                .split('-')
+                .join(' ')
+                .replaceAll('/', ' / ')
+                .toUpperCase();
+
         return "ALL PRODUCTS";
     };
 
@@ -949,37 +965,48 @@ const ProductListing = () => {
         return "Browse our complete product catalog"
     }
 
-    // Sort items by sequence and date
+    // Sort items by sequence and date - CORRECTED VERSION
     const sortItemsBySequenceAndDate = (items) => {
-        // Separate items into two groups
-        const itemsWithSequence = items.filter(item =>
-            item.sequence !== undefined && item.sequence !== null
-        );
+        return [...items].sort((a, b) => {
+            // Handle sequence comparison
+            const aSequence = a.sequence !== undefined && a.sequence !== null ? a.sequence : Number.MAX_SAFE_INTEGER;
+            const bSequence = b.sequence !== undefined && b.sequence !== null ? b.sequence : Number.MAX_SAFE_INTEGER;
 
-        const itemsWithoutSequence = items.filter(item =>
-            item.sequence === undefined || item.sequence === null
-        );
+            // If both have sequence, sort by sequence (ascending)
+            if (aSequence !== Number.MAX_SAFE_INTEGER && bSequence !== Number.MAX_SAFE_INTEGER) {
+                return aSequence - bSequence;
+            }
 
-        // Sort items with sequence by sequence number (ascending)
-        itemsWithSequence.sort((a, b) => a.sequence - b.sequence);
+            // If only one has sequence, items with sequence come first
+            if (aSequence !== Number.MAX_SAFE_INTEGER) {
+                return -1;
+            }
+            if (bSequence !== Number.MAX_SAFE_INTEGER) {
+                return 1;
+            }
 
-        // Sort items without sequence by createdAt date (newest first)
-        itemsWithoutSequence.sort((a, b) =>
-            new Date(b.createdAt) - new Date(a.createdAt)
-        );
-
-        // Combine both arrays: sequenced items first, then dated items
-        return [...itemsWithSequence, ...itemsWithoutSequence];
+            // If neither has sequence, sort by createdAt (newest first)
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
     };
 
     // CORRECTED: Apply both sequence sorting and current sort
     const getSortedItems = () => {
-        let sorted = sortItemsBySequenceAndDate(allItems);
-        // Apply current sort option on top of sequence sorting
-        return applyClientSideSorting(sorted, sortBy);
+        // First apply sequence-based sorting
+        let sequencedItems = sortItemsBySequenceAndDate(allItems);
+
+        // Then apply current sort option on top of sequence sorting
+        // But only if it's a price-based sort (sequence takes priority over date-based sorts)
+        if (sortBy === "Price Low to High" || sortBy === "Price High to Low") {
+            return applyClientSideSorting(sequencedItems, sortBy);
+        }
+
+        // For "Newest" and other sorts, keep the sequence-based order
+        return sequencedItems;
     };
 
     const sortedItems = getSortedItems();
+
 
     // Render product group badge
     const renderProductGroupBadge = () => {
@@ -1046,27 +1073,25 @@ const ProductListing = () => {
                 {/* Product Group Badge */}
                 {isProductGroup && renderProductGroupBadge()}
 
-                {/* Product Badge */}
-                {!isProductGroup && item.badge && (
-                    <div className="absolute top-2 left-4 sm:left-6 z-10">
-                        <div
-                            className="px-2 py-1 rounded text-xs font-medium"
-                            style={{
-                                backgroundColor: item.badge.backgroundColor,
-                                color: item.badge.textColor || '#fff',
-                            }}
-                        >
-                            {item.badge.text}
-                        </div>
-                    </div>
-                )}
-
                 {/* Item Image */}
-                <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
+                <div className="flex justify-center  rounded-lg">
+                    {!isProductGroup && item.badge && (
+                        <div className="absolute top-4 left-2 sm:left-8 z-10">
+                            <div
+                                className="px-2 py-1 rounded text-xs font-medium"
+                                style={{
+                                    backgroundColor: item.badge.backgroundColor,
+                                    color: item.badge.textColor || '#fff',
+                                }}
+                            >
+                                {item.badge.text}
+                            </div>
+                        </div>
+                    )}
                     <img
                         src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain"
+                        className="w-32 h-32 sm:w-36 sm:h-36 lg:w-[170px] lg:h-[170px] object-contain"
                         onClick={() => handleProductImageClick(item, isProductGroup)}
                     />
                 </div>
@@ -1084,8 +1109,16 @@ const ProductListing = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU {isProductGroup ? item.sku : item.sku}
+                            SKU :{" "}
+                            {isProductGroup
+                                ? item.sku.length > 8
+                                    ? `${item.sku.slice(0, 8)}...`
+                                    : item.sku
+                                : item.sku.length > 8
+                                    ? `${item.sku.slice(0, 8)}...`
+                                    : item.sku}
                         </p>
+
 
                         {/* Stock Status */}
                         <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
@@ -1534,7 +1567,7 @@ const ProductListing = () => {
 
     if (!productID && !productGroupId) {
         return (
-            <div className="min-h-screen">
+            <div className="min-h-screen ">
 
                 <Notification
                     message={notification.message}
@@ -1545,7 +1578,7 @@ const ProductListing = () => {
 
                 {/* Breadcrumb */}
                 <div className="bg-white justify-items-center pt-4">
-                    <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
+                    <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                         <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                             <span className="hidden sm:inline"> {getPageTitle()}</span>
                         </nav>
@@ -1555,16 +1588,16 @@ const ProductListing = () => {
                         {
                             subCategoryTwoSlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
                             subCategorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
-                            categorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                            categorySlug?.split('/').pop().split('-').join('  ').toUpperCase() ||
                             brandSlug?.split('-').join(' ').toUpperCase()
                         }
                     </h1>
                 </div>
 
-                <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
+                <div className="md:max-w-[80%] mx-auto px-2  py-3 sm:py-6">
                     <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
                         {/* Mobile Filter Toggle Button */}
-                        <div className="lg:hidden ">
+                        {/* <div className="lg:hidden ">
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
                                 className="w-full bg-white p-3 rounded-lg border flex items-center justify-between text-black font-spartan"
@@ -1579,18 +1612,23 @@ const ProductListing = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                        </div>
+                        </div> */}
 
                         {/* // Sidebar Filter */}
                         {brandId && (
                             <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
-                                <h1 className="px-2 text-lg font-bold ">{categorySlug?.split('/').pop().split('-').join(' ').toUpperCase()}</h1>
+                                <h1 className="hidden lg:block px-2 text-lg font-bold">
+                                    {(() => {
+                                        const slugText = categorySlug?.split('/').pop().split('-').join(' ').toUpperCase() || '';
+                                        return slugText.length > 18 ? slugText.slice(0, 15) + '...' : slugText;
+                                    })()}
+                                </h1>
+
                                 {/* Categories Section */}
                                 {loadingCategories ? (
                                     <div className="py-2 text-sm text-gray-500">Loading categories...</div>
                                 ) : categories.length > 0 ? (
                                     categories.map((category) => {
-                                        // Check if category has subcategories (either already fetched or we need to fetch them)
                                         const hasSubcategories = category.hasChild;
 
                                         return (
@@ -1600,26 +1638,32 @@ const ProductListing = () => {
                                             >
                                                 {/* Main Category */}
                                                 <div
-                                                    onMouseEnter={() => {
-                                                        // Only fetch subcategories if they haven't been fetched yet
-                                                        if (!subCategoriesByCategory[category._id]) {
-                                                            fetchSubCategoriesForCategory(category._id);
-                                                        }
-                                                        setHoveredCategory(category._id);
-                                                    }}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleMinCategoryClick(category.slug, category._id);
-                                                    }}
-                                                    className={`flex justify-between items-center py-1 px-2 hover:text-[#e9098d]/70 cursor-pointer transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                                    className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                                 >
-                                                    <span className={`text-xs sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/50 ${categoryId === category._id ? "text-[#e9098d]" : "text-black"} truncate max-w-[180px]`}>
+                                                    {/* Category Name - Clickable for filter */}
+                                                    <span
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleMinCategoryClick(category.slug, category._id);
+                                                        }}
+                                                        className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"} truncate max-w-[180px]`}
+                                                    >
                                                         {category.name}
                                                     </span>
-                                                    {/* Show arrow only if category has subcategories */}
+
+                                                    {/* Chevron Icon - Clickable for dropdown */}
                                                     {hasSubcategories && (
                                                         <svg
-                                                            className={`w-4 h-4 transition-transform ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                // Only fetch subcategories if they haven't been fetched yet
+                                                                if (!subCategoriesByCategory[category._id]) {
+                                                                    fetchSubCategoriesForCategory(category._id);
+                                                                }
+                                                                // Toggle the hovered state
+                                                                setHoveredCategory(hoveredCategory === category._id ? null : category._id);
+                                                            }}
+                                                            className={`w-4 h-4 transition-transform cursor-pointer hover:text-[#e9098d]/70 ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
                                                             fill="none"
                                                             stroke="currentColor"
                                                             viewBox="0 0 24 24"
@@ -1633,7 +1677,6 @@ const ProductListing = () => {
                                                 {hoveredCategory === category._id && hasSubcategories && (
                                                     <div className="ml-4 mt-1 space-y-1 pb-2">
                                                         {subCategoriesByCategory[category._id]?.map((subCategory) => {
-                                                            // Use the hasChild field from API response
                                                             const hasSubcategoriesTwo = subCategory.hasChild;
 
                                                             return (
@@ -1642,24 +1685,37 @@ const ProductListing = () => {
                                                                     className="relative"
                                                                 >
                                                                     <div
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleSubCategoryClick(subCategory.slug, subCategory._id);
-                                                                        }}
-                                                                        onMouseEnter={() => {
-                                                                            // Only fetch subcategories two if they haven't been fetched yet and hasChild is true
-                                                                            if (!subCategoriesTwoBySubCategory[subCategory._id] && hasSubcategoriesTwo) {
-                                                                                fetchSubCategoriesTwoForSubCategory(subCategory._id);
-                                                                            }
-                                                                            setHoveredSubCategory(subCategory._id);
-                                                                        }}
-                                                                        className={`flex justify-between items-center py-1 px-2 rounded cursor-pointer transition-colors text-sm ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                                        className={`flex justify-between items-center py-1 px-2 rounded transition-colors text-xs sm:text-sm lg:text-[16px] ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
                                                                     >
-                                                                        <span className="text-base truncate max-w-[160px]">{subCategory.name}</span>
-                                                                        {/* Show arrow only if subcategory has subcategories two */}
+                                                                        {/* Subcategory Name - Clickable for filter */}
+                                                                        <span
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleSubCategoryClick(subCategory.slug, subCategory._id);
+                                                                            }}
+                                                                            className="text-base truncate max-w-[160px] cursor-pointer"
+                                                                        >
+                                                                            {subCategory.name}
+                                                                        </span>
+
+                                                                        {/* Chevron Icon - Clickable for dropdown */}
                                                                         {hasSubcategoriesTwo && (
-                                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                                                                            <svg
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    // Only fetch subcategories two if they haven't been fetched yet
+                                                                                    if (!subCategoriesTwoBySubCategory[subCategory._id]) {
+                                                                                        fetchSubCategoriesTwoForSubCategory(subCategory._id);
+                                                                                    }
+                                                                                    // Toggle the hovered state
+                                                                                    setHoveredSubCategory(hoveredSubCategory === subCategory._id ? null : subCategory._id);
+                                                                                }}
+                                                                                className="w-3 h-3 cursor-pointer hover:opacity-70"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                                                             </svg>
                                                                         )}
                                                                     </div>
@@ -1698,77 +1754,73 @@ const ProductListing = () => {
                         {/* Main Content */}
                         <div className="flex-1">
                             {/* Products Header */}
-                            <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 ">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
-                                    <h2 className="text-lg lg:text-[1.2rem] font-[400] text-black">
+                            <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 px-3 lg:px-0">
+                                <div className="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-center lg:gap-4">
+                                    {/* Title */}
+                                    <h2 className="text-base lg:text-[1.2rem] font-[400] text-black">
                                         Items <span className="text-[#000000]/60">({totalItems})</span>
                                     </h2>
 
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-[27px] w-full sm:w-auto">
+                                    {/* Filters Container */}
+                                    <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 xs:gap-3 w-full lg:w-auto">
 
-                                        <div className="flex items-center gap-2 w-full ">
-                                            <div className="relative inline-block   ">
-                                                <select
-                                                    value={perpageItems}
-                                                    onChange={handleItemsPerPageChange}
-                                                    className="border border-gray-300 rounded pl-3 py-1 lg:py-1 rounded-[10px] 
-                                                            text-xs sm:text-sm text-black font-[400] font-spartan 
-                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                                            appearance-none  w-[135px]"
+                                        {/* Items Per Page Dropdown */}
+                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none">
+                                            <select
+                                                value={perpageItems}
+                                                onChange={handleItemsPerPageChange}
+                                                className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
+                            text-sm text-black font-[400] font-spartan 
+                            focus:outline-none focus:ring-2 focus:ring-blue-500 
+                            appearance-none w-full lg:w-[135px]"
+                                            >
+                                                <option value="10" className="text-sm font-medium">10 Per Page</option>
+                                                <option value="15" className="text-sm font-medium">15 Per Page</option>
+                                                <option value="20" className="text-sm font-medium">20 Per Page</option>
+                                                <option value="25" className="text-sm font-medium">25 Per Page</option>
+                                                <option value="30" className="text-sm font-medium">30 Per Page</option>
+                                            </select>
+
+                                            <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
                                                 >
-                                                    <option value="10" className="text-[15px] font-medium">10 Per Page</option>
-                                                    <option value="15" className="text-[15px] font-medium">15 Per Page</option>
-                                                    <option value="20" className="text-[15px] font-medium">20 Per Page</option>
-                                                    <option value="25" className="text-[15px] font-medium">25 Per Page</option>
-                                                    <option value="30" className="text-[15px] font-medium">30 Per Page</option>
-                                                </select>
-
-                                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        className="w-4 h-4 "
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                        strokeWidth="3"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </div>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
                                             </div>
-
                                         </div>
 
-                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full">
-                                            {/* Sort Dropdown */}
-                                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                <div className="relative inline-block w-full sm:w-auto">
-                                                    <select
-                                                        value={sortBy}
-                                                        onChange={handleSortChange}
-                                                        className="border border-gray-300 rounded pl-3 pr-8 py-2 sm:py-1 lg:py-1 rounded-[10px] 
-                                                                text-sm sm:text-xs md:text-sm text-black font-[400] font-spartan 
-                                                                focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                                                appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
-                                                    >
-                                                        <option value="Price Low to High" className="text-sm sm:text-[15px] font-medium">Price Low to High</option>
-                                                        <option value="Price High to Low" className="text-sm sm:text-[15px] font-medium">Price High to Low</option>
-                                                        <option value="Newest" className="text-sm sm:text-[15px] font-medium">Newest</option>
-                                                    </select>
+                                        {/* Sort Dropdown */}
+                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none">
+                                            <select
+                                                value={sortBy}
+                                                onChange={handleSortChange}
+                                                className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
+                            text-sm text-black font-[400] font-spartan 
+                            focus:outline-none focus:ring-2 focus:ring-blue-500 
+                            appearance-none w-full lg:w-[150px]"
+                                            >
+                                                <option value="Price Low to High" className="text-sm font-medium">Price Low to High</option>
+                                                <option value="Price High to Low" className="text-sm font-medium">Price High to Low</option>
+                                                <option value="Newest" className="text-sm font-medium">Newest</option>
+                                            </select>
 
-                                                    <div className="pointer-events-none absolute inset-y-0 right-2 sm:right-3 flex items-center">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="w-4 h-4 sm:w-4 sm:h-4"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                            strokeWidth="3"
-                                                        >
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
+                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    className="w-4 h-4"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                                </svg>
                                             </div>
                                         </div>
                                     </div>
@@ -1794,9 +1846,10 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
+
 
                                             {/* Pagination */}
                                             {/* Pagination */}

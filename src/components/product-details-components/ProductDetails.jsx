@@ -1423,7 +1423,7 @@ function ProductDetail() {
 
       {/* Breadcrumb */}
       <div className="bg-white justify-items-center pt-4 overflow-x-hidden">
-        <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
+        <div className="md mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
           <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
             <span className="uppercase">Home</span>
             <span className="">/</span>

@@ -9,7 +9,7 @@ import useWishlistStore from "@/zustand/wishList"
 import useCartStore from "@/zustand/cartPopup"
 import Notification from "@/components/Notification"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
-import ProductPopup from "@/components/product-details-components/Popup" 
+import ProductPopup from "@/components/product-details-components/Popup"
 
 const SearchPage = () => {
     const [sortBy, setSortBy] = useState("Newest")
@@ -980,7 +980,7 @@ const SearchPage = () => {
         return (
             <div
                 key={itemId}
-                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
+                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm md:min-w-[230px]"
             >
 
                 {/* Wishlist Icon */}
@@ -1003,45 +1003,49 @@ const SearchPage = () => {
                 {/* Product Group Badge */}
                 {isProductGroup && renderProductGroupBadge()}
 
-                {/* Product Badge */}
-                {!isProductGroup && item.badge && (
-                    <div className="absolute top-2 left-4 sm:left-6 z-10">
-                        <div
-                            className="px-2 py-1 rounded text-xs font-medium"
-                            style={{
-                                backgroundColor: item.badge.backgroundColor,
-                                color: item.badge.textColor || '#fff',
-                            }}
-                        >
-                            {item.badge.text}
-                        </div>
-                    </div>
-                )}
+
 
                 {/* Item Image */}
                 <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
+                    {!isProductGroup && item.badge && (
+                        <div className="absolute top-6 left-4 sm:left-6 z-10">
+                            <div
+                                className="px-2 py-1 rounded text-xs font-medium"
+                                style={{
+                                    backgroundColor: item.badge.backgroundColor,
+                                    color: item.badge.textColor || '#fff',
+                                }}
+                            >
+                                {item.badge.text}
+                            </div>
+                        </div>
+                    )}
                     <img
                         src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 object-contain cursor-pointer"
+                        className="h-[170px] w-[170px] object-contain cursor-pointer"
                         onClick={() => handleProductImageClick(item, isProductGroup)} // Add click handler here
                     />
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 lg:max-w-[229px]">
+                <div className="text-start space-y-2 min-w-[300px] lg:min-w-0 lg:max-w-[229px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
+                        className="text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[60px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
                         {isProductGroup ? item.name : item.ProductName}
                     </h3>
 
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center ">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU : {isProductGroup ? item.sku : item.sku}
+                            SKU : {(() => {
+                                const sku = isProductGroup ? item.sku : item.sku;
+                                return sku?.length > 8 ? sku.slice(0, 8) + '...' : sku;
+                            })()}
                         </p>
+
 
                         {/* Stock Status */}
                         <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
@@ -1074,7 +1078,7 @@ const SearchPage = () => {
                             )}
                         </div>
 
-                        
+
                     </div>
 
                     {/* Product Group Info */}
@@ -1133,7 +1137,7 @@ const SearchPage = () => {
                     {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
                         <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center ">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 onClick={(e) => {
@@ -1279,7 +1283,7 @@ const SearchPage = () => {
 
             {/* Breadcrumb */}
             <div className="bg-white justify-items-center pt-4">
-                <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
+                <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                         <span className="hidden sm:inline">Search Results for "{searchQuery}"</span>
                     </nav>
@@ -1289,7 +1293,7 @@ const SearchPage = () => {
                 </h1>
             </div>
 
-            <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
+            <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-12 2xl:px-18 py-3 sm:py-6">
                 <div className="flex flex-col">
                     {/* Main Content */}
                     <div className="flex-1">
@@ -1448,7 +1452,7 @@ const SearchPage = () => {
                         {/* Items Grid */}
                         {!loading && allItems.length > 0 && (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 md:gap-12 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
                                     {sortedItems.map((item) => renderItemCard(item))}
                                 </div>
 

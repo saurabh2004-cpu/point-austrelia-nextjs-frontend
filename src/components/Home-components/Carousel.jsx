@@ -1,23 +1,22 @@
+'use client';
 
-'use client'
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCartPopupStateStore } from '@/zustand/cartPopupState';
 
 const Carousel = () => {
-  // Array of carousel images - add more images here to see auto-scroll
+  // Array of carousel images
   const carouselImages = [
     {
       id: 1,
-      src: "/home-images/carousel-img.avif", // Replace with your actual image path
-      alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
+      src: '/home-images/carousel-img.avif',
+      alt: 'Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories',
     },
     {
       id: 2,
-      src: "/home-images/carousel-img.avif", // Replace with your actual image path
-      alt: "Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories"
-    }
-
+      src: '/home-images/carousel-img.avif',
+      alt: 'Brands Showcase - Matador Wholesale, Asra Aromas, Point Accessories',
+    },
   ];
 
   const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
@@ -28,10 +27,12 @@ const Carousel = () => {
       const cartPopup = document.querySelector('[data-cart-popup]');
       const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
 
-      if (showCartPopup &&
+      if (
+        showCartPopup &&
         cartPopup &&
         !cartPopup.contains(event.target) &&
-        (!navbarCartButton || !navbarCartButton.contains(event.target))) {
+        (!navbarCartButton || !navbarCartButton.contains(event.target))
+      ) {
         setShowCartPopup(false);
       }
     };
@@ -51,14 +52,13 @@ const Carousel = () => {
   const [isAutoScrolling, setIsAutoScrolling] = useState(carouselImages.length > 1);
 
   useEffect(() => {
-    // Only auto-scroll if there are multiple images
     if (!isAutoScrolling || carouselImages.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex(prevIndex =>
+      setCurrentIndex((prevIndex) =>
         prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
       );
-    }, 3000); // Change slide every 3 seconds
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [isAutoScrolling, carouselImages.length]);
@@ -70,7 +70,6 @@ const Carousel = () => {
     }
   };
 
-  // Resume auto-scroll when mouse leaves
   const handleMouseLeave = () => {
     if (carouselImages.length > 1) {
       setIsAutoScrolling(true);
@@ -78,22 +77,18 @@ const Carousel = () => {
   };
 
   return (
-    <div className="w-full max-w-8xl mx-auto p-4 md:py-4 xl:pb-12">
+    <div className="w-full max-w-8xl mx-auto p-3 sm:p-4 md:py-4 xl:pb-12">
       <div
-        className="relative w-full overflow-hidden rounded-lg  "
+        className="relative w-full overflow-hidden rounded-lg carousel-container"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-      // style={{
-      //   height: '40rem' // Adjust height based on your image proportions
-      // }}
       >
-        {/* Carousel Container */}
+        {/* Carousel Images Wrapper */}
         <div
-          className={`flex transition-transform duration-2000 ease-in-out h-full ${carouselImages.length === 1 ? '' : 'animate-none'
-            }`}
+          className={`flex transition-transform duration-[2000ms] ease-in-out h-full`}
           style={{
-            transform: `translateX(-${currentIndex * (100) / carouselImages.length}%)`,
-            width: `${carouselImages.length * 100}%`
+            transform: `translateX(-${currentIndex * 100}%)`,
+            width: `${carouselImages.length * 100}%`,
           }}
         >
           {carouselImages.map((image) => (
@@ -102,50 +97,59 @@ const Carousel = () => {
               className="relative flex-shrink-0 w-full h-full"
               style={{ width: `${100 / carouselImages.length}%` }}
             >
-              <img
+              {/* Next/Image for better responsiveness */}
+              <Image
                 src={image.src}
                 alt={image.alt}
-                className='h-[80%]'
-              // className="object-contain" // Use object-contain to maintain aspect ratio
-              // sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-
+                fill
+                priority
+                className="object-contain md:object-cover transition-transform duration-500"
+                sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
               />
             </div>
           ))}
         </div>
-
-        {/* Navigation Dots - Only show if multiple images */}
-        {/* {carouselImages.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {carouselImages.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                  index === currentIndex 
-                    ? 'bg-white' 
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
-                onClick={() => setCurrentIndex(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        )} */}
-
-
       </div>
 
       {/* Responsive adjustments */}
       <style jsx>{`
-        @media (max-width: 768px) {
+        .carousel-container {
+          height: 12rem; /* default for small screens */
+        }
+
+        @media (min-width: 480px) {
           .carousel-container {
-            height: 15rem; /* Smaller height on mobile */
+            height: 16rem; /* small tablets / large phones */
           }
         }
-        
-        @media (max-width: 480px) {
+
+        @media (min-width: 640px) {
           .carousel-container {
-            height: 12rem; /* Even smaller on very small screens */
+            height: 20rem; /* tablets */
+          }
+        }
+
+        @media (min-width: 768px) {
+          .carousel-container {
+            height: 24rem; /* iPad Mini / medium tablets */
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .carousel-container {
+            height: 28rem; /* laptops */
+          }
+        }
+
+        @media (min-width: 1280px) {
+          .carousel-container {
+            height: 32rem; /* large desktop */
+          }
+        }
+
+        @media (min-width: 1536px) {
+          .carousel-container {
+            height: 36rem; /* very large screens */
           }
         }
       `}</style>

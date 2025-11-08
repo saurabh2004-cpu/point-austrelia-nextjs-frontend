@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
-import { Search, ShoppingCart, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
+import { Search, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +17,6 @@ import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
 
-// Debounce utility
 const debounce = (func, wait) => {
   let timeout;
   return function executedFunction(...args) {
@@ -30,26 +29,21 @@ const debounce = (func, wait) => {
   };
 };
 
-// Custom hook for click outside detection
 const useClickOutside = (callback) => {
   const ref = useRef();
-
   useEffect(() => {
     const handleClick = (event) => {
       if (ref.current && !ref.current.contains(event.target)) {
         callback();
       }
     };
-
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
-
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
     };
   }, [callback]);
-
   return ref;
 };
 
@@ -78,24 +72,20 @@ export function Navbar() {
   const setFilters = useProductFiltersStore((state) => state.setFilters)
   const [brandId, setBrandId] = useState(null)
   const [brandSlug, setBrandSlug] = useState(null)
-  const [loadingSubCategoriesTwo, setLoadingSubCategoriesTwo] = useState({});
-
   const [showCompanyDropDown, setShowCompanyDropDown] = useState(false)
+
+  const [mobileActiveBrand, setMobileActiveBrand] = useState(null)
+  const [mobileActiveCategory, setMobileActiveCategory] = useState(null)
+  const [mobileActiveSubcategory, setMobileActiveSubcategory] = useState(null)
 
   const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
   const setUser = useUserStore((state) => state.setUser);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
-  const desktopSearchRef = useClickOutside(() => {
-    setIsDesktopSearchOpen(false);
-  });
+  const desktopSearchRef = useClickOutside(() => setIsDesktopSearchOpen(false));
   const { showCartPopup, setShowCartPopup, toggleCartPopup } = useCartPopupStateStore();
-
   const isCheckoutPage = pathname === '/checkout';
-
-  // Search state
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Optimized user fetch - non-blocking
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -103,46 +93,31 @@ export function Navbar() {
         if (response.data.statusCode === 200 && response.data.data.inactive == false) {
           setUser(response.data.data);
         }
-        // Removed automatic redirect to prevent conflicts
       } catch (error) {
         console.error("Error fetching current user:", error);
       } finally {
         setLoading(false);
       }
     };
-
     if (currentUser === null || currentUser === undefined) {
       fetchCurrentUser();
     } else {
       setLoading(false);
     }
-  }, [setUser]); // Only depend on setUser
+  }, [setUser]);
 
-  // Use click outside hooks
-  const userDropdownRef = useClickOutside(() => {
-    setShowUserDropdown(false);
-  });
+  const userDropdownRef = useClickOutside(() => setShowUserDropdown(false));
+  const mobileMenuRef = useClickOutside(() => setIsMenuOpen(false));
 
-  const mobileMenuRef = useClickOutside(() => {
-    setIsMenuOpen(false);
-  });
-
-  const desktopDropdownRef = useClickOutside(() => {
-    setActiveDropdown(null);
-    setHoveredCategory(null);
-    setHoveredSubcategory(null);
-  });
-
-  // Optimized navigation handler
   const handleFastNavigation = useCallback((path) => {
-    // Close all open states first (instant)
     setIsMenuOpen(false);
     setShowUserDropdown(false);
     setShowCartPopup(false);
     setActiveDropdown(null);
     setShowCompanyDropDown(false);
-
-    // Use regular router push for immediate navigation
+    setMobileActiveBrand(null);
+    setMobileActiveCategory(null);
+    setMobileActiveSubcategory(null);
     router.push(path);
   }, [router, setShowCartPopup]);
 
@@ -176,7 +151,6 @@ export function Navbar() {
     }
   }, [searchQuery, handleFastNavigation]);
 
-  // Fetch brands ONCE on mount - Non-blocking
   useEffect(() => {
     const fetchBrands = async () => {
       try {
@@ -188,19 +162,15 @@ export function Navbar() {
         console.error("Error fetching brands:", error)
       }
     }
-
     fetchBrands()
   }, [])
 
-  // Debounced category fetching
   const fetchCategoriesForBrand = useCallback(
     debounce(async (brandId) => {
       if (categoriesByBrand[brandId]) return
-
       try {
         setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
         const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
-
         if (res.data.statusCode === 200) {
           setCategoriesByBrand(prev => ({
             ...prev,
@@ -219,14 +189,8 @@ export function Navbar() {
   const fetchSubCategoriesForCategory = useCallback(
     debounce(async (categoryId) => {
       if (subCategoriesByCategory[categoryId]) return
-
       try {
         const res = await axiosInstance.get(`subcategory/get-sub-categories-by-category-id/${categoryId}`)
-
-        console.log("Subcategories fetched:", res.data)
-
-
-
         if (res.data.statusCode === 200) {
           setSubCategoriesByCategory(prev => ({
             ...prev,
@@ -243,25 +207,21 @@ export function Navbar() {
   const fetchSubCategoriesTwoForSubCategory = useCallback(
     debounce(async (subCategoryId) => {
       if (subCategoriesTwoBySubCategory[subCategoryId]) return
-
       try {
         const res = await axiosInstance.get(`subcategoryTwo/get-sub-categories-two-by-category-id/${subCategoryId}`)
-
         if (res.data.statusCode === 200 && res.data.data) {
           setSubCategoriesTwoBySubCategory(prev => ({
             ...prev,
             [subCategoryId]: res.data.data
           }))
         } else {
-          // Handle case where no subcategories two are found
           setSubCategoriesTwoBySubCategory(prev => ({
             ...prev,
-            [subCategoryId]: [] // Set empty array to prevent repeated API calls
+            [subCategoryId]: []
           }))
         }
       } catch (error) {
         console.error('Error fetching subcategories two:', error)
-        // Set empty array on error too
         setSubCategoriesTwoBySubCategory(prev => ({
           ...prev,
           [subCategoryId]: []
@@ -271,24 +231,15 @@ export function Navbar() {
     [subCategoriesTwoBySubCategory]
   );
 
-  // Optimized navigation items with minimal dependencies
-  // Optimized navigation items with minimal dependencies
   const navigationItems = useMemo(() => {
-    const items = [
-      { label: "HOME", index: 0, link: '/' }
-    ]
-
+    const items = [{ label: "HOME", index: 0, link: '/' }]
     brands.forEach((brand, idx) => {
       const categories = categoriesByBrand[brand._id] || []
       const brandRoute = `/brand/${brand.slug}`;
-
       const categoriesWithColumns = categories.map((cat, catIdx) => {
         const itemsPerColumn = Math.ceil(categories.length / 5)
         const column = Math.floor(catIdx / itemsPerColumn) + 1
-
-        // Check if category has children (subcategories)
         const hasSubcategories = cat.hasChild || (subCategoriesByCategory[cat._id] && subCategoriesByCategory[cat._id].length > 0);
-
         return {
           id: cat._id,
           label: cat.name,
@@ -297,11 +248,9 @@ export function Navbar() {
           brandSlug: brand.slug,
           link: `/${cat.slug}`,
           column: column,
-          hasChild: hasSubcategories, // Add hasChild field
+          hasChild: hasSubcategories,
           subcategories: subCategoriesByCategory[cat._id]?.map(subCat => {
-            // Check if subcategory has children (subcategoriesTwo)
             const hasSubcategoriesTwo = subCat.hasChild || (subCategoriesTwoBySubCategory[subCat._id] && subCategoriesTwoBySubCategory[subCat._id].length > 0);
-
             return {
               id: subCat._id,
               label: subCat.name,
@@ -309,7 +258,7 @@ export function Navbar() {
               brandId: brand._id,
               brandSlug: brand.slug,
               link: `/${subCat.slug}`,
-              hasChild: hasSubcategoriesTwo, // Add hasChild field for subcategories
+              hasChild: hasSubcategoriesTwo,
               subcategoriesTwo: subCategoriesTwoBySubCategory[subCat._id]?.map(subCatTwo => ({
                 id: subCatTwo._id,
                 label: subCatTwo.name,
@@ -317,13 +266,12 @@ export function Navbar() {
                 brandId: brand._id,
                 brandSlug: brand.slug,
                 link: `/${subCatTwo.slug}`,
-                hasChild: false // SubcategoriesTwo don't have further children
+                hasChild: false
               }))
             }
           })
         }
       })
-
       items.push({
         label: brand.name.toUpperCase(),
         index: idx + 1,
@@ -334,26 +282,14 @@ export function Navbar() {
         categories: categoriesWithColumns
       })
     })
-
     items.push({
       label: currentUser ? "COMPANY" : "CONTACT US",
       index: brands.length + 1,
       hasDropdown: true
     })
-
     return items
   }, [brands, categoriesByBrand, subCategoriesByCategory, subCategoriesTwoBySubCategory, currentUser])
 
-  const handleBrandClick = useCallback((brandId, brandSlug) => {
-    setActiveDropdown(null);
-    setHoveredCategory(null);
-    setHoveredSubcategory(null);
-    setIsMenuOpen(false);
-    setShowUserDropdown(false);
-    setShowCartPopup(false);
-  }, [setShowCartPopup]);
-
-  // Optimized navigation handler
   const handleNavigation = useCallback((item) => {
     if (!item.hasDropdown) {
       setCurrentIndex(item.index)
@@ -366,21 +302,11 @@ export function Navbar() {
           setShowCompanyDropDown(prev => !prev);
           setActiveDropdown(null);
         }
-      } else {
-        if (!currentUser && item.brandRoute) {
-          handleFastNavigation(item.brandRoute);
-        } else if (currentUser && item.brandId) {
-          handleBrandClick(item.brandId, item.brandSlug);
-          setActiveDropdown(null);
-          setIsMenuOpen(false);
-        }
       }
     }
-  }, [currentUser, handleFastNavigation, setCurrentIndex, handleBrandClick]);
+  }, [currentUser, handleFastNavigation, setCurrentIndex]);
 
-  const companyDropdownRef = useClickOutside(() => {
-    setShowCompanyDropDown(false);
-  });
+  const companyDropdownRef = useClickOutside(() => setShowCompanyDropDown(false));
 
   const handleCategoryClick = useCallback((link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
     setActiveDropdown(null)
@@ -389,6 +315,9 @@ export function Navbar() {
     setIsMenuOpen(false)
     setShowUserDropdown(false)
     setShowCartPopup(false)
+    setMobileActiveBrand(null)
+    setMobileActiveCategory(null)
+    setMobileActiveSubcategory(null)
     setFilters({
       categorySlug: categorySlug,
       subCategorySlug: subCategorySlug,
@@ -419,11 +348,29 @@ export function Navbar() {
     fetchSubCategoriesTwoForSubCategory(subCategoryId)
   }, [fetchSubCategoriesTwoForSubCategory]);
 
+  const handleMobileBrandClick = useCallback((brandId, brandSlug, brandIndex) => {
+    if (!currentUser) {
+      handleFastNavigation(`/brand/${brandSlug}`);
+      return;
+    }
+    if (mobileActiveBrand === brandIndex) {
+      setMobileActiveBrand(null);
+      setMobileActiveCategory(null);
+      setMobileActiveSubcategory(null);
+    } else {
+      setMobileActiveBrand(brandIndex);
+      setMobileActiveCategory(null);
+      setMobileActiveSubcategory(null);
+      fetchCategoriesForBrand(brandId);
+      setBrandId(brandId);
+      setBrandSlug(brandSlug);
+    }
+  }, [currentUser, mobileActiveBrand, fetchCategoriesForBrand, handleFastNavigation]);
+
   const fetchCustomersCart = useCallback(async () => {
     try {
       if (!currentUser?._id) return;
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
-
       if (response.data.statusCode === 200) {
         const cartData = response.data.data;
         setCartItems(cartData.length);
@@ -437,13 +384,11 @@ export function Navbar() {
     try {
       if (!currentUser?._id) return
       const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`)
-
       if (response.data.statusCode === 200) {
         const wishlistData = response.data.data;
         setWishlistItems(wishlistData.length);
       }
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error fetching customer wishlist:', error)
     }
   }, [currentUser, setWishlistItems]);
@@ -454,13 +399,11 @@ export function Navbar() {
       setWishlistItems(0);
       setCartItems(0);
       setShowUserDropdown(false);
-
       try {
         await axiosInstance.post('user/logout');
       } catch (error) {
         console.error('Error during logout API call:', error);
       }
-
       handleFastNavigation('/');
     } catch (error) {
       console.error('Error during logout:', error);
@@ -472,28 +415,18 @@ export function Navbar() {
     handleFastNavigation('/my-account-review');
   }, [handleFastNavigation]);
 
-  // Optimized cart/wishlist fetching
   useEffect(() => {
     if (!currentUser?._id) return;
-
     const fetchData = async () => {
-      if (currentCartItems === 0) {
-        await fetchCustomersCart();
-      }
-      if (currentWishlistItems === 0) {
-        await fetchCustomersWishList();
-      }
+      if (currentCartItems === 0) await fetchCustomersCart();
+      if (currentWishlistItems === 0) await fetchCustomersWishList();
     };
-
     fetchData();
   }, [currentUser?._id, currentCartItems, currentWishlistItems, fetchCustomersCart, fetchCustomersWishList]);
 
-  // Prefetch critical pages
   useEffect(() => {
     const prefetchPages = ['/login', '/sign-up', '/wishlist', '/cart', '/contact-us'];
-    prefetchPages.forEach(page => {
-      router.prefetch(page);
-    });
+    prefetchPages.forEach(page => router.prefetch(page));
   }, [router]);
 
   const groupCategoriesByColumn = (categories) => {
@@ -506,94 +439,43 @@ export function Navbar() {
     return Object.values(columns)
   }
 
-  if (loading) {
-    return null
-  }
+  if (loading) return null
 
   return (
     <>
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
-        {/* Top Bar */}
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between min-h-[60px] md:h-18">
-
-              {/* Mobile & Tablet: Left side - Menu button */}
               <div className="flex items-center lg:hidden">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleMobileMenuToggle}
-                  className="p-2"
-                >
+                <Button variant="ghost" size="sm" onClick={handleMobileMenuToggle} className="p-2">
                   {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </Button>
               </div>
 
-              {/* Desktop: Left - Login/Signup */}
               {!currentUser ? (
                 <div className="hidden lg:flex text-[1rem] font-[600] text-[#2d2c70] items-center ml-20 space-x-1 text-sm">
                   <div className="group flex gap-1 items-center cursor-pointer">
-                    <User
-                      fill="currentColor"
-                      className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]"
-                    />
-                    <Link
-                      href="/login"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/login');
-                      }}
-                      className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]"
-                    >
-                      LOGIN
-                    </Link>
+                    <User fill="currentColor" className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]" />
+                    <Link href="/login" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/login'); }} className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">LOGIN</Link>
                   </div>
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
-                  <Link
-                    href="/sign-up"
-                    prefetch={true}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleFastNavigation('/sign-up');
-                    }}
-                    className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]"
-                  >
-                    SIGN UP
-                  </Link>
+                  <Link href="/sign-up" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/sign-up'); }} className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">SIGN UP</Link>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2 text-[1rem] font-medium ml-20 relative">
                   <span className="text-[#2d2c70] font-medium">Welcome</span>
                   <div className="relative" ref={userDropdownRef}>
-                    <button
-                      onClick={handleUserDropdownToggle}
-                      className="flex items-center gap-2 hover:text-[#E9098D] transition-colors duration-200 group"
-                    >
+                    <button onClick={handleUserDropdownToggle} className="flex items-center gap-2 hover:text-[#E9098D] transition-colors duration-200 group">
                       <User className="w-4 h-4 text-gray-600 group-hover:text-[#E9098D]" />
                       <span className="font-semibold text-black group-hover:text-[#E9098D]">{currentUser?.customerName || currentUser?.contactName}</span>
-                      <ChevronDown
-                        strokeWidth={3}
-                        className={`w-4 h-4 text-[#2d2c70] mt-1 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`}
-                      />
+                      <ChevronDown strokeWidth={3} className={`w-4 h-4 text-[#2d2c70] mt-1 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`} />
                     </button>
-
                     {showUserDropdown && (
                       <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
                         <div className="py-1">
-                          <button
-                            onClick={handleMyAccount}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                          >
-                            My Account
-                          </button>
-                          <button
-                            onClick={handleLogout}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                          >
-                            Logout
-                          </button>
+                          <button onClick={handleMyAccount} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200">My Account</button>
+                          <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200">Logout</button>
                         </div>
                       </div>
                     )}
@@ -601,124 +483,42 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* Center - Logo */}
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link
-                  href="/"
-                  prefetch={true}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleFastNavigation('/');
-                  }}
-                >
-                  <Image
-                    src="/logo/point-austrelia-logo.png"
-                    alt="Logo"
-                    width={219}
-                    height={100}
-                    className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer"
-                    priority
-                  />
+                <Link href="/" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/'); }}>
+                  <Image src="/logo/point-austrelia-logo.png" alt="Logo" width={219} height={100} className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer" priority />
                 </Link>
               </div>
 
-              {/* Right - Search, Cart, and Mobile Actions */}
               <div className="flex items-center space-x-2 lg:space-x-4">
-
                 {currentUser && !isCheckoutPage && (
                   <div className="flex lg:hidden items-center space-x-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      className="p-2"
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2">
                       <Search className="w-4 h-4 md:w-5 md:h-5" />
                     </Button>
-
-                    <Link
-                      href="/wishlist"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/wishlist');
-                        setIsMenuOpen(false);
-                      }}
-                      className="relative bg-white group p-1"
-                    >
-                      <svg
-                        width="18"
-                        height="17"
-                        viewBox="0 0 21 20"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200"
-                      >
+                    <Link href="/wishlist" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/wishlist'); setIsMenuOpen(false); }} className="relative bg-white group p-1">
+                      <svg width="18" height="17" viewBox="0 0 21 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                         <path d="M14.8633 0.526367C17.9009 0.526367 20.3633 3.02637 20.3633 6.52637C20.3633 13.5264 12.8633 17.5264 10.3633 19.0264C7.86328 17.5264 0.363281 13.5264 0.363281 6.52637C0.363281 3.02637 2.86328 0.526367 5.86328 0.526367C7.72325 0.526367 9.36328 1.52637 10.3633 2.52637C11.3633 1.52637 13.0033 0.526367 14.8633 0.526367ZM11.2972 16.1302C12.1788 15.5749 12.9733 15.0219 13.7182 14.4293C16.697 12.0594 18.3633 9.46987 18.3633 6.52637C18.3633 4.16713 16.8263 2.52637 14.8633 2.52637C13.7874 2.52637 12.6226 3.09548 11.7775 3.94058L10.3633 5.3548L8.94908 3.94058C8.10396 3.09548 6.93918 2.52637 5.86328 2.52637C3.92234 2.52637 2.36328 4.18287 2.36328 6.52637C2.36328 9.46987 4.02955 12.0594 7.00842 14.4293C7.75328 15.0219 8.54778 15.5749 9.42938 16.1302C9.72788 16.3183 10.0244 16.4993 10.3633 16.7016C10.7022 16.4993 10.9987 16.3183 11.2972 16.1302Z" />
                       </svg>
-                      <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">
-                        {currentWishlistItems || 0}
-                      </span>
+                      <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">{currentWishlistItems || 0}</span>
                     </Link>
-
-                    <Link
-                      href="/cart"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/cart');
-                        setIsMenuOpen(false);
-                      }}
-                      className="relative bg-white group p-1"
-                    >
-                      <svg
-                        width="18"
-                        height="17"
-                        viewBox="0 0 20 19"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200"
-                      >
+                    <Link href="/cart" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/cart'); setIsMenuOpen(false); }} className="relative bg-white group p-1">
+                      <svg width="18" height="17" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                         <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                       </svg>
-                      <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">
-                        {currentCartItems || 0}
-                      </Badge>
+                      <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">{currentCartItems || 0}</Badge>
                     </Link>
                   </div>
                 )}
 
-                {/* Desktop icons */}
                 <div className="hidden lg:flex lg:space-x-10 items-center">
                   {currentUser && !isCheckoutPage && (
                     <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
-                      {!isDesktopSearchOpen &&
-                        <button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsDesktopSearchOpen(!isDesktopSearchOpen)}
-                          className="p-2 mr-2 flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70] hover:text-[#E9098D] cursor-pointer group"
-                        >
-                          <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D] group-hover:text-[#E9098D]" />
-                          Search
-                        </button>}
-
+                      {!isDesktopSearchOpen && <button variant="ghost" size="sm" onClick={() => setIsDesktopSearchOpen(!isDesktopSearchOpen)} className="p-2 mr-2 flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70] hover:text-[#E9098D] cursor-pointer group">
+                        <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D] group-hover:text-[#E9098D]" />Search</button>}
                       {isDesktopSearchOpen && currentUser && (
                         <div className="flex items-center relative w-64">
-                          <Input
-                            placeholder="Search products..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyPress={handleSearch}
-                            className="pr-10 border-[#2d2c70] focus:border-[#E9098D]"
-                            autoFocus
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleSearch}
-                            className="absolute right-0 h-full px-3 hover:bg-transparent"
-                          >
+                          <Input placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleSearch} className="pr-10 border-[#2d2c70] focus:border-[#E9098D]" autoFocus />
+                          <Button variant="ghost" size="sm" onClick={handleSearch} className="absolute right-0 h-full px-3 hover:bg-transparent">
                             <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
                           </Button>
                         </div>
@@ -727,60 +527,21 @@ export function Navbar() {
                   )}
 
                   {currentUser && !isCheckoutPage && (
-                    <Link
-                      href={'/wishlist'}
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/wishlist');
-                      }}
-                      className="relative bg-white group"
-                    >
-                      <svg
-                        width="21"
-                        height="20"
-                        viewBox="0 0 21 20"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        <path d="M14.8633 0.526367C17.9009 0.526367 20.3633 3.02637 20.3633 6.52637C20.3633 13.5264 12.8633 17.5264 10.3633 19.0264C7.86328 17.5264 0.363281 13.5264 0.363281 6.52637C0.363281 3.02637 2.86328 0.526367 5.86328 0.526367C7.72325 0.526367 9.36328 1.52637 10.3633 2.52637C11.3633 1.52637 13.0033 0.526367 14.8633 0.526367ZM11.2972 16.1302C12.1788 15.5749 12.9733 15.0219 13.7182 14.4293C16.697 12.0594 18.3633 9.46987 18.3633 6.52637C18.3633 4.16713 16.8263 2.52637 14.8633 2.52637C13.7874 2.52637 12.6226 3.09548 11.7775 3.94058L10.3633 5.3548L8.94908 3.94058C8.10396 3.09548 6.93918 2.52637 5.86328 2.52637C3.92234 2.52637 2.36328 4.18287 2.36328 6.52637C2.36328 9.46987 4.02955 12.0594 7.00842 14.4293C7.75328 15.0219 8.54778 15.5749 9.42938 16.1302C9.72788 16.3183 10.0244 16.4993 10.3633 16.7016C10.7022 16.4993 10.9987 16.3183 11.2972 16.1302Z" />
-                      </svg>
-                      <span className={`
-                          absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs 
-                          bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200
-                          ${(currentWishlistItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'}
-                          ${(currentWishlistItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}
-                        `}>
-                        {currentWishlistItems > 999 ? '999+' : currentWishlistItems || 0}
-                      </span>
-                    </Link>
-                  )}
+                    <>
+                      <Link href={'/wishlist'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/wishlist'); }} className="relative bg-white group">
+                        <svg width="21" height="20" viewBox="0 0 21 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
+                          <path d="M14.8633 0.526367C17.9009 0.526367 20.3633 3.02637 20.3633 6.52637C20.3633 13.5264 12.8633 17.5264 10.3633 19.0264C7.86328 17.5264 0.363281 13.5264 0.363281 6.52637C0.363281 3.02637 2.86328 0.526367 5.86328 0.526367C7.72325 0.526367 9.36328 1.52637 10.3633 2.52637C11.3633 1.52637 13.0033 0.526367 14.8633 0.526367ZM11.2972 16.1302C12.1788 15.5749 12.9733 15.0219 13.7182 14.4293C16.697 12.0594 18.3633 9.46987 18.3633 6.52637C18.3633 4.16713 16.8263 2.52637 14.8633 2.52637C13.7874 2.52637 12.6226 3.09548 11.7775 3.94058L10.3633 5.3548L8.94908 3.94058C8.10396 3.09548 6.93918 2.52637 5.86328 2.52637C3.92234 2.52637 2.36328 4.18287 2.36328 6.52637C2.36328 9.46987 4.02955 12.0594 7.00842 14.4293C7.75328 15.0219 8.54778 15.5749 9.42938 16.1302C9.72788 16.3183 10.0244 16.4993 10.3633 16.7016C10.7022 16.4993 10.9987 16.3183 11.2972 16.1302Z" />
+                        </svg>
+                        <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentWishlistItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentWishlistItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentWishlistItems > 999 ? '999+' : currentWishlistItems || 0}</span>
+                      </Link>
 
-                  {currentUser && !isCheckoutPage && (
-                    <button
-                      className="relative bg-white group"
-                      onClick={handleCartPopupToggle}
-                    >
-                      <svg
-                        width="20"
-                        height="19"
-                        viewBox="0 0 20 19"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200"
-                      >
-                        <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
-                      </svg>
-                      <span className={`
-                          absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs 
-                          bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200
-                          ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'}
-                          ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}
-                        `}>
-                        {currentCartItems > 999 ? '999+' : currentCartItems || 0}
-                      </span>
-                    </button>
+                      <button className="relative bg-white group" onClick={handleCartPopupToggle}>
+                        <svg width="20" height="19" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
+                          <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
+                        </svg>
+                        <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentCartItems > 999 ? '999+' : currentCartItems || 0}</span>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -788,111 +549,53 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile & Tablet Search Bar */}
         {isSearchOpen && (
           <div className="lg:hidden border-b border-[#2d2c70] p-4">
             <div className="flex items-center space-x-2">
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleSearch}
-                className="flex-1 border-[#2d2c70] focus:border-[#E9098D]"
-                autoFocus
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSearch}
-                className="p-2"
-              >
+              <Input placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleSearch} className="flex-1 border-[#2d2c70] focus:border-[#E9098D]" autoFocus />
+              <Button variant="ghost" size="sm" onClick={handleSearch} className="p-2">
                 <Search className="w-4 h-4 md:w-5 md:h-5" />
               </Button>
             </div>
           </div>
         )}
 
-        {/* Main Navigation */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative">
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center justify-center  space-x-[36px] h-14" ref={desktopDropdownRef}>
+          <div className="hidden lg:flex items-center justify-center space-x-[36px] h-14">
             {navigationItems.map((item) => (
-              <div
-                key={item.index}
-                className="relative h-full flex items-center  px-2"
-                onMouseEnter={() => {
-                  if (item.hasDropdown && currentUser) {
-                    if (item.brandId) {
-                      handleBrandHover(item.brandId, item.index, item.brandSlug);
-                    } else if (item.label === "COMPANY") {
-                      setShowCompanyDropDown(true);
-                    } else {
-                      setActiveDropdown(item.index)
-                    }
+              <div key={item.index} className="relative h-full flex items-center px-2" onMouseEnter={() => {
+                if (item.hasDropdown && currentUser) {
+                  if (item.brandId) {
+                    handleBrandHover(item.brandId, item.index, item.brandSlug);
+                  } else if (item.label === "COMPANY") {
+                    setShowCompanyDropDown(true);
+                  } else {
+                    setActiveDropdown(item.index)
                   }
-                }}
-                onMouseLeave={() => {
-                  setActiveDropdown(null)
-                  setHoveredCategory(null)
-                  setHoveredSubcategory(null)
-                  setShowCompanyDropDown(false)
-                }}
-              >
+                }
+              }} onMouseLeave={(e) => {
+                const relatedTarget = e.relatedTarget;
+                const dropdownElement = document.querySelector('[data-brand-dropdown]');
+                if (!dropdownElement || !dropdownElement.contains(relatedTarget)) {
+                  if (item.label === "COMPANY") {
+                    setShowCompanyDropDown(false);
+                  }
+                }
+              }}>
                 {!item.hasDropdown ? (
-                  <Link
-                    href={item.link || '/'}
-                    prefetch={true}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleFastNavigation(item.link || '/');
-                    }}
-                    className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
-                  >
-                    {item.label}
-                  </Link>
+                  <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
-                  <button
-                    onClick={() => handleNavigation(item)}
-                    className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]"
-                  >
-                    {item.label}
-                  </button>
+                  <button onClick={() => handleNavigation(item)} className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</button>
                 )}
 
-                {/* COMPANY Dropdown for Desktop */}
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
-                  <div
-                    className="absolute top-full left-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
-                    ref={companyDropdownRef}
-                  >
+                  <div className="absolute top-full left-0 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50" ref={companyDropdownRef}>
                     <div className="py-1">
                       {brands.map((brand) => (
-                        <Link
-                          key={brand._id}
-                          href={`/brand/${brand.slug}`}
-                          prefetch={true}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleFastNavigation(`/brand/${brand.slug}`);
-                            setShowCompanyDropDown(false);
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200"
-                        >
-                          {brand.name}
-                        </Link>
+                        <Link key={brand._id} href={`/brand/${brand.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(`/brand/${brand.slug}`); setShowCompanyDropDown(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200">{brand.name}</Link>
                       ))}
-                      <Link
-                        href="/contact-us"
-                        prefetch={true}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleFastNavigation('/contact-us');
-                          setShowCompanyDropDown(false);
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200"
-                      >
-                        Contact Us
-                      </Link>
+                      <Link href="/contact-us" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/contact-us'); setShowCompanyDropDown(false); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200">Contact Us</Link>
                     </div>
                   </div>
                 )}
@@ -900,137 +603,116 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Mobile & Tablet Navigation Menu */}
+          {/* Mobile Navigation Menu */}
           {isMenuOpen && (
-            <div className="space-y-2">
+            <div className="lg:hidden space-y-2 py-4" ref={mobileMenuRef}>
               {navigationItems.map((item) => (
                 <div key={item.index}>
                   {!item.hasDropdown ? (
-                    <Link
-                      href={item.link || '/'}
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation(item.link || '/');
-                        setIsMenuOpen(false);
-                      }}
-                      className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
-                    >
-                      {item.label}
-                    </Link>
+                    <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); setIsMenuOpen(false); }} className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100">{item.label}</Link>
                   ) : (
-                    <button
-                      onClick={() => {
-                        if (item.hasDropdown) {
-                          if (item.label === "COMPANY") {
-                            if (!currentUser) {
-                              handleFastNavigation('/contact-us');
-                              setIsMenuOpen(false);
-                            } else {
-                              setActiveDropdown(activeDropdown === item.index ? null : item.index)
-                            }
+                    <>
+                      <button onClick={() => {
+                        if (item.label === "COMPANY") {
+                          if (!currentUser) {
+                            handleFastNavigation('/contact-us');
+                            setIsMenuOpen(false);
                           } else {
-                            if (currentUser && item.brandId) {
-                              handleBrandClick(item.brandId, item.brandSlug);
-                              setIsMenuOpen(false);
-                            } else if (!currentUser && item.brandRoute) {
-                              handleFastNavigation(item.brandRoute);
-                              setIsMenuOpen(false);
-                            }
+                            setActiveDropdown(activeDropdown === item.index ? null : item.index)
                           }
+                        } else if (item.brandId) {
+                          handleMobileBrandClick(item.brandId, item.brandSlug, item.index);
                         } else {
                           handleNavigation(item)
                         }
-                      }}
-                      className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100 flex items-center justify-between"
-                    >
-                      {item.label}
-                      {item.hasChild && currentUser && (
-                        <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === item.index ? 'rotate-180' : ''}`} />
-                      )}
-                    </button>
-                  )}
+                      }} className="flex items-center justify-between w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100">
+                        {item.label}
+                        {((item.hasDropdown && currentUser && item.label !== "COMPANY") || (item.label === "COMPANY" && currentUser)) && (
+                          <ChevronDown className={`w-4 h-4 transition-transform ${(activeDropdown === item.index || mobileActiveBrand === item.index) ? 'rotate-180' : ''}`} />
+                        )}
+                      </button>
 
-                  {/* COMPANY Dropdown Menu for Mobile */}
-                  {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
-                    <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                      {brands.map((brand) => (
-                        <Link
-                          key={brand._id}
-                          href={`/brand/${brand.slug}`}
-                          prefetch={true}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleFastNavigation(`/brand/${brand.slug}`);
-                            setIsMenuOpen(false);
-                          }}
-                          className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
-                        >
-                          {brand.name}
-                        </Link>
-                      ))}
-                      <Link
-                        href="/contact-us"
-                        prefetch={true}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleFastNavigation('/contact-us');
-                          setIsMenuOpen(false);
-                        }}
-                        className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2"
-                      >
-                        Contact Us
-                      </Link>
-                    </div>
-                  )}
-
-                  {/* Brand Dropdown */}
-                  {item.hasDropdown && item.label !== "COMPANY" && activeDropdown === item.index && item.categories && currentUser && (
-                    <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
-                      {item.categories.length > 0 ? (
-                        item.categories.map((category, idx) => (
-                          <div key={category.id || idx}>
-                            <Link
-                              href={`/${category.slug}`}
-                              prefetch={true}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleCategoryClick(category.link, category.id, null, null, category.slug, null, null, category.brandId);
-                              }}
-                              className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 flex items-center justify-between"
-                            >
-                              {category.label}
-                              {category.subcategories && (
-                                <ChevronRight className={`w-4 h-4 transition-transform ${hoveredCategory === category.id ? 'rotate-90' : ''}`} />
-                              )}
-                            </Link>
-
-                            {category.subcategories && hoveredCategory === category.id && (
-                              <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
-                                {category.subcategories.map((subcat) => (
-                                  <Link
-                                    key={subcat.id}
-                                    href={`/${subcat.slug}`}
-                                    prefetch={true}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null, subcat.brandId);
-                                    }}
-                                    className="block w-full text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200"
-                                  >
-                                    {subcat.label}
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <div className="py-2 text-sm text-gray-500">
-                          {loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}
+                      {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
+                        <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
+                          {brands.map((brand) => (
+                            <Link key={brand._id} href={`/brand/${brand.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(`/brand/${brand.slug}`); setIsMenuOpen(false); }} className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200">{brand.name}</Link>
+                          ))}
+                          <Link href="/contact-us" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/contact-us'); setIsMenuOpen(false); }} className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2">Contact Us</Link>
                         </div>
                       )}
-                    </div>
+
+                      {item.brandId && mobileActiveBrand === item.index && currentUser && (
+                        <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
+                          {item.categories && item.categories.length > 0 ? (
+                            item.categories.map((category) => (
+                              <div key={category.id}>
+                                <div className="flex items-center justify-between">
+                                  <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => {
+                                    e.preventDefault();
+                                    handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
+                                  }} className="flex-1 block text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200">{category.label}</Link>
+                                  {category.hasChild && (
+                                    <button onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      if (mobileActiveCategory === category.id) {
+                                        setMobileActiveCategory(null);
+                                        setMobileActiveSubcategory(null);
+                                      } else {
+                                        setMobileActiveCategory(category.id);
+                                        setMobileActiveSubcategory(null);
+                                        fetchSubCategoriesForCategory(category.id);
+                                      }
+                                    }} className="p-2">
+                                      <ChevronRight className={`w-4 h-4 transition-transform ${mobileActiveCategory === category.id ? 'rotate-90' : ''}`} />
+                                    </button>
+                                  )}
+                                </div>
+
+                                {category.hasChild && mobileActiveCategory === category.id && category.subcategories && (
+                                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
+                                    {category.subcategories.map((subcat) => (
+                                      <div key={subcat.id}>
+                                        <div className="flex items-center justify-between">
+                                          <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => {
+                                            e.preventDefault();
+                                            handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
+                                          }} className="flex-1 block text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200">{subcat.label}</Link>
+                                          {subcat.hasChild && (
+                                            <button onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              if (mobileActiveSubcategory === subcat.id) {
+                                                setMobileActiveSubcategory(null);
+                                              } else {
+                                                setMobileActiveSubcategory(subcat.id);
+                                                fetchSubCategoriesTwoForSubCategory(subcat.id);
+                                              }
+                                            }} className="p-2">
+                                              <ChevronRight className={`w-3 h-3 transition-transform ${mobileActiveSubcategory === subcat.id ? 'rotate-90' : ''}`} />
+                                            </button>
+                                          )}
+                                        </div>
+
+                                        {subcat.hasChild && mobileActiveSubcategory === subcat.id && subcat.subcategoriesTwo && (
+                                          <div className="ml-4 mt-1 space-y-1 border-l-2 border-purple-200 pl-3">
+                                            {subcat.subcategoriesTwo.map((subcatTwo) => (
+                                              <Link key={subcatTwo.id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`, null, null, subcatTwo.id, null, null, subcatTwo.slug); }} className="block text-left py-1.5 text-xs text-purple-600 hover:text-[#2d2c70] transition-colors duration-200">{subcatTwo.label}</Link>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-2 text-sm text-gray-500">{loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}</div>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
@@ -1040,121 +722,47 @@ export function Navbar() {
 
         {/* Desktop Full-Width Dropdown */}
         {activeDropdown !== null && currentUser && (
-          <div
-            className="hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50"
-            onMouseEnter={() => setActiveDropdown(activeDropdown)}
-            onMouseLeave={() => {
-              setActiveDropdown(null)
-              setHoveredCategory(null)
-              setHoveredSubcategory(null)
-            }}
-            ref={desktopDropdownRef}
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div data-brand-dropdown className="hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50" onMouseEnter={() => setActiveDropdown(activeDropdown)} onMouseLeave={() => { setActiveDropdown(null); setHoveredCategory(null); setHoveredSubcategory(null); }}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"> {/* Reduced py-8 to py-6 */}
               {navigationItems.find(item => item.index === activeDropdown)?.categories && (
-                <div className="grid grid-cols-5 gap-8">
+                <div className="grid grid-cols-5 gap-6"> {/* Reduced gap-8 to gap-6 */}
                   {groupCategoriesByColumn(navigationItems.find(item => item.index === activeDropdown).categories).map((columnCategories, colIdx) => (
-                    <div key={colIdx} className="space-y-2">
+                    <div key={colIdx} className="space-y-1"> {/* Reduced space-y-2 to space-y-1 */}
                       {columnCategories.length > 0 ? (
                         columnCategories.map((category, catIdx) => (
-                          <div
-                            key={category.id || catIdx}
-                            className="relative p-2"
-                            onMouseEnter={() => {
-                              if (category.hasChild) {
-                                setHoveredCategory(`${colIdx}-${catIdx}`)
-                                if (category.id) {
-                                  handleCategoryHover(category.id)
-                                }
-                              }
-                            }}
-                            onMouseLeave={() => setHoveredCategory(null)}
-                          >
-                            <Link
-                              href={`/${category.slug}`}
-                              prefetch={true}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
-                              }}
-                              className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-2 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE"
-                                  ? "text-[#E9098D] font-bold"
-                                  : "text-[#2d2c70] hover:text-[#E9098D]"
-                                } ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''
-                                }`}
-                            >
+                          <div key={category.id || catIdx} className="relative p-1" onMouseEnter={() => {
+                            {/* Reduced p-2 to p-1 */ }
+                            if (category.hasChild) {
+                              setHoveredCategory(`${colIdx}-${catIdx}`)
+                              if (category.id) handleCategoryHover(category.id)
+                            }
+                          }} onMouseLeave={() => setHoveredCategory(null)}>
+                            <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(category.link, category.id, null, null, category.slug, null, null); }} className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-1 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE" ? "text-[#E9098D] font-bold" : "text-[#2d2c70] hover:text-[#E9098D]"} ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''}`}> {/* Reduced p-2 to p-1 */}
                               <span>{category.label}</span>
-                              {/* Only show chevron if category has children */}
-                              {category.hasChild && (
-                                <ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />
-                              )}
+                              {category.hasChild && (<ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />)}
                             </Link>
 
-                            {/* Subcategory Popup - Only show if category has children */}
                             {category.hasChild && hoveredCategory === `${colIdx}-${catIdx}` && (
-                              <div
-                                className="absolute left-2/3 top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
-                                onMouseEnter={() => setHoveredCategory(`${colIdx}-${catIdx}`)}
-                              >
-                                <div className="p-4 space-y-2">
+                              <div className="absolute left-2/3 top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md" onMouseEnter={() => setHoveredCategory(`${colIdx}-${catIdx}`)}>
+                                <div className="p-3 space-y-1"> {/* Reduced p-4 to p-3 and space-y-2 to space-y-1 */}
                                   {(category.subcategories || subCategoriesByCategory[category.id] || []).map((subcat) => (
-                                    <div
-                                      key={subcat.id}
-                                      className="relative p-1"
-                                      onMouseEnter={() => {
-                                        if (subcat.hasChild) {
-                                          handleSubCategoryHover(subcat.id)
-                                          setHoveredSubcategory(subcat.id)
-                                        }
-                                      }}
-                                      onMouseLeave={() => setHoveredSubcategory(null)}
-                                    >
-                                      <Link
-                                        href={`/${subcat.slug}`}
-                                        prefetch={true}
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
-                                        }}
-                                        className={`block w-full text-left text-sm py-2 px-3 rounded transition-colors duration-200 flex items-center justify-between group cursor-pointer ${hoveredSubcategory === subcat.id
-                                            ? 'bg-gray-100 text-[#E9098D]'
-                                            : 'text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50'
-                                          }`}
-                                      >
+                                    <div key={subcat.id} className="relative p-0.5" onMouseEnter={() => {
+                                      {/* Reduced p-1 to p-0.5 */ }
+                                      if (subcat.hasChild) {
+                                        handleSubCategoryHover(subcat.id)
+                                        setHoveredSubcategory(subcat.id)
+                                      }
+                                    }} >
+                                      <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null); }} className={`block w-full text-left text-sm py-1 px-2 rounded transition-colors duration-200 flex items-center justify-between group cursor-pointer ${hoveredSubcategory === subcat.id ? 'bg-gray-100 text-[#E9098D]' : 'text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50'}`}> 
                                         <span>{subcat.label}</span>
-                                        {/* Only show chevron if subcategory has children */}
-                                        {subcat.hasChild && (
-                                          <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        )}
+                                        {subcat.hasChild && (<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />)}
                                       </Link>
 
-                                      {/* SubcategoryTwo Popup - Only show if subcategory has children */}
                                       {subcat.hasChild && subCategoriesTwoBySubCategory[subcat.id]?.length > 0 && hoveredSubcategory === subcat.id && (
-                                        <div
-                                          className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md"
-                                        >
-                                          <div className="p-4 space-y-2">
+                                        <div className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md">
+                                          <div className="p-3 space-y-1"> {/* Reduced p-4 to p-3 and space-y-2 to space-y-1 */}
                                             {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
-                                              <Link
-                                                key={subcatTwo._id}
-                                                href={`/${subcatTwo.slug}`}
-                                                prefetch={true}
-                                                onClick={(e) => {
-                                                  e.preventDefault();
-                                                  handleCategoryClick(
-                                                    `/${subcatTwo.slug}`,
-                                                    null,
-                                                    null,
-                                                    subcatTwo._id,
-                                                    null,
-                                                    null,
-                                                    subcatTwo.slug
-                                                  );
-                                                }}
-                                                className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-2 px-3 rounded hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
-                                              >
-                                                {subcatTwo.name}
-                                              </Link>
+                                              <Link key={subcatTwo._id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`, null, null, subcatTwo._id, null, null, subcatTwo.slug); }} className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200 cursor-pointer">{subcatTwo.name}</Link>
                                             ))}
                                           </div>
                                         </div>
@@ -1167,13 +775,8 @@ export function Navbar() {
                           </div>
                         ))
                       ) : (
-                        <div className="text-sm text-gray-500">
-                          {loadingCategories[navigationItems.find(item => item.index === activeDropdown)?.brandId]
-                            ? 'Loading categories...'
-                            : 'No categories available'
-                          }
-                        </div>
-                      )}
+                        <div className="text-sm text-gray-500 py-1">{loadingCategories[navigationItems.find(item => item.index === activeDropdown)?.brandId] ? 'Loading categories...' : 'No categories available'}</div> 
+              )}
                     </div>
                   ))}
                 </div>

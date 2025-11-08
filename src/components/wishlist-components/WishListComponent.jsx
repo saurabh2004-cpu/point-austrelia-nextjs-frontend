@@ -299,15 +299,15 @@ const ProductCard = ({
     const hasModifications = isCartItemModified();
 
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 font-spartan xl:h-full xl:w-[622px]">
-            <div className="flex flex-col xl:flex-row h-full gap-7 mt-4">
+        <div className="bg-white  border border-gray-200 rounded-lg shadow-sm p-2 font-spartan   mx-auto  xl:h-full xl:w-[552px] mx-auto">
+            <div className="flex flex-col xl:flex-row h-full ">
                 {/* Product Image */}
-                <div className="flex-shrink-0 mr-4">
-                    <div className="xl:w-39 h-full rounded-lg flex items-center justify-center align-middle relative">
+                <div className="flex-shrink-0 mr-4 ">
+                    <div className=" rounded-lg flex items-center justify-center align-middle relative">
                         <img
                             src={getImageUrl()}
                             alt={getProductName()}
-                            className="object-contain h-[156px] w-[156px]"
+                            className="object-contain h-[200px] w-[200px]"
                             key={productId}
                             onError={(e) => {
                                 e.target.src = '/product-listing-images/product-1.avif';
@@ -322,11 +322,12 @@ const ProductCard = ({
                 </div>
 
                 {/* Product Details */}
-                <div className="flex-1 min-w-0 space-y-2 max-w-[350px] mx-auto xl:mx-0">
-                    <h3 className="text-[15px] font-semibold line-clamp-2 mb-2">
+                <div className="flex flex-col min-w-0  lg:max-w-[350px] mx-auto xl:mx-0">
+                    <h3 className="text-[15px] font-semibold line-clamp-2 ">
                         {getProductName()}
                     </h3>
-                    <div className="flex items-center space-x-10 mb-2 justify-between align-middle">
+
+                    <div className="flex items-center space-x-10  justify-between align-middle">
                         <span className="font-medium text-[13px]">
                             SKU: {getSku()}
                         </span>
@@ -452,49 +453,53 @@ const ProductCard = ({
                         </div>
                     </div>
 
-                    <div className='text-[16px] font-semibold mt-4 gap-2 flex'>
+                    <div className='text-[16px] font-semibold  gap-2 flex'>
                         <span>Amount:</span>
                         <span className="text-[#2D2C70] text-[18px]">
                             ${calculateAmount(productData, productId)}
                         </span>
                     </div>
 
-                    <div className='flex text-[13px] font-semibold justify-between w-full'>
-                        {/* ✅ UPDATE BUTTON: Only enabled when product is in cart AND has modifications */}
+                    <div className="flex text-[13px] font-semibold justify-between items-center gap-3 sm:gap-4 md:gap-6 ">
+                        {/* ✅ UPDATE BUTTON */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-8 disabled:opacity-50 ${hasModifications && isAvailable && isItemInCart
-                                ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
-                                : 'bg-gray-400 cursor-not-allowed'
+                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50 ${hasModifications && isAvailable && isItemInCart
+                                    ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
+                                    : 'bg-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
                                 !isItemInCart
                                     ? `${isProductGroup ? 'Product group' : 'Product'} not in cart`
                                     : !isAvailable
-                                        ? (isOutOfStock ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock` : "Requested quantity exceeds available stock")
+                                        ? isOutOfStock
+                                            ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock`
+                                            : 'Requested quantity exceeds available stock'
                                         : !hasModifications
-                                            ? "No changes to update"
-                                            : "Update cart item"
+                                            ? 'No changes to update'
+                                            : 'Update cart item'
                             }
                         >
                             {isLoading ? 'Updating...' : 'Update'}
                         </button>
 
-                        {/* ✅ ADD TO CART BUTTON: Disabled when product is already in cart */}
+                        {/* ✅ ADD TO CART BUTTON */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`flex py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-1 px-8 disabled:opacity-50 ${isAvailable && !isItemInCart
-                                ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
-                                : 'bg-gray-400 cursor-not-allowed'
+                            className={`flex items-center py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl px-6 disabled:opacity-50 ${isAvailable && !isItemInCart
+                                    ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
+                                    : 'bg-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={isLoading || !isAvailable || isItemInCart}
                             title={
                                 isItemInCart
                                     ? `${isProductGroup ? 'Product group' : 'Product'} already in cart`
                                     : !isAvailable
-                                        ? (isOutOfStock ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock` : "Requested quantity exceeds available stock")
-                                        : "Add to cart"
+                                        ? isOutOfStock
+                                            ? `${isProductGroup ? 'Product group' : 'Product'} is out of stock`
+                                            : 'Requested quantity exceeds available stock'
+                                        : 'Add to cart'
                             }
                         >
                             <svg
@@ -506,20 +511,25 @@ const ProductCard = ({
                                 <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
                             </svg>
                             {!isAvailable
-                                ? (isOutOfStock ? 'Out of Stock' : 'Exceeds Stock')
-                                : (isItemInCart ? 'In Cart' : 'Add to Cart')
-                            }
+                                ? isOutOfStock
+                                    ? 'Out of Stock'
+                                    : 'Exceeds Stock'
+                                : isItemInCart
+                                    ? 'In Cart'
+                                    : 'Add to Cart'}
                         </button>
 
+                        {/* ✅ REMOVE BUTTON */}
                         <button
                             onClick={() => onRemoveFromWishlist(productId, isProductGroup)}
                             className={`h-9 w-9 border rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
                                 }`}
                             disabled={isLoading}
                         >
-                            <img src="/icons/dustbin-1.png" className='w-4 h-4' alt="" />
+                            <img src="/icons/dustbin-1.png" className="w-4 h-4" alt="remove" />
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -920,7 +930,7 @@ const WishListComponent = () => {
 
     if (loading) {
         return (
-            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan flex items-center justify-center">
+            <div className="bg-gray-50 min-h-screen  p-4 pb-16 font-spartan flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading wishlist...</p>
@@ -932,8 +942,8 @@ const WishListComponent = () => {
     return (
         <>
             {/* <Navbar /> */}
-            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
-                <div className="max-w-7xl mx-auto">
+            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan ">
+                <div className="lg:max-w-[80%] mx-auto">
                     {/* Header */}
                     <div className="mb-6">
                         <h1 className="text-[24px] font-semibold">

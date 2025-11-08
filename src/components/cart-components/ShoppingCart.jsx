@@ -627,8 +627,8 @@ const ShoppingCart = () => {
     return (
         <>
             {/* <Navbar /> */}
-            <div className="bg-white justify-items-center pt-6 font-spartan">
-                <div className="max-w-8xl mx-auto px-2  lg:px-6 xl:px-8 ">
+            <div className="bg-white  justify-items-center pt-6 font-spartan">
+                <div className="md:max-w-[80%] mx-auto px-2  lg:px-6 xl:px-8 ">
                     <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                         <span>Home</span>
                         <span className="mx-1 sm:mx-2">/</span>
@@ -638,7 +638,7 @@ const ShoppingCart = () => {
             </div>
 
             {/* Header */}
-            <div className="px-6 md:px-0  md:max-w-7xl mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
+            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:mr-30 mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
                     <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalItems || cartItemsCount} Items)</span>
@@ -647,7 +647,7 @@ const ShoppingCart = () => {
 
             {/* Out of Stock Warning */}
             {outOfStockCount > 0 && (
-                <div className="max-w-7xl mx-auto px-4 pt-2 mb-4">
+                <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start">
@@ -677,7 +677,7 @@ const ShoppingCart = () => {
 
             {/* Exceeding Stock Level Warning */}
             {exceedingStockCount > 0 && (
-                <div className="max-w-7xl mx-auto px-4 pt-2 mb-4">
+                <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
                     <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg">
                         <div className="flex items-start">
                             <AlertCircle className="h-5 w-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
@@ -696,7 +696,7 @@ const ShoppingCart = () => {
 
             {/* Error Display */}
             {error && (
-                <div className="max-w-7xl mx-auto px-4 pt-2">
+                <div className="md:max-w-[80%] mx-auto px-4 pt-2">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                         {error}
                     </div>
@@ -704,7 +704,7 @@ const ShoppingCart = () => {
             )}
 
             <div className="min-h-screen  py-4 px-4 sm:px-6  lg:px-8 font-spartan ">
-                <div className="max-w-7xl justify-between mx-auto border-t-2 border-[#2D2C70]">
+                <div className="md:max-w-[80%] justify-between mx-auto border-t-2 border-[#2D2C70]">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Shopping Cart Section */}
                         <div className="lg:col-span-2">
@@ -737,7 +737,7 @@ const ShoppingCart = () => {
 
                                                 return (
                                                     <div key={item._id} className="lg:py-6">
-                                                        <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0 md:space-x-25 ${outOfStock
+                                                        <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0   ${outOfStock
                                                             ? 'border-red-300 bg-red-50/30'
                                                             : exceedsStock
                                                                 ? 'border-orange-300 bg-orange-50/30'
@@ -747,7 +747,7 @@ const ShoppingCart = () => {
                                                             <div className="">
                                                                 <div className="rounded-lg flex items-center w-full  justify-items-center  ">
                                                                     <img
-                                                                        className='object-contain xl:pl-2'
+                                                                        className='object-contain h-[200px] w-[200px] xl:pl-2'
                                                                         src={getItemImage(item)}
                                                                         alt={getItemName(item)}
                                                                         width={116}
@@ -875,22 +875,8 @@ const ShoppingCart = () => {
 
                                                                 {/* Amount with Tax */}
                                                                 <div className="space-y-1">
-                                                                    <div className="flex justify-between text-[13px]">
-                                                                        <span className="font-semibold">Subtotal:</span>
-                                                                        <span className="text-[#2D2C70] font-semibold">
-                                                                            ${((item.amount || 0) * calculateDisplayTotalQuantity(item)).toFixed(2)}
-                                                                        </span>
-                                                                    </div>
 
-                                                                    {/* Show tax only if applicable for this item */}
-                                                                    {calculateItemTax(item) > 0 && (
-                                                                        <div className="flex justify-between text-[12px] text-gray-600">
-                                                                            <span>Tax ({item.product?.taxPercentages || item.productGroup?.taxPercentages || 0}%):</span>
-                                                                            <span>${calculateItemTax(item).toFixed(2)}</span>
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="flex justify-between text-[13px] font-semibold border-t pt-1">
+                                                                    <div className="flex space-x-2 text-[13px] font-semibold  pt-1">
                                                                         <span>Total:</span>
                                                                         <span className="text-[#2D2C70] text-[15px]">
                                                                             ${calculateItemTotal(item).toFixed(2)}
@@ -1113,7 +1099,7 @@ const ShoppingCart = () => {
                                             <div className="flex items-center space-x-3">
                                                 <button
                                                     onClick={() => router.push('/')}
-                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 xl:px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
                                                 >
                                                     <svg
                                                         className="w-5 h-5 transition-colors duration-300 "

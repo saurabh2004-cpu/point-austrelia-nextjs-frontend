@@ -116,7 +116,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
     };
 
     useEffect(() => {
-        if (currentUser?._id ) {
+        if (currentUser?._id) {
             fetchCustomersCardDetails();
         }
     }, [currentUser?._id,]);
@@ -192,7 +192,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
             <div className="bg-white rounded-lg p-4 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-18 xl:gap-4 mb-4">
                     {/* credit card */}
-                    <div className="h-full">
+                    <div className="h-full" onClick={() => handlePaymentChange('credit-card')}>
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-start">
                                 <input
@@ -273,7 +273,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                     </div>
 
                     {/* person card */}
-                    <div className="h-full">
+                    <div className="h-full" onClick={() => handlePaymentChange('Account Customer')}>
                         <div className="flex items-start justify-between mb-4">
                             <input
                                 type="radio"
@@ -300,7 +300,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                     </div>
 
                     {/* phone card */}
-                    <div className="h-full">
+                    <div className="h-full" onClick={() => handlePaymentChange('Contact me for payment')}>
                         <div className="flex items-start justify-between mb-4">
                             <input
                                 type="radio"

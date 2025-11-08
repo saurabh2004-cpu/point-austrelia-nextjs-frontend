@@ -836,7 +836,7 @@ const CheckoutComponent = () => {
 
     return (
         <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
-            <div className="max-w-8xl px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="md:max-w-[80%] px-4 sm:px-6 lg:px-8 mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
                     <h1 className="text-lg sm:text-xl lg:text-[24px] font-semibold mb-4 text-center sm:text-left">
@@ -875,7 +875,7 @@ const CheckoutComponent = () => {
                     onRemoveItems={handleRemoveOutOfStockItems}
                 />
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-2">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-0 lg:gap-2">
                     {/* STEP 1: Select Addresses */}
                     {step === 1 && (
                         <div className="min-w-full col-span-2 mx-auto xl:min-h-screen">
@@ -1020,7 +1020,7 @@ const CheckoutComponent = () => {
                     {/* Order Summary Sidebar */}
                     <div className={`lg:col-span-1 ${step === 1 ? 'xl:mt-27' : 'xl:mt-18'}`}>
                         <div className="bg-white rounded-lg sticky top-6">
-                            <div className="md:p-4">
+                            <div className="md:p-0 xl:p-4">
                                 <div className="border-2 border-gray-300 rounded-lg space-y-3 font-spartan">
                                     <div className="flex items-center justify-center mb-4 py-4 border-b">
                                         <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
@@ -1114,7 +1114,7 @@ const CheckoutComponent = () => {
 
                                             return (
                                                 <div key={item._id} className={`flex items-center space-x-3 p-2 justify-between ${isOutOfStock ? 'bg-red-50 border border-red-200 rounded-md' : ''}`}>
-                                                    <div className="w-28 h-28 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <div className=" rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
                                                             src={isProductGroup ? item.productGroup.thumbnail : item.product.images}
                                                             alt={itemData.name || itemData.ProductName}

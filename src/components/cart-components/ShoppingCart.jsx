@@ -231,25 +231,51 @@ const ShoppingCart = () => {
     }, [pagination.hasNext, loadingMore, loadMoreItems]);
 
     // Remove out of stock items
+    // Remove all out of stock items at once
     const removeOutOfStockItems = async () => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to remove items");
             return;
         }
 
+        if (outOfStockCount === 0) {
+            setError("No out of stock items to remove");
+            return;
+        }
+
         setRemovingOutOfStock(true);
 
         try {
-            const response = await axiosInstance.delete(
-                `cart/remove-out-of-stock-items/${currentUser._id}`
+            // Prepare items to remove with proper type identification
+            const itemsToRemove = outOfStockItems.map(item => {
+                if (item.product) {
+                    return { productId: item.product._id };
+                } else if (item.productGroup) {
+                    return { productGroupId: item.productGroup._id };
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            if (itemsToRemove.length === 0) {
+                setError('No valid items to remove');
+                return;
+            }
+
+            const response = await axiosInstance.put(
+                `cart/remove-multiple-from-cart/${currentUser._id}`,
+                { itemsToRemove }
             );
 
-            console.log("remove out of stock items", response);
+            console.log("remove multiple out of stock items", response);
 
             if (response.data.statusCode === 200) {
-                setCartItems(response.data.data.cartItems || []);
+                // Update local state
+                setCartItems(prev => prev.filter(item => !isOutOfStock(item)));
                 setCartItemsCount(response.data.data.cartItems?.length || 0);
                 setError(null);
+
+                // Refresh totals
+                await fetchCustomersCart(1, false);
             } else {
                 setError(response.data.message || "Failed to remove out of stock items");
             }
@@ -638,12 +664,47 @@ const ShoppingCart = () => {
             </div>
 
             {/* Header */}
-            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:mr-30 mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
+            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
-                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalItems || cartItemsCount} Items)</span>
+                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity } Items)</span>
                 </h1>
             </div>
+
+            {/* Out of Stock Warning */}
+            {outOfStockCount > 0 && (
+                <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-start">
+                                <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+                                <div>
+                                    <h3 className="text-sm font-semibold text-yellow-800">
+                                        Out of Stock Items
+                                    </h3>
+                                    <p className="text-sm text-yellow-700 mt-1">
+                                        {outOfStockCount} {outOfStockCount === 1 ? 'item is' : 'items are'} currently out of stock and cannot be purchased.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={removeOutOfStockItems}
+                                disabled={removingOutOfStock}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                            >
+                                {removingOutOfStock ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Removing...
+                                    </div>
+                                ) : (
+                                    `Remove ${outOfStockCount} Out of Stock Item${outOfStockCount > 1 ? 's' : ''}`
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Out of Stock Warning */}
             {outOfStockCount > 0 && (
@@ -675,8 +736,8 @@ const ShoppingCart = () => {
                 </div>
             )}
 
-            {/* Exceeding Stock Level Warning */}
-            {exceedingStockCount > 0 && (
+            {/* Exceeding Stock Level Warning - Only show when NO out of stock items */}
+            {exceedingStockCount > 0 && outOfStockCount === 0 && (
                 <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
                     <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg">
                         <div className="flex items-start">
@@ -694,8 +755,8 @@ const ShoppingCart = () => {
                 </div>
             )}
 
-            {/* Error Display */}
-            {error && (
+            {/* Error Display - Only show when NO other warnings */}
+            {error && outOfStockCount === 0 && exceedingStockCount === 0 && (
                 <div className="md:max-w-[80%] mx-auto px-4 pt-2">
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                         {error}
@@ -763,7 +824,7 @@ const ShoppingCart = () => {
                                                             <div className="flex-1 ">
                                                                 {/* Product Name */}
                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                    <h3 className="text-[15px] font-semibold">
+                                                                    <h3 className="text-[15px] font-semibold cursor-pointer">
                                                                         {getItemName(item)}
                                                                     </h3>
                                                                     {isProductGroupItem && (
@@ -774,9 +835,9 @@ const ShoppingCart = () => {
                                                                 </div>
 
                                                                 {/* SKU and Stock */}
-                                                                <div className='flex align-center justify-between pr-12 items-center'>
+                                                                <div className='flex align-center justify-between pr-12 items-center '>
                                                                     <p className="text-[13px] text-[400] ">SKU: {getItemSku(item)}</p>
-                                                                    <div className={`flex items-center w-[100px] text-[10px] font-semibold p-2 text-[14px] rounded ${outOfStock
+                                                                    <div className={`flex items-center w-[125px] text-[10px] font-semibold p-2 text-[14px] rounded ${outOfStock
                                                                         ? 'bg-red-100 text-red-600'
                                                                         : 'bg-[#E7FAEF] text-black'
                                                                         }`}>
@@ -794,7 +855,7 @@ const ShoppingCart = () => {
                                                                     <div className="flex items-center space-x-2 mt-2 mb-2 bg-orange-100 border border-orange-300 rounded-md p-2">
                                                                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
                                                                         <p className="text-xs text-orange-700">
-                                                                            Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
+                                                                            Requested quantity ({totalQuantity}) exceeds available stock  Please reduce quantity.
                                                                         </p>
                                                                     </div>
                                                                 )}
@@ -818,13 +879,13 @@ const ShoppingCart = () => {
                                                                         {/* Pack Type Dropdown (only for products) */}
                                                                         {item.product && item.product.typesOfPacks && item.product.typesOfPacks.length > 0 && (
                                                                             <div className="mb-3  space-x-12 align-center items-center font-spartan">
-                                                                                <label className="block text-sm font-medium text-gray-700 mb-1">Pack Type</label>
+                                                                                <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Pack Type</label>
                                                                                 <div className="relative w-full">
                                                                                     <select
                                                                                         value={selectedPacks[item._id] || ''}
                                                                                         onChange={(e) => handlePackChange(item._id, e.target.value)}
                                                                                         disabled={outOfStock}
-                                                                                        className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                                                        className="w-full border cursor-pointer border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                                                                                     >
                                                                                         {item.product.typesOfPacks.map((pack) => (
                                                                                             <option key={pack._id} value={pack._id}>
@@ -843,33 +904,53 @@ const ShoppingCart = () => {
 
                                                                         {item.product && <div className="hidden xl:block bg-gray-300 w-[1px] h-15 ml-8"></div>}
 
-                                                                        <div className="flex  items-start space-x-2 space-y-2 flex-col">
-                                                                            <span className="text-sm font-[400] ">Quantity</span>
-                                                                            <div className="flex items-center  rounded-lg">
+                                                                        <div className="flex items-start space-x-2 space-y-2 flex-col">
+                                                                            <span className="text-sm font-[400] cursor-pointer">Quantity</span>
+                                                                            <div className="flex items-center rounded-lg">
                                                                                 <button
                                                                                     onClick={() => handleQuantityChange(item._id, -1)}
                                                                                     disabled={isLoading || displayQuantity <= 1 || outOfStock}
-                                                                                    className="p-1 bg-black rounded-md  px-2 py-1 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                                                    className="p-1 bg-black rounded-md px-2 py-1 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                                                                 >
                                                                                     <Minus className="w-4 h-4 text-white" />
                                                                                 </button>
-                                                                                <span className="px-3 py-1 min-w-[2rem] text-center text-base font-medium">
-                                                                                    {isLoading ? (
-                                                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mx-auto"></div>
-                                                                                    ) : (
-                                                                                        displayQuantity
-                                                                                    )}
-                                                                                </span>
+
+                                                                                {/* Input field for direct quantity entry */}
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min="1"
+                                                                                    value={displayQuantity}
+                                                                                    onChange={(e) => {
+                                                                                        const newQuantity = parseInt(e.target.value) || 1;
+                                                                                        const validQuantity = Math.max(1, newQuantity);
+                                                                                        setLocalQuantities(prev => ({
+                                                                                            ...prev,
+                                                                                            [item._id]: validQuantity
+                                                                                        }));
+                                                                                    }}
+                                                                                    onBlur={(e) => {
+                                                                                        if (!e.target.value || parseInt(e.target.value) < 1) {
+                                                                                            setLocalQuantities(prev => ({
+                                                                                                ...prev,
+                                                                                                [item._id]: 1
+                                                                                            }));
+                                                                                        }
+                                                                                    }}
+                                                                                    className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                                                                                    disabled={outOfStock || isLoading}
+                                                                                />
+
                                                                                 <button
                                                                                     onClick={() => handleQuantityChange(item._id, 1)}
                                                                                     disabled={isLoading || outOfStock || exceedsStock}
-                                                                                    className="p-1 bg-black rounded-md py-1  px-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                                                    className="p-1 bg-black rounded-md py-1 px-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                                                                     title={exceedsStock ? 'Stock level exceeded' : ''}
                                                                                 >
-                                                                                    <Plus className="w-4 h-4 text-white " />
+                                                                                    <Plus className="w-4 h-4 text-white" />
                                                                                 </button>
                                                                             </div>
                                                                         </div>
+
                                                                     </div>
                                                                 </div>
 
@@ -889,7 +970,7 @@ const ShoppingCart = () => {
                                                                     <button
                                                                         onClick={() => updateCartItem(item)}
                                                                         disabled={isLoading || !hasModifications || exceedsStock}
-                                                                        className={`w-full xl:w-auto text-white px-8 py-2 rounded-full transition-colors ${hasModifications && !exceedsStock
+                                                                        className={`w-full xl:w-auto text-white px-8 py-2 rounded-full cursor-pointer transition-colors ${hasModifications && !exceedsStock
                                                                             ? 'bg-[#E799A9] hover:bg-[#d68999]'
                                                                             : 'bg-gray-400 cursor-not-allowed'
                                                                             } disabled:opacity-50`}
@@ -901,7 +982,7 @@ const ShoppingCart = () => {
                                                                         <button
                                                                             onClick={() => moveToWishlist(item)}
                                                                             disabled={isLoading}
-                                                                            className="flex items-center w-full xl:w-auto justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full disabled:opacity-50">
+                                                                            className="flex items-center w-full xl:w-auto justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer">
                                                                             <Heart className="h-4 w-4" />
                                                                             <span className='mt-1'>Move to wishlist</span>
                                                                         </button>
@@ -909,7 +990,7 @@ const ShoppingCart = () => {
                                                                         <button
                                                                             onClick={() => handleRemoveItemClick(item)}
                                                                             disabled={isLoading}
-                                                                            className='xl:hidden flex h-8 w-9 border border-[#E9098D] rounded-full items-center justify-center disabled:opacity-50'
+                                                                            className='xl:hidden flex h-8 w-9 border border-[#E9098D] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer'
                                                                         >
                                                                             <svg width="15" height="16" viewBox="0 0 15 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                                 <path d="M11.25 3.57129H15V5.07129H13.5V14.8213C13.5 15.2355 13.1642 15.5713 12.75 15.5713H2.25C1.83579 15.5713 1.5 15.2355 1.5 14.8213V5.07129H0V3.57129H3.75V1.32129C3.75 0.907079 4.08579 0.571289 4.5 0.571289H10.5C10.9142 0.571289 11.25 0.907079 11.25 1.32129V3.57129ZM12 5.07129H3V14.0713H12V5.07129ZM5.25 2.07129V3.57129H9.75V2.07129H5.25Z" fill="black" />
@@ -920,7 +1001,7 @@ const ShoppingCart = () => {
                                                                     <button
                                                                         onClick={() => handleRemoveItemClick(item)}
                                                                         disabled={isLoading}
-                                                                        className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50"
+                                                                        className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer"
                                                                     >
                                                                         <Image
                                                                             src="/icons/dustbin-1.png"
@@ -956,7 +1037,7 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors cursor-pointer ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 cursor-not-allowed'
                                                     : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
                                                     }`}
@@ -1040,7 +1121,7 @@ const ShoppingCart = () => {
                                                     onClick={() => setIsTaxShippingOpen(!isTaxShippingOpen)}
                                                     className="w-full flex px-3 py-2 justify-between transition-colors items-center"
                                                 >
-                                                    <div className='flex gap-2 items-center'>
+                                                    <div className='flex gap-2 items-center cursor-pointer'>
                                                         Gst & shipping
                                                         <span>
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-circle-question-mark-icon lucide-circle-question-mark">
@@ -1081,7 +1162,7 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors  ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors cursor-pointer  ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 border-black cursor-not-allowed'
                                                     : 'bg-[#2D2C70] border-[#2D2C70] ] '
                                                     }`}
@@ -1099,7 +1180,7 @@ const ShoppingCart = () => {
                                             <div className="flex items-center space-x-3">
                                                 <button
                                                     onClick={() => router.push('/')}
-                                                    className={`flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 xl:px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                    className={`flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 xl:px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
                                                 >
                                                     <svg
                                                         className="w-5 h-5 transition-colors duration-300 "
@@ -1114,7 +1195,7 @@ const ShoppingCart = () => {
                                             </div>
                                             <button
                                                 onClick={handleClearCartClick}
-                                                className="w-full border-1 border-black rounded-2xl py-2 transition-colors hover:bg-gray-50">
+                                                className="w-full border-1 cursor-pointer border-black rounded-2xl py-2 transition-colors hover:bg-gray-50">
                                                 Clear cart
                                             </button>
                                         </div>

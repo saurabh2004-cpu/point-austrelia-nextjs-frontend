@@ -16,6 +16,7 @@ export default function LoginComponent() {
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('')
   const [forgotPasswordError, setForgotPasswordError] = useState('')
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false)
   
   const setUser = useUserStore((state) => state.setUser)
   const router = useRouter()
@@ -105,10 +106,18 @@ export default function LoginComponent() {
       if (res.data.statusCode === 200 && res.data.data.inactive == false) {
         setUser(res.data.data)
         
-        // Use startTransition for non-blocking navigation
-        startTransition(() => {
-          router.push('/')
-        })
+        // Show success popup
+        setShowSuccessPopup(true)
+        
+        // Hide popup and navigate after 2 seconds
+        setTimeout(() => {
+          setShowSuccessPopup(false)
+          // Use startTransition for non-blocking navigation
+          startTransition(() => {
+            router.push('/')
+          })
+        }, 2000)
+        
       } else if (res.data.statusCode === 200 && res.data.data.inactive == true) {
         setIsLoading(false)
         setErrors(prev => ({
@@ -208,6 +217,26 @@ export default function LoginComponent() {
 
   return (
     <>
+      {/* Success Login Popup */}
+      {showSuccessPopup && (
+        <div className="fixed top-4 left-4 z-50 animate-slide-in-left">
+          <div className="bg-green-50 border border-green-200 rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">
+                  Login successful! ...
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="py-12 bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8 font-spartan">
         <div className="max-w-md w-full animate-fade-in">
           {/* Header */}
@@ -480,8 +509,6 @@ export default function LoginComponent() {
           </div>
         </div>
       )}
-
-    
     </>
   )
 }

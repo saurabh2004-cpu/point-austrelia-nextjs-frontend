@@ -550,7 +550,7 @@ export default function MyAccount() {
 
   return (
     <div className="h-full py-6 p-4 md:p-6 lg:px-8 font-spartan">
-      <div className="max-w-8xl mx-auto">
+      <div className="md:max-w-[80%] mx-auto">
         {/* Breadcrumb */}
         <div className="bg-white justify-items-center ">
           <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 ">
@@ -677,7 +677,7 @@ export default function MyAccount() {
                           </p>
                           <p className="text-[14px] text-[500]">{currentUser.CustomerPhoneNo}</p>
                           {index === 0 && (
-                            <span className="flex items-center   ">
+                            <span className="flex items-center  pb-4 ">
                               <p className="flex align-center items-center gap-2">
                                 <span>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#2D2C70" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info-icon lucide-info"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
@@ -690,14 +690,14 @@ export default function MyAccount() {
                         <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
                           <button
                             onClick={() => openEditAddressPopup(address, address._id, 'shipping')}
-                            className="text-[#2D2C70] font-medium hover:text-[#E9098D]"
+                            className="text-[#2D2C70] cursor-pointer font-medium hover:text-[#E9098D]"
                           >
                             Edit
                           </button>
 
                           <button
                             onClick={() => openDeleteConfirmPopup(address._id, 'shipping')}
-                            className="text-[#46BCF9] font-medium hover:text-[#2D2C70]"
+                            className="text-[#46BCF9] cursor-pointer font-medium hover:text-[#2D2C70]"
                           >
                             Remove
                           </button>
@@ -748,7 +748,7 @@ export default function MyAccount() {
                           </p>
                           <p className="text-[14px] text-[500]">{currentUser.CustomerPhoneNo}</p>
                           {index === 0 && (
-                            <span className="flex items-center   ">
+                            <span className="flex items-center  pb-4 ">
                               <p className="flex align-center items-center gap-2">
                                 <span>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#2D2C70" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info-icon lucide-info"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
@@ -761,13 +761,13 @@ export default function MyAccount() {
                         <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
                           <button
                             onClick={() => openEditAddressPopup(address, address._id, 'billing')}
-                            className="text-[#2D2C70] font-medium hover:text-[#E9098D]"
+                            className="text-[#2D2C70] font-medium cursor-pointer hover:text-[#E9098D]"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => openDeleteConfirmPopup(address._id, 'billing')}
-                            className="text-[#60A5FA] font-medium hover:text-[#2D2C70]"
+                            className="text-[#60A5FA] font-medium cursor-pointer hover:text-[#2D2C70]"
                           >
                             Remove
                           </button>
@@ -802,7 +802,7 @@ export default function MyAccount() {
                       All Purchase History
                     </h2>
 
-                    <button className="p-2 text-[17px] font-medium bg-[#2D2C70] text-white rounded-xl">
+                    <button className="p-2 text-[17px] cursor-pointer font-medium bg-[#2D2C70] text-white rounded-xl">
                       Reorder Items
                     </button>
 
@@ -821,44 +821,48 @@ export default function MyAccount() {
                     </div> */}
 
                     {/* Date Range */}
-                    <div className="flex items-end gap-10  justify-between mt-2">
+                    <div className="flex items-end gap-10 justify-between mt-2">
                       {/* From */}
                       <div className="flex gap-10">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col cursor-pointer">
                           <label className="text-[1rem] font-medium mb-2 text-gray-900">From</label>
                           <div className="relative">
                             <input
                               type="date"
                               value={timeLapse.from}
                               onChange={(e) => setTimeLapse({ ...timeLapse, from: e.target.value })}
-                              className="appearance-none border rounded-lg border-gray-300 px-3 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent bg-white w-48 text-gray-900 
-                    [&::-webkit-calendar-picker-indicator]:opacity-0 
-                    [&::-webkit-calendar-picker-indicator]:absolute 
-                    [&::-webkit-calendar-picker-indicator]:w-full 
-                    [&::-webkit-calendar-picker-indicator]:h-full"
+                              className="appearance-none border rounded-lg border-gray-300 px-3 py-3 pr-12 text-sm 
+                     focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent 
+                     bg-white w-48 text-gray-900 cursor-pointer
+                     [&::-webkit-calendar-picker-indicator]:opacity-0 
+                     [&::-webkit-calendar-picker-indicator]:absolute 
+                     [&::-webkit-calendar-picker-indicator]:w-full 
+                     [&::-webkit-calendar-picker-indicator]:h-full"
                             />
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                              <CalendarDays className="w-5 h-5" />
+                              <CalendarDays className="w-5 h-5 text-gray-600" />
                             </div>
                           </div>
                         </div>
 
                         {/* To */}
-                        <div className="flex flex-col">
+                        <div className="flex flex-col cursor-pointer">
                           <label className="text-[1rem] font-medium mb-2 text-gray-900">To</label>
                           <div className="relative">
                             <input
                               type="date"
                               value={timeLapse.to}
                               onChange={(e) => setTimeLapse({ ...timeLapse, to: e.target.value })}
-                              className="appearance-none border rounded-lg border-gray-300 px-3 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent bg-white w-48 text-gray-900 
-                  [&::-webkit-calendar-picker-indicator]:opacity-0 
-                  [&::-webkit-calendar-picker-indicator]:absolute 
-                  [&::-webkit-calendar-picker-indicator]:w-full 
-                  [&::-webkit-calendar-picker-indicator]:h-full"
+                              className="appearance-none border rounded-lg border-gray-300 px-3 py-3 pr-12 text-sm 
+                     focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent 
+                     bg-white w-48 text-gray-900 cursor-pointer
+                     [&::-webkit-calendar-picker-indicator]:opacity-0 
+                     [&::-webkit-calendar-picker-indicator]:absolute 
+                     [&::-webkit-calendar-picker-indicator]:w-full 
+                     [&::-webkit-calendar-picker-indicator]:h-full"
                             />
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                              <CalendarDays className="w-5 h-5" />
+                              <CalendarDays className="w-5 h-5 text-gray-600" />
                             </div>
                           </div>
                         </div>
@@ -867,12 +871,14 @@ export default function MyAccount() {
                       {/* Sort Options */}
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <div className="p-2 border rounded-lg">
+                          <div className="p-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                             <ArrowUpDown className="w-5 h-5 text-[#E9098D]" />
                           </div>
                           <div className="relative w-[156px]">
                             <select
-                              className="appearance-none w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 text-[14px] font-medium bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2D2C70] focus:border-transparent"
+                              className="appearance-none w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 text-[14px] 
+                     font-medium bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#2D2C70] 
+                     focus:border-transparent cursor-pointer"
                               value={sortBy}
                               onChange={(e) => setSortBy(e.target.value)}
                             >
@@ -887,7 +893,7 @@ export default function MyAccount() {
                             {/* Custom arrow */}
                             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                               <svg
-                                className="w-4 h-4"
+                                className="w-4 h-4 text-gray-600"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="3"
@@ -900,6 +906,7 @@ export default function MyAccount() {
                         </div>
                       </div>
                     </div>
+
 
                   </div>
                 </div>
@@ -956,7 +963,7 @@ export default function MyAccount() {
                               <p>{currentUser?.CustomerPhoneNo}</p>
                             </div>
                             <button
-                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium"
+                              className="absolute bottom-4 cursor-pointer right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium"
                               onClick={() => setActiveSection("address")}
                             >
                               edit
@@ -981,7 +988,7 @@ export default function MyAccount() {
                             </div>
                             <button
                               onClick={() => setActiveSection("address")}
-                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
+                              className="absolute bottom-4 right-4 cursor-pointer text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
                               edit
                             </button>
                           </div>
@@ -1012,7 +1019,7 @@ export default function MyAccount() {
                             </div>
                             <button
                               onClick={() => setActiveSection("address")}
-                              className="absolute bottom-4 right-4 text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
+                              className="absolute bottom-4 right-4 cursor-pointer text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
                               edit
                             </button>
                           </div>
@@ -1047,8 +1054,8 @@ export default function MyAccount() {
                       <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
                     </div>
                     <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D]">Edit</button>
-                      <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70]">Remove</button>
+                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D] cursor-pointer">Edit</button>
+                      <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70] cursor-pointer">Remove</button>
                     </div>
                   </div>
 
@@ -1117,7 +1124,7 @@ export default function MyAccount() {
                 <div className="">
                   <button
                     onClick={changePassword}
-                    className="w-[200px] border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/95 py-1 rounded-2xl text-[20px] font-medium  "
+                    className="w-[200px] border cursor-pointer border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/95 py-1 rounded-2xl text-[20px] font-medium  "
                   >
                     Update
                   </button>

@@ -428,14 +428,14 @@ export default function ProductPopup({
         const isValid = newTotalQuantity <= stockLevel;
 
         if (!isValid) {
-            setStockError(`Exceeds available stock (${stockLevel})`);
+            setStockError(`Exceeds available stock `);
         } else {
             setStockError(null);
         }
 
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock (${stockLevel})`,
+            message: isValid ? null : `Exceeds available stock `,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -768,7 +768,7 @@ export default function ProductPopup({
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-medium font-spartan">{getItemName()}</h2>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -789,7 +789,7 @@ export default function ProductPopup({
                                                 <button
                                                     key={index}
                                                     onClick={() => setSelectedImage(index)}
-                                                    className={`flex-shrink-0 p-2 bg-white shadow-xl ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
+                                                    className={`flex-shrink-0 p-2 bg-white shadow-xl cursor-pointer ${selectedImage === index ? "border-2 border-blue-500" : "border border-gray-200"
                                                         }`}
                                                 >
                                                     <img
@@ -827,7 +827,7 @@ export default function ProductPopup({
                                                 <>
                                                     <button
                                                         onClick={prevImage}
-                                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                                        className="absolute cursor-pointer left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
                                                         aria-label="Previous image"
                                                     >
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -836,7 +836,7 @@ export default function ProductPopup({
                                                     </button>
                                                     <button
                                                         onClick={nextImage}
-                                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
+                                                        className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all z-10"
                                                         aria-label="Next image"
                                                     >
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -861,7 +861,7 @@ export default function ProductPopup({
                                 <h1 className="text-[18px] font-semibold text-black uppercase">{getItemName()}</h1>
                                 <div className="space-y-1 flex justify-between items-center">
                                     <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                        SKU {getItemSku()}
+                                        SKU : {getItemSku()}
                                     </p>
 
                                     {/* Stock Status */}
@@ -916,15 +916,59 @@ export default function ProductPopup({
                                             <button
                                                 onClick={decrementQuantity}
                                                 disabled={quantity <= 1 || isOutOfStock}
-                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer hover:bg-gray-800 transition-colors"
                                             >
                                                 <Minus className="w-4 h-4" />
                                             </button>
-                                            <span className="px-4">{quantity}</span>
+                                            <input
+                                                type="number"
+                                                value={quantity}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    
+                                                    // Allow empty input for user to type
+                                                    if (value === '') {
+                                                        return;
+                                                    }
+                                                    
+                                                    const newQuantity = parseInt(value);
+                                                    
+                                                    // Validate the input
+                                                    if (isNaN(newQuantity) || newQuantity < 1) {
+                                                        return;
+                                                    }
+                                                    
+                                                    // Check stock limit
+                                                    if (newQuantity > getStockLevel()) {
+                                                        return;
+                                                    }
+                                                    
+                                                    // Update quantity
+                                                    setQuantity(newQuantity);
+                                                    checkStock(newQuantity, selectedUnitId);
+                                                }}
+                                                onBlur={(e) => {
+                                                    // Reset to 1 if field is empty on blur
+                                                    if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                                                        setQuantity(1);
+                                                        checkStock(1, selectedUnitId);
+                                                    }
+                                                }}
+                                                onKeyPress={(e) => {
+                                                    // Only allow numbers
+                                                    if (!/[0-9]/.test(e.key)) {
+                                                        e.preventDefault();
+                                                    }
+                                                }}
+                                                className="w-16 text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-medium focus:bg-gray-50 transition-colors"
+                                                min="1"
+                                                max={getStockLevel()}
+                                                disabled={isOutOfStock}
+                                            />
                                             <button
                                                 onClick={incrementQuantity}
                                                 disabled={isOutOfStock || totalRequestedQuantity >= getStockLevel()}
-                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                className="px-2 py-1 bg-black text-white rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer hover:bg-gray-800 transition-colors"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </button>
@@ -939,7 +983,7 @@ export default function ProductPopup({
                                                 value={selectedUnitId}
                                                 onChange={(e) => handleUnitChange(e.target.value)}
                                                 disabled={isOutOfStock}
-                                                className="w-full border rounded-md p-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                className="w-full border rounded-md p-2 disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer hover:border-gray-400 transition-colors"
                                             >
                                                 {getCurrentItem().typesOfPacks && getCurrentItem().typesOfPacks.length > 0 ? (
                                                     getCurrentItem().typesOfPacks.map((pack) => (
@@ -962,7 +1006,7 @@ export default function ProductPopup({
                                         <button
                                             onClick={handleAddToCart}
                                             disabled={isOutOfStock || loadingCart || !!stockError}
-                                            className={`flex-1 flex items-center justify-center gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 ${isOutOfStock || loadingCart || stockError
+                                            className={`flex-1 flex items-center justify-center gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 cursor-pointer ${isOutOfStock || loadingCart || stockError
                                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                 : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
                                                 }`}
@@ -1023,7 +1067,7 @@ export default function ProductPopup({
                                             <button
                                                 onClick={handleAddToCart}
                                                 disabled={isOutOfStock || loadingCart || !!stockError}
-                                                className={`flex-1 border-1 border border-black rounded-lg py-2 px-3 text-sm font-medium transition-colors ${isOutOfStock || loadingCart || stockError
+                                                className={`flex-1 border-1 border border-black rounded-lg py-2 px-3 text-sm font-medium transition-colors cursor-pointer ${isOutOfStock || loadingCart || stockError
                                                     ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                                     : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
                                                     }`}
@@ -1043,7 +1087,7 @@ export default function ProductPopup({
 
                                 <button
                                     onClick={handleViewItemDetails}
-                                    className="text-sm underline flex items-center hover:text-[#E9098D] transition-colors"
+                                    className="text-sm underline flex items-center hover:text-[#E9098D] transition-colors cursor-pointer"
                                 >
                                     View {itemType === 'product' ? 'product' : 'bundle'} details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>

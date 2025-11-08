@@ -375,7 +375,7 @@ const ProductListing = () => {
         const isValid = newTotalQuantity <= stockLevel;
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock (${stockLevel})`,
+            message: isValid ? null : `Exceeds available stock `,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -1168,14 +1168,14 @@ const ProductListing = () => {
                     {!isProductGroup && item.typesOfPacks && item.typesOfPacks.length > 0 && (
                         <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
-                            <div className="relative w-full">
+                            <div className="relative w-full cursor-pointer hover:cursor-pointer">
                                 <select
                                     value={selectedUnits[itemId] || ''}
                                     onChange={(e) => handleUnitChange(itemId, e.target.value, item)}
                                     disabled={isOutOfStock}
                                     className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                    appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+      focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+      appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 >
                                     {item.typesOfPacks && item.typesOfPacks.length > 0 ? (
                                         item.typesOfPacks.map((pack) => (
@@ -1188,7 +1188,7 @@ const ProductListing = () => {
                                     )}
                                 </select>
 
-                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center cursor-pointer">
                                     <svg
                                         className="w-4 h-4 text-gray-500"
                                         fill="none"
@@ -1200,6 +1200,7 @@ const ProductListing = () => {
                                     </svg>
                                 </div>
                             </div>
+
                         </div>
                     )}
 
@@ -1208,7 +1209,7 @@ const ProductListing = () => {
                         <label className="block text-sm font-medium text-gray-700">Quantity</label>
                         <div className="flex items-center space-x-4">
                             <button
-                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleQuantityChange(itemId, -1, isProductGroup);
@@ -1223,11 +1224,24 @@ const ProductListing = () => {
                                     />
                                 </span>
                             </button>
-                            <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
-                                {currentQuantity}
-                            </span>
+                            <input
+                                type="number"
+                                value={currentQuantity}
+                                onChange={(e) => {
+                                    e.stopPropagation();
+                                    const newQuantity = parseInt(e.target.value) || 1;
+                                    const quantityDiff = newQuantity - currentQuantity;
+                                    if (newQuantity >= 1 && !isOutOfStock) {
+                                        handleQuantityChange(itemId, quantityDiff, isProductGroup);
+                                    }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                min="1"
+                                disabled={isOutOfStock}
+                            />
                             <button
-                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleQuantityChange(itemId, 1, isProductGroup);
@@ -1291,7 +1305,7 @@ const ProductListing = () => {
                             <button
                                 className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
                                     ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999] cursor-pointer'
                                     }`}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -1765,14 +1779,14 @@ const ProductListing = () => {
                                     <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 xs:gap-3 w-full lg:w-auto">
 
                                         {/* Items Per Page Dropdown */}
-                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none">
+                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
                                             <select
                                                 value={perpageItems}
                                                 onChange={handleItemsPerPageChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-                            text-sm text-black font-[400] font-spartan 
-                            focus:outline-none focus:ring-2 focus:ring-blue-500 
-                            appearance-none w-full lg:w-[135px]"
+        text-sm text-black font-[400] font-spartan 
+        focus:outline-none focus:ring-2 focus:ring-blue-500 
+        appearance-none w-full lg:w-[135px] cursor-pointer"
                                             >
                                                 <option value="10" className="text-sm font-medium">10 Per Page</option>
                                                 <option value="15" className="text-sm font-medium">15 Per Page</option>
@@ -1781,7 +1795,7 @@ const ProductListing = () => {
                                                 <option value="30" className="text-sm font-medium">30 Per Page</option>
                                             </select>
 
-                                            <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center">
+                                            <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center cursor-pointer">
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
                                                     className="w-4 h-4"
@@ -1796,21 +1810,21 @@ const ProductListing = () => {
                                         </div>
 
                                         {/* Sort Dropdown */}
-                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none">
+                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
                                             <select
                                                 value={sortBy}
                                                 onChange={handleSortChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-                            text-sm text-black font-[400] font-spartan 
-                            focus:outline-none focus:ring-2 focus:ring-blue-500 
-                            appearance-none w-full lg:w-[150px]"
+        text-sm text-black font-[400] font-spartan 
+        focus:outline-none focus:ring-2 focus:ring-blue-500 
+        appearance-none w-full lg:w-[150px] cursor-pointer"
                                             >
                                                 <option value="Price Low to High" className="text-sm font-medium">Price Low to High</option>
                                                 <option value="Price High to Low" className="text-sm font-medium">Price High to Low</option>
                                                 <option value="Newest" className="text-sm font-medium">Newest</option>
                                             </select>
 
-                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center cursor-pointer">
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
                                                     className="w-4 h-4"
@@ -1823,7 +1837,9 @@ const ProductListing = () => {
                                                 </svg>
                                             </div>
                                         </div>
+
                                     </div>
+
                                 </div>
                             </div>
 

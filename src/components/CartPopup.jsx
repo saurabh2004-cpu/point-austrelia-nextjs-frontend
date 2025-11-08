@@ -87,7 +87,7 @@ const ShoppingCartPopup = () => {
 
       console.log("popup remove from cart ", response)
       if (response.data.statusCode === 200) {
-        // Update local state
+        // Update local state without refetching
         setCartItems(prevItems => prevItems.filter(item => {
           if (productId) {
             return item.product?._id !== productId;
@@ -95,12 +95,31 @@ const ShoppingCartPopup = () => {
             return item.productGroup?._id !== productGroupId;
           }
         }));
+
+        // Update cart count from response
         setCartItemsCount(response.data.data.cartItems?.length || 0);
         setError(null);
 
-        // IMPORTANT: Refresh the cart data to sync with product listing
-        await fetchCustomersCart();
+        // Remove from local quantities and selected packs
+        setLocalQuantities(prev => {
+          const newQuantities = { ...prev };
+          delete newQuantities[itemId];
+          return newQuantities;
+        });
 
+        setSelectedPacks(prev => {
+          const newPacks = { ...prev };
+          delete newPacks[itemId];
+          return newPacks;
+        });
+
+        setPackDetails(prev => {
+          const newPackDetails = { ...prev };
+          delete newPackDetails[itemId];
+          return newPackDetails;
+        });
+
+        // Dispatch cart updated event for other components
         window.dispatchEvent(new CustomEvent('cartUpdated'));
       } else {
         setError(response.data.message || "Failed to remove cart item");
@@ -165,7 +184,7 @@ const ShoppingCartPopup = () => {
     // Check stock level before updating
     if (exceedsStockLevel(item)) {
       const stockLevel = getStockLevel(item);
-      setError(`Requested quantity exceeds available stock (${stockLevel})`);
+      setError(`Requested quantity exceeds available stock `);
       return;
     }
 
@@ -243,6 +262,15 @@ const ShoppingCartPopup = () => {
     } finally {
       setUpdatingItems(prev => ({ ...prev, [item._id]: false }));
     }
+  };
+
+  // Add this function with your other functions
+  const handleDirectQuantityChange = (itemId, newQuantity) => {
+    const validQuantity = Math.max(1, parseInt(newQuantity) || 1);
+    setLocalQuantities(prev => ({
+      ...prev,
+      [itemId]: validQuantity
+    }));
   };
 
   const getDisplayQuantity = (item) => {
@@ -361,7 +389,7 @@ const ShoppingCartPopup = () => {
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto flex flex-col">
         <div className="flex flex-col items-center justify-between px-4 pt-4">
           <div className="w-full flex justify-end">
-            <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 transition-colors">
+            <button onClick={() => setIsOpen(false)} className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -472,7 +500,7 @@ const ShoppingCartPopup = () => {
                             type="button"
                             onClick={() => removeCartItem(currentUser._id, item.product?._id, item.productGroup?._id)}
                             disabled={isLoading}
-                            className="flex items-center ml-4 justify-center h-7 w-7 p-1 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
+                            className="flex items-center cursor-pointer ml-4 justify-center h-7 w-7 p-1 border border-[#E799A9] rounded-full disabled:opacity-50 flex-shrink-0"
                           >
                             <Image
                               src="/icons/dustbin-1.png"
@@ -505,7 +533,7 @@ const ShoppingCartPopup = () => {
                             <div className="flex items-start">
                               <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
                               <p className="text-xs text-orange-700">
-                                Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
+                                Requested quantity ({totalQuantity}) exceeds available stock. Please reduce quantity.
                               </p>
                             </div>
                           </div>
@@ -513,19 +541,34 @@ const ShoppingCartPopup = () => {
 
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                           <div>
-                            <span className="block text-xs font-medium mb-1">Quantity</span>
+                            <span className="block text-xs font-medium mb-1 cursor-pointer">Quantity</span>
                             <div className="flex items-center">
                               <button
                                 onClick={() => handleQuantityChange(item._id, -1)}
-                                className="p-1 bg-black rounded-md px-2"
+                                className="p-1 bg-black rounded-md px-2 transition-colors disabled:opacity-50 cursor-pointer"
                                 disabled={displayQuantity <= 1 || outOfStock}
                               >
                                 <Minus className="w-3 h-3 text-white" />
                               </button>
-                              <span className="px-3 py-1 min-w-[2rem] text-center text-xs font-medium">{displayQuantity}</span>
+
+                              {/* Input field for direct quantity entry */}
+                              <input
+                                type="number"
+                                min="1"
+                                value={displayQuantity}
+                                onChange={(e) => handleDirectQuantityChange(item._id, e.target.value)}
+                                onBlur={(e) => {
+                                  if (!e.target.value || parseInt(e.target.value) < 1) {
+                                    handleDirectQuantityChange(item._id, 1);
+                                  }
+                                }}
+                                className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                                disabled={outOfStock}
+                              />
+
                               <button
                                 onClick={() => handleQuantityChange(item._id, 1)}
-                                className="p-1 bg-black rounded-md px-2"
+                                className="p-1 bg-black rounded-md px-2 transition-colors disabled:opacity-50 cursor-pointer"
                                 disabled={outOfStock || exceedsStock}
                                 title={exceedsStock ? 'Stock level exceeded' : ''}
                               >
@@ -537,16 +580,16 @@ const ShoppingCartPopup = () => {
                           {/* Units Dropdown (only for products, not product groups) */}
                           {item.product && availablePacks.length > 0 && (
                             <div className="w-full sm:w-auto">
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Units</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                               <div className="relative">
                                 <select
                                   value={selectedPacks[item._id] || ''}
                                   onChange={(e) => handlePackChange(item._id, e.target.value)}
                                   disabled={outOfStock}
-                                  className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-xs focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                  className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-xs focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
                                 >
                                   {availablePacks.map((pack) => (
-                                    <option key={pack._id} value={pack._id}>{pack.name}</option>
+                                    <option key={pack._id} value={pack._id} className="cursor-pointer">{pack.name}</option>
                                   ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
@@ -563,7 +606,7 @@ const ShoppingCartPopup = () => {
                           <button
                             onClick={() => updateCartItem(item)}
                             disabled={isLoading || exceedsStock}
-                            className={`w-full text-white text-xs font-medium py-2 rounded-full mt-2 disabled:opacity-50 ${exceedsStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E799A9] hover:bg-[#d68999]'}`}
+                            className={`w-full text-white text-xs cursor-pointer font-medium py-2 rounded-full mt-2 disabled:opacity-50 ${exceedsStock ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E799A9] hover:bg-[#d68999]'}`}
                             title={exceedsStock ? 'Cannot update: stock level exceeded' : ''}
                           >
                             {isLoading ? 'Updating...' : 'Update'}

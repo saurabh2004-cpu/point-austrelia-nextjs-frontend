@@ -333,7 +333,7 @@ const SearchPage = () => {
 
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock (${stockLevel})`,
+            message: isValid ? null : `Exceeds available stock `,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel,
             newTotalQuantity
@@ -724,7 +724,7 @@ const SearchPage = () => {
 
             console.log("Cart items:", response)
             if (response.data.statusCode === 200) {
-                const cartData = response.data.data || [];
+                const cartData = response.data.data.items || [];
                 setCartItems(cartData);
                 setCartItemsCount(cartData.length);
 
@@ -831,7 +831,7 @@ const SearchPage = () => {
                 disabled={currentPage === 1}
                 className={`px-3 py-2 rounded-lg border ${currentPage === 1
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50'
+                    : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
                     }`}
             >
                 Previous
@@ -844,7 +844,7 @@ const SearchPage = () => {
                 <button
                     key={1}
                     onClick={() => handlePageChange(1)}
-                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50"
+                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50 cursor-pointer"
                 >
                     1
                 </button>
@@ -866,7 +866,7 @@ const SearchPage = () => {
                     onClick={() => handlePageChange(i)}
                     className={`px-3 py-2 rounded-lg border ${currentPage === i
                         ? 'bg-[#2D2C70] text-white'
-                        : 'bg-white text-black hover:bg-gray-50'
+                        : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
                         }`}
                 >
                     {i}
@@ -902,7 +902,7 @@ const SearchPage = () => {
                 disabled={currentPage === totalPages}
                 className={`px-3 py-2 rounded-lg border ${currentPage === totalPages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50'
+                    : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
                     }`}
             >
                 Next
@@ -986,7 +986,7 @@ const SearchPage = () => {
                 {/* Wishlist Icon */}
                 <div className="absolute top-2 right-4 sm:right-6 z-10">
                     <button
-                        className="rounded-full transition-colors"
+                        className="rounded-full transition-colors cursor-pointer"
                         onClick={() => handleAddToWishList(itemId, isProductGroup)}
                         disabled={isWishlistLoading}
                     >
@@ -1096,17 +1096,18 @@ const SearchPage = () => {
                     )}
 
                     {/* Units Dropdown (only for products, not product groups) */}
+                    {/* Units Dropdown (only for products, not product groups) */}
                     {!isProductGroup && getPackTypes(item).length > 0 && (
                         <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                             <div className="relative w-full">
                                 <select
                                     value={selectedUnits[itemId] || ''}
                                     onChange={(e) => handleUnitChange(itemId, e.target.value, item)}
                                     disabled={isOutOfStock}
                                     className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
-                                                            focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                                            appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
+                        appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
                                 >
                                     {getPackTypes(item).length > 0 ? (
                                         getPackTypes(item).map((pack) => (
@@ -1136,39 +1137,86 @@ const SearchPage = () => {
 
                     {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
-                        <label className="block text-sm font-medium text-gray-700 ">Quantity</label>
-                        <div className="flex items-center ">
+                        <label className="block text-sm font-medium text-gray-700 cursor-pointer">Quantity</label>
+                        <div className="flex items-center">
                             <button
-                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleQuantityChange(itemId, -1, isProductGroup);
                                 }}
                                 disabled={currentQuantity <= 1}
                             >
-                                <span className="text-xl font-bold flex items-center ">
-                                    <Image src="/icons/minus-icon.png"
+                                <span className="text-xl font-bold flex items-center">
+                                    <Image
+                                        src="/icons/minus-icon.png"
                                         alt="Minus"
                                         width={12}
                                         height={12}
+                                        className="cursor-pointer"
                                     />
                                 </span>
                             </button>
-                            <span className="text-[1rem] font-spartan font-medium min-w-[2rem] text-center">
-                                {currentQuantity}
-                            </span>
+
+                            {/* Input field for direct quantity entry */}
+                            <input
+                                type="number"
+                                min="1"
+                                value={currentQuantity}
+                                onChange={(e) => {
+                                    const newQuantity = parseInt(e.target.value) || 1;
+                                    const validQuantity = Math.max(1, newQuantity);
+
+                                    const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
+                                    const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
+
+                                    setQuantitiesState(prev => ({
+                                        ...prev,
+                                        [itemId]: validQuantity
+                                    }));
+
+                                    // Check stock with the new quantity
+                                    const stockCheck = checkStockLevel(itemId, isProductGroup, null, validQuantity);
+                                    if (!stockCheck.isValid) {
+                                        setStockErrors(prev => ({
+                                            ...prev,
+                                            [itemId]: stockCheck.message
+                                        }));
+                                    } else {
+                                        setStockErrors(prev => ({
+                                            ...prev,
+                                            [itemId]: null
+                                        }));
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    if (!e.target.value || parseInt(e.target.value) < 1) {
+                                        const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
+                                        const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
+
+                                        setQuantitiesState(prev => ({
+                                            ...prev,
+                                            [itemId]: 1
+                                        }));
+                                    }
+                                }}
+                                className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                            />
+
                             <button
-                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleQuantityChange(itemId, 1, isProductGroup);
                                 }}
                                 disabled={isOutOfStock}
                             >
-                                <Image src="/icons/plus-icon.png"
+                                <Image
+                                    src="/icons/plus-icon.png"
                                     alt="Plus"
                                     width={12}
                                     height={12}
+                                    className="cursor-pointer"
                                 />
                             </button>
                         </div>
@@ -1179,7 +1227,7 @@ const SearchPage = () => {
                         <button
                             className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
                                 }`}
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -1193,7 +1241,7 @@ const SearchPage = () => {
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             ) : (
                                 <svg
-                                    className="w-5 h-5 transition-colors duration-300 "
+                                    className="w-5 h-5 transition-colors duration-300 cursor-pointer"
                                     viewBox="0 0 21 21"
                                     fill="currentColor"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1222,7 +1270,7 @@ const SearchPage = () => {
                             <button
                                 className={`flex-1 border-1 border border-black rounded-lg py-1 px-3 text-sm font-medium transition-colors ${isOutOfStock || isCartLoading || stockError
                                     ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999]'
+                                    : 'border-[#E799A9] bg-[#E799A9] text-white hover:bg-[#d68999] cursor-pointer'
                                     }`}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -1314,7 +1362,7 @@ const SearchPage = () => {
                                                 className="border border-gray-300 rounded pl-3 py-1 lg:py-1 rounded-[10px] 
                                                         text-xs sm:text-sm text-black font-[400] font-spartan 
                                                         focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                                        appearance-none  w-[135px]"
+                                                        appearance-none  w-[135px] cursor-pointer"
                                             >
                                                 <option value="10" className="text-[15px] font-medium">10 Per Page</option>
                                                 <option value="15" className="text-[15px] font-medium">15 Per Page</option>
@@ -1348,7 +1396,7 @@ const SearchPage = () => {
                                                     className="border border-gray-300 rounded pl-3 pr-8 py-2 sm:py-1 lg:py-1 rounded-[10px] 
                                                             text-sm sm:text-xs md:text-sm text-black font-[400] font-spartan 
                                                             focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                                            appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px]"
+                                                            appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px] cursor-pointer"
                                                 >
                                                     <option value="Price Low to High" className="text-sm sm:text-[15px] font-medium">Price Low to High</option>
                                                     <option value="Price High to Low" className="text-sm sm:text-[15px] font-medium">Price High to Low</option>
@@ -1371,7 +1419,7 @@ const SearchPage = () => {
                                         </div>
 
                                         {/* View Mode Toggle */}
-                                        <div className="flex border border-gray-300 px-2 sm:px-3 rounded-md justify-between w-full sm:w-auto sm:min-w-[80px] md:min-w-[90px]">
+                                        {/* <div className="flex border border-gray-300 px-2 sm:px-3 rounded-md justify-between w-full sm:w-auto sm:min-w-[80px] md:min-w-[90px]">
                                             <button
                                                 onClick={() => setViewMode("grid")}
                                                 className={`p-2 sm:p-1 lg:px-2 border-r border-r-[2px] flex items-center justify-center w-full sm:w-auto align-middle transition-colors duration-200 ${viewMode === "grid" ? "text-[#2e2f7f]/30" : "text-gray-600 hover:text-[#2e2f7f]"}`}
@@ -1408,7 +1456,7 @@ const SearchPage = () => {
                                                     <rect x="70" y="70" width="20" height="20" rx="3" />
                                                 </svg>
                                             </button>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </div>
                             </div>

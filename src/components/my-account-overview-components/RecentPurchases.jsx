@@ -165,7 +165,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           <button
             onClick={handlePrevPage}
             disabled={!pagination.hasPrev || loading}
-            className={`px-3 py-1 text-sm rounded border ${!pagination.hasPrev || loading
+            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!pagination.hasPrev || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
@@ -180,7 +180,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           <button
             onClick={handleNextPage}
             disabled={!pagination.hasNext || loading}
-            className={`px-3 py-1 text-sm rounded border ${!pagination.hasNext || loading
+            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!pagination.hasNext || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
@@ -428,9 +428,9 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           <button
             onClick={handlePrevPage}
             disabled={!pagination.hasPrev || loading}
-            className={`px-4 py-2 text-sm rounded border ${!pagination.hasPrev || loading
+            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!pagination.hasPrev || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 '
               }`}
           >
             Previous
@@ -438,7 +438,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           <button
             onClick={handleNextPage}
             disabled={!pagination.hasNext || loading}
-            className={`px-4 py-2 text-sm rounded border ${!pagination.hasNext || loading
+            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!pagination.hasNext || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}

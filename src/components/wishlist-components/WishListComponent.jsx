@@ -303,7 +303,7 @@ const ProductCard = ({
             <div className="flex flex-col xl:flex-row h-full ">
                 {/* Product Image */}
                 <div className="flex-shrink-0 mr-4 ">
-                    <div className=" rounded-lg flex items-center justify-center align-middle relative">
+                    <div className=" rounded-lg flex items-center justify-center align-middle relative cursor-pointer">
                         <img
                             src={getImageUrl()}
                             alt={getProductName()}
@@ -366,7 +366,7 @@ const ProductCard = ({
                             <div className="flex items-start">
                                 <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
                                 <p className="text-orange-600 text-[12px] font-medium">
-                                    Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
+                                    Requested quantity ({totalQuantity}) exceeds available stock . Please reduce quantity.
                                 </p>
                             </div>
                         </div>
@@ -388,14 +388,14 @@ const ProductCard = ({
                         {/* Pack Type Selector - Only for individual products */}
                         {!isProductGroup && (
                             <div className="mb-3 space-x-12 align-center items-center font-spartan">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                                 <div className="relative w-full">
                                     <select
                                         value={selectedUnits[productId] || ''}
                                         onChange={(e) => onUpdateUnit(productId, e.target.value)}
                                         className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                                   appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''}`}
+                                                   appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''} cursor-pointer`}
                                         disabled={isLoading}
                                     >
                                         {productData.typesOfPacks && productData.typesOfPacks.length > 0 ? (
@@ -429,21 +429,38 @@ const ProductCard = ({
                         )}
 
                         <div className="flex items-start space-x-2 space-y-2 flex-col justify-between">
-                            <span className="text-[13px] font-medium">Quantity</span>
+                            <span className="text-[13px] font-medium cursor-pointer">Quantity</span>
                             <div className="flex items-center rounded-lg">
                                 <button
                                     onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) - 1)}
-                                    className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50"
+                                    className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50 cursor-pointer"
                                     disabled={isLoading || (productQuantities[productId] || 1) <= 1}
                                 >
                                     <Minus className="w-3 h-3 text-white" />
                                 </button>
-                                <span className="px-3 py-1 min-w-[2rem] text-center text-base font-medium">
-                                    {productQuantities[productId] || 1}
-                                </span>
+
+                                {/* Input field for direct quantity entry */}
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={productQuantities[productId] || 1}
+                                    onChange={(e) => {
+                                        const newQuantity = parseInt(e.target.value) || 1;
+                                        const validQuantity = Math.max(1, newQuantity);
+                                        onUpdateQuantity(productId, validQuantity);
+                                    }}
+                                    onBlur={(e) => {
+                                        if (!e.target.value || parseInt(e.target.value) < 1) {
+                                            onUpdateQuantity(productId, 1);
+                                        }
+                                    }}
+                                    className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                                    disabled={isLoading}
+                                />
+
                                 <button
                                     onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) + 1)}
-                                    className="p-1 bg-black rounded-md py-[5px] px-2 transition-colors disabled:opacity-50"
+                                    className="p-1 bg-black rounded-md py-[5px] px-2 transition-colors disabled:opacity-50 cursor-pointer"
                                     disabled={isLoading || !isAvailable || exceedsStock}
                                     title={exceedsStock ? 'Stock level exceeded' : !isAvailable ? 'Out of stock' : ''}
                                 >
@@ -451,6 +468,7 @@ const ProductCard = ({
                                 </button>
                             </div>
                         </div>
+
                     </div>
 
                     <div className='text-[16px] font-semibold  gap-2 flex'>
@@ -465,8 +483,8 @@ const ProductCard = ({
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
                             className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50 ${hasModifications && isAvailable && isItemInCart
-                                    ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
-                                    : 'bg-gray-400 cursor-not-allowed'
+                                ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
@@ -488,8 +506,8 @@ const ProductCard = ({
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
                             className={`flex items-center py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl px-6 disabled:opacity-50 ${isAvailable && !isItemInCart
-                                    ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
-                                    : 'bg-gray-400 cursor-not-allowed'
+                                ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
                                 }`}
                             disabled={isLoading || !isAvailable || isItemInCart}
                             title={
@@ -522,7 +540,7 @@ const ProductCard = ({
                         {/* ✅ REMOVE BUTTON */}
                         <button
                             onClick={() => onRemoveFromWishlist(productId, isProductGroup)}
-                            className={`h-9 w-9 border rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
+                            className={`h-9 w-9 border cursor-pointer rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
                                 }`}
                             disabled={isLoading}
                         >
@@ -729,7 +747,7 @@ const WishListComponent = () => {
                 : productData.stockLevel || 0;
 
             if (totalQuantity > stockLevel) {
-                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${stockLevel})`);
+                setError(`Requested quantity (${totalQuantity}) exceeds available stock `);
                 return;
             }
 
@@ -894,6 +912,10 @@ const WishListComponent = () => {
             setLoadingProducts(prev => ({ ...prev, [productId]: false }));
         }
     };
+
+    window.addEventListener('cartUpdated', () => {
+        fetchCustomersCart()
+    });
 
     // Fetch customers cart
     const fetchCustomersCart = async () => {

@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import CheckoutFormUI from '@/components/checkout-components/CheckOutInformation';
@@ -143,16 +143,18 @@ const AddressPopup = ({
         }));
     };
 
+
+
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-[#000000]/20 bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white border border-gray-400 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="text-lg font-semibold">
+                <div className="flex items-center justify-between p-4 border-b ">
+                    <h2 className="text-lg font-semibold ">
                         {mode === 'add' ? 'Add New' : 'Edit'} {type === 'shipping' ? 'Shipping' : 'Billing'} Address
                     </h2>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
+                    <button onClick={onClose} className="p-1 cursor-pointer hover:bg-gray-100 rounded-full">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -234,13 +236,13 @@ const AddressPopup = ({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            className="flex-1 cursor-pointer px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 bg-[#2D2C70] text-white rounded-md hover:bg-[#25245a]"
+                            className="flex-1 px-4 py-2 cursor-pointer bg-[#2D2C70] text-white rounded-md hover:bg-[#25245a]"
                         >
                             {mode === 'add' ? 'Add Address' : 'Update Address'}
                         </button>
@@ -262,6 +264,27 @@ const CheckoutComponent = () => {
         addressId: null
     });
     const [totalTax, setTotalTax] = useState(0);
+
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [pagination, setPagination] = useState({
+        currentPage: 1,
+        totalPages: 1,
+        hasNext: false,
+        totalItems: 0
+    });
+
+    // Add totals state
+    const [totals, setTotals] = useState({
+        subtotal: 0,
+        tax: 0,
+        grandTotal: 0,
+        totalQuantity: 0,
+        totalItems: 0
+    });
+
+    const totalsFromAPI = totals;
+
+    const [brandWiseTotals, setBrandWiseTotals] = useState([]);
 
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -365,29 +388,39 @@ const CheckoutComponent = () => {
     // Remove out of stock items from cart
     const handleRemoveOutOfStockItems = async (itemIds) => {
         try {
-            for (const itemId of itemIds) {
-                const response = await axiosInstance.put(`cart/remove-from-cart/${currentUser._id}/${itemId}`);
+            // Prepare items to remove with proper type identification
+            const itemsToRemove = itemIds.map(itemId => {
+                const item = cartItems.find(item => item._id === itemId);
+                if (!item) return null;
 
-                if (response.data.statusCode === 200) {
-                    setCartItemsCount(response.data.data.cartItems.length);
+                if (item.product) {
+                    return { productId: item.product._id };
+                } else if (item.productGroup) {
+                    return { productGroupId: item.productGroup._id };
                 }
+                return null;
+            }).filter(item => item !== null);
+
+            if (itemsToRemove.length === 0) {
+                setError('No valid items to remove');
+                return;
             }
 
-            // Refresh cart
-            await fetchCustomersCart();
+            const response = await axiosInstance.put(`cart/remove-multiple-from-cart/${currentUser._id}`, {
+                itemsToRemove
+            });
 
-            // Clear out of stock items
-            setOutOfStockItems(prev =>
-                prev.filter(item => !itemIds.includes(item._id))
-            );
+            if (response.data.statusCode === 200) {
+                setCartItemsCount(response.data.data.cartItems.length);
 
-            // If cart is now empty, redirect to cart page
-            const remainingItems = cartItems.filter(
-                item => !itemIds.includes(item._id)
-            );
+                // Update local state
+                setCartItems(prev => prev.filter(item => !itemIds.includes(item._id)));
+                setOutOfStockItems(prev => prev.filter(item => !itemIds.includes(item._id)));
 
-            if (remainingItems.length === 0) {
-                router.push('/cart');
+                // If cart is now empty, redirect to cart page
+                if (response.data.data.cartItems.length === 0) {
+                    router.push('/cart');
+                }
             }
         } catch (error) {
             console.error('Error removing items:', error);
@@ -655,8 +688,9 @@ const CheckoutComponent = () => {
         };
     };
 
-    const totals = calculateTotals();
-    const totalItems = cartItems.reduce((sum, item) => sum + item.totalQuantity, 0);
+    // const totals = calculateTotals();
+    const totalItems = totals.totalQuantity || cartItems.reduce((sum, item) => sum + item.totalQuantity, 0);
+
 
     useEffect(() => {
         if (latestSalesOrderDocumentNumber) {
@@ -727,29 +761,58 @@ const CheckoutComponent = () => {
         }
     };
 
-    const fetchCustomersCart = async () => {
+    // Fetch customers cart with pagination
+    const fetchCustomersCart = async (page = 1, isLoadMore = false) => {
         try {
             if (!currentUser || !currentUser._id) return;
 
-            setLoading(true);
-            const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`);
+            if (isLoadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+            }
 
-            console.log("custtomers cart in checkout page ", response)
+            const response = await axiosInstance.get(`cart/get-paginated-cart-by-customer-id/${currentUser._id}?page=${page}&limit=2`);
+
+            console.log("customer cart in checkout page ", response.data.data);
 
             if (response.data.statusCode === 200) {
-                const items = response.data.data.items || [];
-                setCartItems(items);
+                const { items, pagination: paginationData, totals: totalsData, brandWiseTotals } = response.data.data;
 
-                setTotalTax(response.data.data.totals.tax || 0);
+                // Set totals from the first request
+                setTotals(totalsData || {
+                    subtotal: 0,
+                    tax: 0,
+                    grandTotal: 0,
+                    totalQuantity: 0,
+                    totalItems: 0
+                });
 
+                setBrandWiseTotals(brandWiseTotals || {});
+
+                if (isLoadMore) {
+                    // Append new items for infinite scroll
+                    setCartItems(prev => [...prev, ...items]);
+                } else {
+                    // Replace items for initial load
+                    setCartItems(items);
+                }
+
+                // Update pagination
+                setPagination(paginationData);
+
+                // Initialize local quantities and selected packs from cart data
                 const quantities = {};
                 const packs = {};
-                items.forEach(item => {
+                const itemsToProcess = isLoadMore ? items : (response.data.data.items || items);
+
+                itemsToProcess.forEach(item => {
                     quantities[item._id] = item.unitsQuantity;
                     packs[item._id] = item.packType;
                 });
-                setLocalQuantities(quantities);
-                setSelectedPacks(packs);
+
+                setLocalQuantities(prev => ({ ...prev, ...quantities }));
+                setSelectedPacks(prev => ({ ...prev, ...packs }));
             } else {
                 setError(response.data.message);
             }
@@ -758,14 +821,48 @@ const CheckoutComponent = () => {
             setError('Failed to load cart items. Please try again.');
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
+    // Load more items
+    const loadMoreItems = useCallback(() => {
+        if (pagination.hasNext && !loadingMore) {
+            fetchCustomersCart(pagination.currentPage + 1, true);
+        }
+    }, [pagination, loadingMore]);
+
+    // Intersection Observer for infinite scroll
+    useEffect(() => {
+        if (!pagination.hasNext) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !loadingMore) {
+                    loadMoreItems();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const sentinel = document.getElementById('load-more-sentinel');
+        if (sentinel) {
+            observer.observe(sentinel);
+        }
+
+        return () => {
+            if (sentinel) {
+                observer.unobserve(sentinel);
+            }
+        };
+    }, [pagination.hasNext, loadingMore, loadMoreItems]);
+
     useEffect(() => {
         if (currentUser && currentUser._id) {
-            fetchCustomersCart();
+            fetchCustomersCart(1, false); // Initial load with page 1
         }
     }, [currentUser]);
+
 
     useEffect(() => {
         const accessCode = params.get("AccessCode");
@@ -887,7 +984,7 @@ const CheckoutComponent = () => {
                                     {shippingAddresses.map((address) => (
                                         <div
                                             key={address.id}
-                                            className={`bg-white rounded-lg border overflow-hidden ${selectedShippingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
+                                            className={`bg-white cursor-pointer rounded-lg border overflow-hidden ${selectedShippingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
                                         >
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
@@ -908,14 +1005,14 @@ const CheckoutComponent = () => {
                                                         <div className="flex flex-wrap gap-2">
                                                             <button
                                                                 onClick={() => openEditPopup('shipping', address, address.id)}
-                                                                className="text-[#2D2C70] underline font-medium"
+                                                                className="text-[#2D2C70] underline cursor-pointer font-medium"
                                                             >
                                                                 Edit
                                                             </button>
                                                             <span className="text-gray-300">|</span>
                                                             <button
                                                                 onClick={() => handleRemoveAddress('shipping', address.id)}
-                                                                className="text-[#46BCF9] underline font-medium"
+                                                                className="text-[#46BCF9] underline cursor-pointer font-medium"
                                                             >
                                                                 Remove
                                                             </button>
@@ -927,7 +1024,7 @@ const CheckoutComponent = () => {
                                     ))}
                                     <button
                                         onClick={() => openAddPopup('shipping')}
-                                        className="w-full bg-white rounded-lg py-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors"
+                                        className="w-full bg-white rounded-lg cursor-pointer py-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors"
                                     >
                                         <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
                                             <Plus className="w-4 h-4 text-gray-600" />
@@ -945,7 +1042,7 @@ const CheckoutComponent = () => {
                                     {billingAddresses.map((address) => (
                                         <div
                                             key={`billing-${address.id}`}
-                                            className={`bg-white rounded-lg border overflow-hidden ${selectedBillingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
+                                            className={`bg-white cursor-pointer rounded-lg border overflow-hidden ${selectedBillingAddress === address.index ? 'border-[#2D2C70]' : ''}`}
                                         >
                                             <div className="p-4">
                                                 <div className="flex items-center space-x-20">
@@ -966,14 +1063,14 @@ const CheckoutComponent = () => {
                                                         <div className="flex flex-wrap gap-2">
                                                             <button
                                                                 onClick={() => openEditPopup('billing', address, address.id)}
-                                                                className="text-[#2D2C70] underline font-medium"
+                                                                className="text-[#2D2C70] cursor-pointer underline font-medium"
                                                             >
                                                                 Edit
                                                             </button>
                                                             <span className="text-gray-300">|</span>
                                                             <button
                                                                 onClick={() => handleRemoveAddress('billing', address.id)}
-                                                                className="text-[#46BCF9] underline font-medium"
+                                                                className="text-[#46BCF9] cursor-pointer underline font-medium"
                                                             >
                                                                 Remove
                                                             </button>
@@ -985,7 +1082,7 @@ const CheckoutComponent = () => {
                                     ))}
                                     <button
                                         onClick={() => openAddPopup('billing')}
-                                        className="w-full bg-white rounded-lg py-4 flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors"
+                                        className="w-full bg-white rounded-lg py-4 cursor-pointer flex items-center justify-start space-x-2 hover:bg-gray-50 transition-colors"
                                     >
                                         <div className='border-2 border-[#2D2C70] rounded-full h-7 w-7 justify-center flex items-center'>
                                             <Plus className="w-4 h-4 text-gray-600" />
@@ -1028,7 +1125,7 @@ const CheckoutComponent = () => {
                                     <div className="px-4">
                                         <div className="flex justify-between">
                                             <span className="text-base sm:text-lg lg:text-[20px] font-medium">
-                                                Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totalItems} Items</span>
+                                                Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totals.totalQuantity} Items</span>
                                             </span>
                                             <span className="text-[#2D2C70] font-semibold text-[20px]">${totals.subtotal.toFixed(2)}</span>
                                         </div>
@@ -1037,16 +1134,16 @@ const CheckoutComponent = () => {
                                     <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
                                         <div className="flex justify-between">
                                             <span className="text-[#000000]/80">Shipping</span>
-                                            <span>${totals.shipping.toFixed(2)}</span>
+                                            <span>${(currentUser?.defaultShippingRate || 0).toFixed(2)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span className="text-[#000000]/80">GST</span>
-                                            <span>${totalTax.toFixed(2)}</span>
+                                            <span>${totals.tax.toFixed(2)}</span>
                                         </div>
                                     </div>
                                     <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
                                         <span>Total</span>
-                                        <span>${totals.total.toFixed(2)}</span>
+                                        <span>${totals.grandTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 
@@ -1055,7 +1152,7 @@ const CheckoutComponent = () => {
                                         <button
                                             className={`w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${checkingStock || outOfStockItems.length > 0
                                                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                                : 'bg-[#2D2C70] text-white hover:bg-[#25245a]'
+                                                : 'bg-[#2D2C70] text-white hover:bg-[#25245a] cursor-pointer'
                                                 }`}
                                             onClick={() => checkStockAndProceed(step + 1)}
                                             disabled={checkingStock || outOfStockItems.length > 0}
@@ -1066,7 +1163,7 @@ const CheckoutComponent = () => {
                                         <div className="flex items-center space-x-3 mb-8">
                                             <button
                                                 onClick={() => router.push('/products')}
-                                                className="flex items-center justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
+                                                className="flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
                                             >
                                                 <svg
                                                     className="w-5 h-5 transition-colors duration-300"
@@ -1093,13 +1190,13 @@ const CheckoutComponent = () => {
                                     </button>
                                 )}
 
-                                <div className='flex items-center bg-[#2D2C70] text-white justify-between mb-2 flex-row border-1 border-black rounded-2xl px-3 py-3'>
+                                <div className='flex cursor-pointer items-center bg-[#2D2C70] text-white justify-between mb-2 flex-row border-1 border-black rounded-2xl px-3 py-3'>
                                     <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship ({totalItems})</p>
                                     <span><ChevronDown className="w-4 h-4 text-white" /></span>
                                 </div>
 
                                 {/* Order Items */}
-                                <div className="space-y-4 mb-6 border-2 border-gray-300 rounded-lg">
+                                <div className="space-y-4 mb-6 border-2 border-gray-300 h-90 overflow-y-scroll rounded-lg">
                                     <div className='space-y-4 mt-4 p-3 sm:p-4'>
                                         {cartItems.map((item) => {
                                             const isOutOfStock = outOfStockItems.some(outOfStockItem =>
@@ -1154,7 +1251,7 @@ const CheckoutComponent = () => {
                                                             </div>
                                                         </div>
                                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
-                                                            <p className="mb-1">{itemData.sku}</p>
+                                                            <p className="mb-1">SKU : {itemData.sku}</p>
                                                             <div className='flex w-full justify-between'>
                                                                 <p className="mb-1">Pack: {packName}</p>
                                                                 <div>Quantity {item.totalQuantity}</div>
@@ -1172,11 +1269,24 @@ const CheckoutComponent = () => {
                                                 </div>
                                             );
                                         })}
+
+                                        {/* Loading More Indicator */}
+                                        {loadingMore && (
+                                            <div className="flex justify-center py-4">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#2D2C70]"></div>
+                                            </div>
+                                        )}
+
+                                        {/* Sentinel for infinite scroll */}
+                                        {pagination.hasNext && (
+                                            <div id="load-more-sentinel" className="h-10" />
+                                        )}
                                     </div>
+
                                     <div className='px-4'>
                                         <button
                                             onClick={() => router.push('/cart')}
-                                            className="w-full bg-[#2D2C70] text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4 hover:bg-[#25245a] transition-colors"
+                                            className="w-full bg-[#2D2C70] cursor-pointer text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4 hover:bg-[#25245a] transition-colors"
                                         >
                                             Edit Cart
                                         </button>
@@ -1197,7 +1307,7 @@ const CheckoutComponent = () => {
                     mode={popupState.mode}
                 />
             </div>
-        </div>
+        </div >
     );
 };
 

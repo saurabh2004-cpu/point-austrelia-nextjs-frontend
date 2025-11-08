@@ -311,7 +311,7 @@ export default function ProfileInformation({ setActiveSection }) {
                                         <button
                                             onClick={handleChangeAddress}
                                             disabled={loading}
-                                            className="text-[#2D2C70] text-[16px] underline font-[400] hover:underline transition-colors self-start sm:self-center whitespace-nowrap disabled:opacity-50"
+                                            className="text-[#2D2C70] cursor-pointer text-[16px] underline font-[400] hover:underline transition-colors self-start sm:self-center whitespace-nowrap disabled:opacity-50"
                                         >
                                             Change address
                                         </button>
@@ -322,7 +322,7 @@ export default function ProfileInformation({ setActiveSection }) {
                                     <button
                                         onClick={handleUpdate}
                                         disabled={loading}
-                                        className="w-[200px] border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 py-1 rounded-2xl text-[20px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        className="w-[200px] cursor-pointer border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 py-1 rounded-2xl text-[20px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                         {loading ? (
                                             <div className="flex items-center justify-center">
@@ -352,7 +352,7 @@ export default function ProfileInformation({ setActiveSection }) {
                         <button
                             onClick={handleCloseModal}
                             disabled={emailLoading}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                            className="absolute top-4 cursor-pointer right-4 text-gray-500 hover:text-gray-700 disabled:opacity-50"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -421,14 +421,14 @@ export default function ProfileInformation({ setActiveSection }) {
                             <button
                                 onClick={handleCloseModal}
                                 disabled={emailLoading}
-                                className="px-6 py-2 border border-gray-300 rounded-2xl text-[16px] font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-6 py-2 border cursor-pointer border-gray-300 rounded-2xl text-[16px] font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleEmailSubmit}
                                 disabled={emailLoading}
-                                className="px-6 py-2 border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 rounded-2xl text-[16px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-6 py-2 border cursor-pointer border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 rounded-2xl text-[16px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 {emailLoading ? (
                                     <div className="flex items-center justify-center">

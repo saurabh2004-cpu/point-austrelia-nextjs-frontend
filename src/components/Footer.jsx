@@ -39,7 +39,7 @@ export function Footer() {
 
   return (
     <footer className="bg-white border-t border-[#2d2c70] border-t-1 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="md:max-w-[80%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Navigation Column */}
           <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[125px]">

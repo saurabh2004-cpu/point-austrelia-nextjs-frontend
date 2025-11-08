@@ -192,7 +192,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
             <div className="bg-white rounded-lg p-4 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-18 xl:gap-4 mb-4">
                     {/* credit card */}
-                    <div className="h-full" onClick={() => handlePaymentChange('credit-card')}>
+                    <div className="h-full">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-start">
                                 <input
@@ -202,7 +202,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                     value="credit-card"
                                     checked={selectedPayment === 'credit-card'}
                                     onChange={() => handlePaymentChange('credit-card')}
-                                    className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                                    className="mt-1 h-4 w-4 text-[#E9098D] cursor-pointer focus:ring-[#E9098D] border-[#E9098D]"
                                 />
                                 <label htmlFor="credit-card" className="ml-3 flex-1 cursor-pointer">
                                     <span className="text-sm font-medium text-gray-900">Credit card</span>
@@ -211,11 +211,20 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                         </div>
 
                         {loadingCard ? (
-                            <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md flex justify-center items-center">
+                            <div className={` h-full min-h-[212px] rounded-lg p-6 shadow-md flex justify-center items-center transition-all duration-200 ${selectedPayment === 'credit-card'
+                                ? ' bg-blue-50 shadow-lg'
+                                : 'border-gray-200 hover:border-[#2D2C70] hover:shadow-lg'
+                                }`}>
                                 <div className="text-sm text-gray-500">Loading card details...</div>
                             </div>
                         ) : cardData ? (
-                            <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 shadow-md relative flex flex-col justify-between">
+                            <div
+                                className={` cursor-pointer h-full min-h-[212px] rounded-lg p-6 shadow-md relative flex flex-col justify-between transition-all duration-200 ${selectedPayment === 'credit-card'
+                                    ? ' bg-blue-50 shadow-lg '
+                                    : 'border-gray-200 hover:border-[#2D2C70] hover:shadow-lg hover:bg-gray-50'
+                                    }`}
+                                onClick={() => handlePaymentChange('credit-card')}
+                            >
                                 <div className="flex flex-row justify-between items-start">
                                     <div className="space-y-2 text-sm">
                                         <p className="font-[600]">Ending in <span className="font-[400]">{cardData?.lastFourDigits || cardDetails?.lastFourDigits}</span></p>
@@ -234,15 +243,21 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 </div>
                                 <div className="flex justify-end gap-2 text-[14px] mt-4">
                                     <button
-                                        onClick={handleVerifyCard}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleVerifyCard();
+                                        }}
                                         disabled={addingCard}
-                                        className="text-[#2D2C70] font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="text-[#2D2C70] cursor-pointer font-medium hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {addingCard ? 'Processing...' : 'Edit'}
                                     </button>
                                     <button
-                                        onClick={handleRemoveCard}
-                                        className="text-[#46BCF9] font-medium hover:underline"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveCard();
+                                        }}
+                                        className="text-[#46BCF9] cursor-pointer font-medium hover:underline"
                                     >
                                         Remove
                                     </button>
@@ -251,7 +266,10 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                         ) : (
                             <div
                                 onClick={handleVerifyCard}
-                                className="border h-full min-h-[212px] border-dashed border-gray-300 rounded-lg p-6 shadow-md flex flex-col justify-center items-center cursor-pointer hover:border-[#2D2C70] hover:bg-gray-50 transition-all"
+                                className={` h-full min-h-[212px] rounded-lg p-6 shadow-md flex flex-col justify-center items-center cursor-pointer transition-all duration-200 ${selectedPayment === 'credit-card'
+                                    ? ' bg-blue-50 shadow-lg '
+                                    : 'border-dashed border-gray-300 hover:border-[#2D2C70] hover:bg-gray-50 hover:shadow-lg'
+                                    }`}
                             >
                                 {addingCard ? (
                                     <div className="flex flex-col items-center space-y-4">
@@ -261,10 +279,19 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center space-y-4">
-                                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors">
-                                            <Plus size={32} className="text-gray-400" />
+                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors ${selectedPayment === 'credit-card'
+                                            ? 'bg-blue-100'
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                            }`}>
+                                            <Plus size={32} className={`${selectedPayment === 'credit-card'
+                                                ? 'text-[#2D2C70]'
+                                                : 'text-gray-400'
+                                                }`} />
                                         </div>
-                                        <p className="text-sm font-medium text-gray-600">Add Credit Card</p>
+                                        <p className={`text-sm font-medium ${selectedPayment === 'credit-card'
+                                            ? 'text-[#2D2C70]'
+                                            : 'text-gray-600'
+                                            }`}>Add Credit Card</p>
                                         <p className="text-xs text-gray-400 text-center">Click to add a new card</p>
                                     </div>
                                 )}
@@ -273,7 +300,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                     </div>
 
                     {/* person card */}
-                    <div className="h-full" onClick={() => handlePaymentChange('Account Customer')}>
+                    <div className="h-full">
                         <div className="flex items-start justify-between mb-4">
                             <input
                                 type="radio"
@@ -282,25 +309,33 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 value="person-card"
                                 checked={selectedPayment === 'Account Customer'}
                                 onChange={() => handlePaymentChange('Account Customer')}
-                                className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                                className="mt-1 h-4 w-4 text-[#E9098D] cursor-pointer focus:ring-[#E9098D] border-[#E9098D]"
                             />
                             <label htmlFor="person-card" className="ml-3 flex-1 cursor-pointer">
                                 <span className="text-sm font-medium text-gray-900">Account Customer</span>
                             </label>
                         </div>
-                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md">
+                        <div
+                            className={` cursor-pointer h-full min-h-[212px] rounded-lg p-6 flex justify-center items-center shadow-md transition-all duration-200 ${selectedPayment === 'Account Customer'
+                                ? ' bg-blue-50 shadow-lg '
+                                : 'border-gray-200 hover:border-[#2D2C70] hover:shadow-xl hover:bg-gray-50'
+                                }`}
+                            onClick={() => handlePaymentChange('Account Customer')}
+                        >
                             <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${selectedPayment === 'Account Customer' ? 'text-[#2D2C70]' : 'text-gray-600'
+                                    }`}>
                                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
-                                <p className="text-[14px] font-medium">Account Customer</p>
+                                <p className={`text-[14px] font-medium ${selectedPayment === 'Account Customer' ? 'text-[#2D2C70]' : 'text-gray-900'
+                                    }`}>Account Customer</p>
                             </div>
                         </div>
                     </div>
 
                     {/* phone card */}
-                    <div className="h-full" onClick={() => handlePaymentChange('Contact me for payment')}>
+                    <div className="h-full">
                         <div className="flex items-start justify-between mb-4">
                             <input
                                 type="radio"
@@ -309,18 +344,26 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                                 value="phone-card"
                                 checked={selectedPayment === 'Contact me for payment'}
                                 onChange={() => handlePaymentChange('Contact me for payment')}
-                                className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] border-[#E9098D]"
+                                className="mt-1 h-4 w-4 text-[#E9098D] focus:ring-[#E9098D] cursor-pointer border-[#E9098D]"
                             />
                             <label htmlFor="phone-card" className="ml-3 flex-1 cursor-pointer">
                                 <span className="text-sm font-medium text-gray-900">Contact me for payment</span>
                             </label>
                         </div>
-                        <div className="border h-full min-h-[212px] border-gray-200 rounded-lg p-6 flex justify-center items-center shadow-md">
+                        <div
+                            className={` cursor-pointer h-full min-h-[212px] rounded-lg p-6 flex justify-center items-center shadow-md transition-all duration-200 ${selectedPayment === 'Contact me for payment'
+                                ? ' bg-blue-50 shadow-lg  '
+                                : 'border-gray-200  hover:shadow-xl hover:bg-gray-50'
+                                }`}
+                            onClick={() => handlePaymentChange('Contact me for payment')}
+                        >
                             <div className="space-y-2 text-sm flex flex-col justify-center items-center text-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${selectedPayment === 'Contact me for payment' ? 'text-[#2D2C70]' : 'text-gray-600'
+                                    }`}>
                                     <path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384" />
                                 </svg>
-                                <p className="text-[14px] font-medium">Contact me for payment</p>
+                                <p className={`text-[14px] font-medium ${selectedPayment === 'Contact me for payment' ? 'text-[#2D2C70]' : 'text-gray-900'
+                                    }`}>Contact me for payment</p>
                             </div>
                         </div>
                     </div>

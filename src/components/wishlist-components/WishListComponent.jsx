@@ -913,9 +913,18 @@ const WishListComponent = () => {
         }
     };
 
-    window.addEventListener('cartUpdated', () => {
-        fetchCustomersCart()
-    });
+    useEffect(() => {
+        const handleCartUpdated = () => {
+            fetchCustomersCart();
+        };
+
+        window.addEventListener('cartUpdated', handleCartUpdated);
+
+        // Cleanup: remove event listener when component unmounts
+        return () => {
+            window.removeEventListener('cartUpdated', handleCartUpdated);
+        };
+    }, []);
 
     // Fetch customers cart
     const fetchCustomersCart = async () => {

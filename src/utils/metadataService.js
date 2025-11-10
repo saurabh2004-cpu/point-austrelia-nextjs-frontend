@@ -8,12 +8,12 @@ export const metadataService = {
         try {
 
             //for local setup
-            const response = await axiosInstance.get(`http://localhost:3002//api/meta-data/${page}`);
+            // const response = await axiosInstance.get(`http://localhost:3002//api/meta-data/${page}`);
 
             // for production setup
-            // const response = await axios.get(
-            //     `https://app.thesocio.in/api/v1/meta-data/get-meta-data-by-page/${page}`
-            // );
+            const response = await axios.get(
+                `https://app.thesocio.in/api/v1/meta-data/get-meta-data-by-page/${page}`
+            );
 
             console.log("get metadata by page response", response)
 

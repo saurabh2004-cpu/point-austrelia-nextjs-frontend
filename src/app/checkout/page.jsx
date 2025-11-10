@@ -85,8 +85,85 @@ const AddressPopup = ({
         addressThree: '',
         city: '',
         state: '',
-        zip: ''
+        zip: '',
+        CustomerPhoneNo: `+61 ${addressData?.phone} `,
     });
+    const [phoneError, setPhoneError] = useState(''); 
+
+
+    // Function to format Australian phone numbers
+    const formatAustralianPhoneNumber = (phone) => {
+        // Remove all non-digit characters except +
+        const cleaned = phone.replace(/[^\d\+]/g, '');
+
+        // If it starts with +61, handle international format
+        if (cleaned.startsWith('61')) {
+            const mobilePart = cleaned.substring(2);
+            if (mobilePart.startsWith('4') && mobilePart.length === 9) {
+                // Mobile: +61 4XX XXX XXX
+                const firstPart = mobilePart.substring(0, 3);
+                const secondPart = mobilePart.substring(3, 6);
+                const thirdPart = mobilePart.substring(6, 9);
+                return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+            } else if (mobilePart.length === 9) {
+                // Landline: +61 X XXXX XXXX
+                const areaCode = mobilePart.substring(0, 1);
+                const firstPart = mobilePart.substring(1, 5);
+                const secondPart = mobilePart.substring(5, 9);
+                return `+61 ${areaCode} ${firstPart} ${secondPart}`;
+            }
+        } else if (cleaned.startsWith('4') && cleaned.length === 9) {
+            // Mobile without country code: 4XX XXX XXX
+            const firstPart = cleaned.substring(0, 3);
+            const secondPart = cleaned.substring(3, 6);
+            const thirdPart = cleaned.substring(6, 9);
+            return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+        } else if (cleaned.startsWith('0') && cleaned.length === 10) {
+            // Domestic format: 04XX XXX XXX or 0X XXXX XXXX
+            const areaCode = cleaned.substring(0, 2);
+            const rest = cleaned.substring(2);
+
+            if (areaCode === '04') {
+                // Mobile: 04XX XXX XXX -> +61 4XX XXX XXX
+                const firstPart = rest.substring(0, 3);
+                const secondPart = rest.substring(3, 6);
+                const thirdPart = rest.substring(6, 9);
+                return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+            } else {
+                // Landline: 0X XXXX XXXX -> +61 X XXXX XXXX
+                const areaCodeNum = areaCode.substring(1);
+                const firstPart = rest.substring(0, 4);
+                const secondPart = rest.substring(4, 8);
+                return `+61 ${areaCodeNum} ${firstPart} ${secondPart}`;
+            }
+        }
+
+        // Return original if no specific format matches
+        return phone;
+    };
+
+    // Function to validate Australian phone number
+    const isValidAustralianPhoneNumber = (phone) => {
+        const cleaned = phone.replace(/[^\d\+]/g, '');
+
+        // Australian phone number patterns:
+        // - Domestic mobile: 04XXXXXXXX (10 digits)
+        // - Domestic landline: 0XXXXXXXXX (10 digits starting with 02, 03, 07, 08)
+        // - International mobile: 614XXXXXXXX (11 digits)
+        // - International landline: 61XXXXXXXXX (11 digits)
+        // - With +61 prefix: +61 4XXXXXXXX or +61 XXXXXXXXX
+
+        const patterns = [
+            /^\+61\s?[4]\d{8}$/,          // +61 4XX XXX XXX
+            /^\+61\s?[2378]\d{8}$/,       // +61 X XXXX XXXX (landlines)
+            /^04\d{8}$/,                  // 04XX XXX XXX
+            /^0[2378]\d{8}$/,             // 0X XXXX XXXX (landlines)
+            /^61[4]\d{8}$/,               // 614XX XXX XXX
+            /^61[2378]\d{8}$/,            // 61X XXXX XXXX (landlines)
+        ];
+
+        return patterns.some(pattern => pattern.test(cleaned));
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -98,8 +175,11 @@ const AddressPopup = ({
                     addressThree: addressData[`${prefix}AddressThree`] || '',
                     city: addressData[`${prefix}City`] || '',
                     state: addressData[`${prefix}State`] || '',
-                    zip: addressData[`${prefix}Zip`] || ''
+                    zip: addressData[`${prefix}Zip`] || '',
+                    CustomerPhoneNo: addressData.phone || '+61 '
                 });
+                // Clear any existing errors when opening in edit mode
+                setPhoneError('');
             } else {
                 setFormData({
                     addressOne: '',
@@ -107,8 +187,10 @@ const AddressPopup = ({
                     addressThree: '',
                     city: '',
                     state: '',
-                    zip: ''
+                    zip: '',
+                    CustomerPhoneNo: '+61 '
                 });
+                setPhoneError('');
             }
         }
     }, [isOpen, addressData, mode, type]);
@@ -116,20 +198,32 @@ const AddressPopup = ({
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // Validate phone number
+        if (formData.CustomerPhoneNo && !isValidAustralianPhoneNumber(formData.CustomerPhoneNo)) {
+            setPhoneError('Please enter a valid Australian phone number');
+            return;
+        }
+
+        // Format phone number before submitting
+        const formattedPhone = formData.CustomerPhoneNo ?
+            formatAustralianPhoneNumber(formData.CustomerPhoneNo) : '+61 ';
+
         const formattedData = type === 'shipping' ? {
             shippingAddressOne: formData.addressOne,
             shippingAddressTwo: formData.addressTwo,
             shippingAddressThree: formData.addressThree,
             shippingCity: formData.city,
             shippingState: formData.state,
-            shippingZip: formData.zip
+            shippingZip: formData.zip,
+            CustomerPhoneNo: formattedPhone
         } : {
             billingAddressOne: formData.addressOne,
             billingAddressTwo: formData.addressTwo,
             billingAddressThree: formData.addressThree,
             billingCity: formData.city,
             billingState: formData.state,
-            billingZip: formData.zip
+            billingZip: formData.zip,
+            CustomerPhoneNo: formattedPhone
         };
 
         onSubmit(formattedData);
@@ -143,7 +237,102 @@ const AddressPopup = ({
         }));
     };
 
+    // Handle phone number input with real-time formatting
+    const handlePhoneChange = (e) => {
+        let input = e.target.value;
 
+        // Ensure +61 prefix is always present and not editable
+        if (!input.startsWith('+61')) {
+            input = '+61 ' + input.replace(/[^\d]/g, '');
+        }
+
+        // Allow only numbers, spaces after +61
+        const prefix = '+61 ';
+        let numbers = input.substring(prefix.length).replace(/[^\d]/g, '');
+
+        // Limit to 9 digits after +61 (actual digits, not including spaces)
+        if (numbers.length > 9) {
+            numbers = numbers.substring(0, 9);
+        }
+
+        // Auto-format as user types
+        let formatted = prefix;
+        if (numbers.length > 0) {
+            if (numbers.startsWith('4')) {
+                // Mobile format: +61 4XX XXX XXX
+                if (numbers.length <= 3) {
+                    formatted += numbers;
+                } else if (numbers.length <= 6) {
+                    formatted += `${numbers.substring(0, 3)} ${numbers.substring(3)}`;
+                } else {
+                    formatted += `${numbers.substring(0, 3)} ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+                }
+            } else {
+                // Landline format: +61 X XXXX XXXX
+                if (numbers.length <= 1) {
+                    formatted += numbers;
+                } else if (numbers.length <= 5) {
+                    formatted += `${numbers.substring(0, 1)} ${numbers.substring(1)}`;
+                } else {
+                    formatted += `${numbers.substring(0, 1)} ${numbers.substring(1, 5)} ${numbers.substring(5)}`;
+                }
+            }
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            CustomerPhoneNo: formatted
+        }));
+
+        // Clear error when user starts typing again
+        if (phoneError && numbers.length > 0) {
+            // Validate in real-time and remove error if valid
+            const testPhone = prefix + numbers;
+            if (isValidAustralianPhoneNumber(testPhone)) {
+                setPhoneError('');
+            }
+        }
+    };
+
+    // Format phone number on blur and validate
+    const handlePhoneBlur = (e) => {
+        const input = e.target.value;
+
+        if (input && isValidAustralianPhoneNumber(input)) {
+            const formatted = formatAustralianPhoneNumber(input);
+            setFormData(prev => ({
+                ...prev,
+                CustomerPhoneNo: formatted
+            }));
+            setPhoneError(''); // Clear error when valid
+        } else if (input === '+61 ') {
+            // Keep the default if user clears the input
+            setFormData(prev => ({
+                ...prev,
+                CustomerPhoneNo: '+61 '
+            }));
+            setPhoneError(''); // Clear error for empty field
+        } else if (input && !isValidAustralianPhoneNumber(input)) {
+            // Set error for invalid number
+            setPhoneError('Please enter a valid Australian phone number');
+        }
+    };
+
+    // Handle phone input focus - select the number part for easy editing
+    const handlePhoneFocus = (e) => {
+        // Select the number part after +61 for easy editing
+        setTimeout(() => {
+            const input = e.target;
+            if (input.value.startsWith('+61 ')) {
+                input.setSelectionRange(4, input.value.length);
+            }
+        }, 0);
+
+        // Clear error when user focuses on the field to make corrections
+        if (phoneError) {
+            setPhoneError('');
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -230,6 +419,41 @@ const AddressPopup = ({
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
                         />
+                    </div>
+
+                    {/* Phone Number Field with Australian Flag */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number *
+                        </label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                {/* Australian Flag Emoji */}
+                                <span className="text-lg">🇦🇺</span>
+                            </div>
+                            <input
+                                type="text"
+                                name="CustomerPhoneNo"
+                                value={formData.CustomerPhoneNo}
+                                onChange={handlePhoneChange}
+                                onBlur={handlePhoneBlur}
+                                onFocus={handlePhoneFocus}
+                                placeholder="+61 4XX XXX XXX"
+                                required
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
+                            />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                            {formData.CustomerPhoneNo.startsWith('+61 4') ?
+                                'Mobile format: +61 4XX XXX XXX' :
+                                'Landline format: +61 X XXXX XXXX'
+                            }
+                        </div>
+                        {phoneError && (
+                            <p className="text-red-500 text-xs mt-1">
+                                {phoneError}
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex gap-3 pt-4">
@@ -555,7 +779,7 @@ const CheckoutComponent = () => {
         index: index,
         name: currentUser.customerName || currentUser.contactName || '',
         address: `${addr.shippingAddressOne} ${addr.shippingAddressTwo} ${addr.shippingAddressThree} ${addr.shippingCity} ${addr.shippingState} ${addr.shippingZip}`.replace(/\s+/g, ' ').trim(),
-        phone: currentUser.CustomerPhoneNo || currentUser.contactPhone || '',
+        phone: addr.CustomerPhoneNo || currentUser.CustomerPhoneNo || currentUser.contactPhone || '',
         ...addr
     })) || [];
 
@@ -564,7 +788,7 @@ const CheckoutComponent = () => {
         index: index,
         name: currentUser.customerName || currentUser.contactName || '',
         address: `${addr.billingAddressOne} ${addr.billingAddressTwo} ${addr.billingAddressThree} ${addr.billingCity} ${addr.billingState} ${addr.billingZip}`.replace(/\s+/g, ' ').trim(),
-        phone: currentUser.CustomerPhoneNo || currentUser.contactPhone || '',
+        phone: addr.CustomerPhoneNo || currentUser.CustomerPhoneNo || currentUser.contactPhone || '',
         ...addr
     })) || [];
 
@@ -933,7 +1157,7 @@ const CheckoutComponent = () => {
 
     return (
         <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
-            <div className="md:max-w-[80%] px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="md:max-w-[80%]  mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
                     <h1 className="text-lg sm:text-xl lg:text-[24px] font-semibold mb-4 text-center sm:text-left">
@@ -1168,7 +1392,7 @@ const CheckoutComponent = () => {
                                                 <svg
                                                     className="w-5 h-5 transition-colors duration-300"
                                                     viewBox="0 0 21 21"
-                                                    fill="currentColor"
+                                                    fill="CurrentColor"
                                                     xmlns="http://www.w3.org/2000/svg"
                                                 >
                                                     <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
@@ -1283,15 +1507,15 @@ const CheckoutComponent = () => {
                                         )}
                                     </div>
 
-                                    <div className='px-4'>
-                                        <button
-                                            onClick={() => router.push('/cart')}
-                                            className="w-full bg-[#2D2C70] cursor-pointer text-white p-2 rounded-2xl text-sm sm:text-base font-medium mt-4 mb-4 hover:bg-[#25245a] transition-colors"
-                                        >
-                                            Edit Cart
-                                        </button>
-                                    </div>
                                 </div>
+                            </div>
+                            <div className='px-4'>
+                                <button
+                                    onClick={() => router.push('/cart')}
+                                    className="w-full bg-[#2D2C70] cursor-pointer text-white p-2 rounded-2xl text-sm sm:text-base font-medium  mb-4 hover:bg-[#25245a] transition-colors"
+                                >
+                                    Edit Cart
+                                </button>
                             </div>
                         </div>
                     </div>

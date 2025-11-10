@@ -230,7 +230,6 @@ const ShoppingCart = () => {
         };
     }, [pagination.hasNext, loadingMore, loadMoreItems]);
 
-    // Remove out of stock items
     // Remove all out of stock items at once
     const removeOutOfStockItems = async () => {
         if (!currentUser || !currentUser._id) {
@@ -289,7 +288,8 @@ const ShoppingCart = () => {
 
     // Show current displayed quantity
     const getDisplayQuantity = (item) => {
-        return localQuantities[item._id] || item.unitsQuantity;
+        const localQty = localQuantities[item._id];
+        return localQty === '' ? '' : (localQty || item.unitsQuantity);
     };
 
     // Get selected pack from local state
@@ -667,7 +667,7 @@ const ShoppingCart = () => {
             <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
-                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity } Items)</span>
+                    <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity} Items)</span>
                 </h1>
             </div>
 
@@ -707,7 +707,7 @@ const ShoppingCart = () => {
             )}
 
             {/* Out of Stock Warning */}
-            {outOfStockCount > 0 && (
+            {/* {outOfStockCount > 0 && (
                 <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
                     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
                         <div className="flex items-start justify-between">
@@ -734,7 +734,7 @@ const ShoppingCart = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Exceeding Stock Level Warning - Only show when NO out of stock items */}
             {exceedingStockCount > 0 && outOfStockCount === 0 && (
@@ -921,15 +921,30 @@ const ShoppingCart = () => {
                                                                                     min="1"
                                                                                     value={displayQuantity}
                                                                                     onChange={(e) => {
-                                                                                        const newQuantity = parseInt(e.target.value) || 1;
-                                                                                        const validQuantity = Math.max(1, newQuantity);
-                                                                                        setLocalQuantities(prev => ({
-                                                                                            ...prev,
-                                                                                            [item._id]: validQuantity
-                                                                                        }));
+                                                                                        const inputValue = e.target.value;
+
+                                                                                        // If input is empty (backspace cleared it), set to empty string
+                                                                                        if (inputValue === '') {
+                                                                                            setLocalQuantities(prev => ({
+                                                                                                ...prev,
+                                                                                                [item._id]: '' // Set to empty string for user input
+                                                                                            }));
+                                                                                            return;
+                                                                                        }
+
+                                                                                        const newQuantity = parseInt(inputValue);
+
+                                                                                        // If valid number entered, handle the change
+                                                                                        if (!isNaN(newQuantity) && newQuantity >= 1) {
+                                                                                            setLocalQuantities(prev => ({
+                                                                                                ...prev,
+                                                                                                [item._id]: newQuantity
+                                                                                            }));
+                                                                                        }
                                                                                     }}
                                                                                     onBlur={(e) => {
-                                                                                        if (!e.target.value || parseInt(e.target.value) < 1) {
+                                                                                        // When input loses focus, if empty, set back to 1
+                                                                                        if (e.target.value === '' || e.target.value === '0') {
                                                                                             setLocalQuantities(prev => ({
                                                                                                 ...prev,
                                                                                                 [item._id]: 1
@@ -1088,12 +1103,12 @@ const ShoppingCart = () => {
                                         )}
 
                                         {/* Tax Breakdown */}
-                                        {calculateRealtimeTax() > 0 && (
+                                        {/* {calculateRealtimeTax() > 0 && (
                                             <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
                                                 <span className="text-[14px] text-[500] text-[#000000]/80">Tax</span>
                                                 <span className="text-[14px] font-medium">${totals.tax.toFixed(2)}</span>
                                             </div>
-                                        )}
+                                        )} */}
 
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">

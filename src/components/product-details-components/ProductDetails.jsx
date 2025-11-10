@@ -569,7 +569,7 @@ function ProductDetail() {
     const isValid = newTotalQuantity <= stockLevel;
     return {
       isValid,
-      message: isValid ? null : `Exceeds available stock (${stockLevel})`,
+      message: isValid ? null : `Exceeds available stock `,
       requestedQuantity: totalRequestedQuantity,
       currentStock: stockLevel
     };
@@ -923,14 +923,14 @@ function ProductDetail() {
     const isValid = newTotalQuantity <= stockLevel;
 
     if (!isValid) {
-      setStockError(`Exceeds available stock (${stockLevel})`);
+      setStockError(`Exceeds available stock `);
     } else {
       setStockError(null);
     }
 
     return {
       isValid,
-      message: isValid ? null : `Exceeds available stock (${stockLevel})`,
+      message: isValid ? null : `Exceeds available stock `,
       requestedQuantity: totalRequestedQuantity,
       currentStock: stockLevel
     };
@@ -1618,9 +1618,33 @@ function ProductDetail() {
                   <input
                     type="number"
                     value={quantity}
-                    onChange={(e) => handleQuantityInputChange(e.target.value)}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+
+                      // If input is empty (backspace cleared it), set to empty string
+                      if (inputValue === '') {
+                        setQuantity('');
+                        return;
+                      }
+
+                      const newQuantity = parseInt(inputValue);
+
+                      // If valid number entered, handle the change
+                      if (!isNaN(newQuantity) && newQuantity >= 1 && !isOutOfStock) {
+                        setQuantity(newQuantity);
+                        checkStock(newQuantity, selectedUnitId);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // When input loses focus, if empty, set back to 1
+                      if (e.target.value === '' || e.target.value === '0') {
+                        setQuantity(1);
+                        checkStock(1, selectedUnitId);
+                      }
+                    }}
                     min="1"
                     className="px-3 py-1 min-w-[2rem] text-center text-base font-medium border border-gray-300 rounded mx-1 w-16 cursor-pointer"
+                    disabled={isOutOfStock}
                   />
                   <button
                     className="p-1 px-2 bg-black rounded-md disabled:bg-gray-400 cursor-pointer"
@@ -1950,10 +1974,67 @@ function ProductDetail() {
                             </button>
                             <input
                               type="number"
-                              value={relatedItemsQuantities[item._id] || 1}
-                              onChange={(e) => handleRelatedQuantityInputChange(item._id, e.target.value, isProductGroup)}
+                              value={relatedItemsQuantities[item._id] === '' ? '' : (relatedItemsQuantities[item._id] || 1)}
+                              onChange={(e) => {
+                                const inputValue = e.target.value;
+
+                                // If input is empty (backspace cleared it), set to empty string
+                                if (inputValue === '') {
+                                  setRelatedItemsQuantities(prev => ({
+                                    ...prev,
+                                    [item._id]: ''
+                                  }));
+                                  return;
+                                }
+
+                                const newQuantity = parseInt(inputValue);
+
+                                // If valid number entered, handle the change
+                                if (!isNaN(newQuantity) && newQuantity >= 1 && !isOutOfStock) {
+                                  setRelatedItemsQuantities(prev => ({
+                                    ...prev,
+                                    [item._id]: newQuantity
+                                  }));
+
+                                  const stockCheck = checkRelatedStockLevel(item._id, isProductGroup, null, newQuantity);
+                                  if (!stockCheck.isValid) {
+                                    setRelatedItemsStockErrors(prev => ({
+                                      ...prev,
+                                      [item._id]: stockCheck.message
+                                    }));
+                                  } else {
+                                    setRelatedItemsStockErrors(prev => ({
+                                      ...prev,
+                                      [item._id]: null
+                                    }));
+                                  }
+                                }
+                              }}
+                              onBlur={(e) => {
+                                // When input loses focus, if empty, set back to 1
+                                if (e.target.value === '' || e.target.value === '0') {
+                                  setRelatedItemsQuantities(prev => ({
+                                    ...prev,
+                                    [item._id]: 1
+                                  }));
+
+                                  const stockCheck = checkRelatedStockLevel(item._id, isProductGroup, null, 1);
+                                  if (!stockCheck.isValid) {
+                                    setRelatedItemsStockErrors(prev => ({
+                                      ...prev,
+                                      [item._id]: stockCheck.message
+                                    }));
+                                  } else {
+                                    setRelatedItemsStockErrors(prev => ({
+                                      ...prev,
+                                      [item._id]: null
+                                    }));
+                                  }
+                                }
+                              }}
                               min="1"
                               className="w-12 text-center text-sm font-medium border border-gray-300 rounded py-1 cursor-pointer"
+                              disabled={isOutOfStock}
                             />
                             <button
                               className="w-6 h-6 bg-black text-white rounded flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
@@ -2033,7 +2114,7 @@ function ProductDetail() {
             </div>
           )}
         </div>
-      </div>   
+      </div>
     </>
   );
 }

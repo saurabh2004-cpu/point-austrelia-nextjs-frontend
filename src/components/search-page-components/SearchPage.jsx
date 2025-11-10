@@ -364,8 +364,11 @@ const SearchPage = () => {
         const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
         const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
 
-        const currentQuantity = quantitiesState[itemId] || 1;
-        const newQuantity = Math.max(1, currentQuantity + change);
+        const currentQuantity = quantitiesState[itemId];
+
+        // Handle empty string case - treat it as 1
+        const currentQtyValue = currentQuantity === '' ? 1 : (currentQuantity || 1);
+        const newQuantity = Math.max(1, currentQtyValue + change);
 
         // Update quantity first
         setQuantitiesState(prev => ({
@@ -948,7 +951,7 @@ const SearchPage = () => {
         );
     };
 
-    // Render item card (for both products and product groups)
+    //  render item card
     const renderItemCard = (item) => {
         const isProductGroup = item.type === 'productGroup';
         const itemId = item._id;
@@ -980,7 +983,7 @@ const SearchPage = () => {
         return (
             <div
                 key={itemId}
-                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm md:min-w-[230px]"
+                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-xs md:min-w-[210px]"
             >
 
                 {/* Wishlist Icon */}
@@ -1023,13 +1026,13 @@ const SearchPage = () => {
                     <img
                         src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="h-[170px] w-[170px] object-contain cursor-pointer"
+                        className="h-[180px] w-[180px] object-contain cursor-pointer"
                         onClick={() => handleProductImageClick(item, isProductGroup)} // Add click handler here
                     />
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 min-w-[300px] lg:min-w-0 lg:max-w-[229px]">
+                <div className="text-start space-y-2 min-w-[280px] lg:min-w-0 lg:max-w-[180px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
@@ -1040,9 +1043,9 @@ const SearchPage = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center ">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU : {(() => {
+                            SKU: {(() => {
                                 const sku = isProductGroup ? item.sku : item.sku;
-                                return sku?.length > 8 ? sku.slice(0, 8) + '...' : sku;
+                                return sku?.length > 8 ? sku.slice(0, 5) + '...' : sku;
                             })()}
                         </p>
 
@@ -1096,7 +1099,6 @@ const SearchPage = () => {
                     )}
 
                     {/* Units Dropdown (only for products, not product groups) */}
-                    {/* Units Dropdown (only for products, not product groups) */}
                     {!isProductGroup && getPackTypes(item).length > 0 && (
                         <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
                             <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
@@ -1137,8 +1139,8 @@ const SearchPage = () => {
 
                     {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
-                        <label className="block text-sm font-medium text-gray-700 cursor-pointer">Quantity</label>
-                        <div className="flex items-center">
+                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                        <div className="flex items-center space-x-1">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
@@ -1153,56 +1155,60 @@ const SearchPage = () => {
                                         alt="Minus"
                                         width={12}
                                         height={12}
-                                        className="cursor-pointer"
                                     />
                                 </span>
                             </button>
-
-                            {/* Input field for direct quantity entry */}
                             <input
                                 type="number"
-                                min="1"
-                                value={currentQuantity}
+                                value={quantitiesState[itemId] === '' ? '' : (quantitiesState[itemId] || 1)}
                                 onChange={(e) => {
-                                    const newQuantity = parseInt(e.target.value) || 1;
-                                    const validQuantity = Math.max(1, newQuantity);
+                                    e.stopPropagation();
+                                    const inputValue = e.target.value;
 
-                                    const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
+                                    // Determine the correct setter function based on item type
                                     const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
 
-                                    setQuantitiesState(prev => ({
-                                        ...prev,
-                                        [itemId]: validQuantity
-                                    }));
-
-                                    // Check stock with the new quantity
-                                    const stockCheck = checkStockLevel(itemId, isProductGroup, null, validQuantity);
-                                    if (!stockCheck.isValid) {
-                                        setStockErrors(prev => ({
+                                    // If input is empty (backspace cleared it), set to empty string
+                                    if (inputValue === '') {
+                                        setQuantitiesState(prev => ({
                                             ...prev,
-                                            [itemId]: stockCheck.message
+                                            [itemId]: '' // Set to empty string for user input
                                         }));
-                                    } else {
+                                        return;
+                                    }
+
+                                    const newQuantity = parseInt(inputValue);
+
+                                    // If valid number entered, handle the change
+                                    if (!isNaN(newQuantity) && newQuantity >= 1 && !isOutOfStock) {
+                                        const currentQty = quantitiesState[itemId] === '' ? 1 : (quantitiesState[itemId] || 1);
+                                        const quantityDiff = newQuantity - currentQty;
+                                        handleQuantityChange(itemId, quantityDiff, isProductGroup);
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    // Determine the correct setter function based on item type
+                                    const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
+
+                                    // When input loses focus, if empty, set back to 1
+                                    if (e.target.value === '' || e.target.value === '0') {
+                                        setQuantitiesState(prev => ({
+                                            ...prev,
+                                            [itemId]: 1
+                                        }));
+
+                                        // Clear any stock errors when setting back to 1
                                         setStockErrors(prev => ({
                                             ...prev,
                                             [itemId]: null
                                         }));
                                     }
                                 }}
-                                onBlur={(e) => {
-                                    if (!e.target.value || parseInt(e.target.value) < 1) {
-                                        const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
-                                        const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
-
-                                        setQuantitiesState(prev => ({
-                                            ...prev,
-                                            [itemId]: 1
-                                        }));
-                                    }
-                                }}
-                                className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                min="1"
+                                disabled={isOutOfStock}
                             />
-
                             <button
                                 className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
@@ -1216,7 +1222,6 @@ const SearchPage = () => {
                                     alt="Plus"
                                     width={12}
                                     height={12}
-                                    className="cursor-pointer"
                                 />
                             </button>
                         </div>

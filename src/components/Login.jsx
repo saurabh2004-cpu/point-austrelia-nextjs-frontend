@@ -229,7 +229,7 @@ export default function LoginComponent() {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-green-800">
-                  Login successful! ...
+                  Login successful!
                 </p>
               </div>
             </div>

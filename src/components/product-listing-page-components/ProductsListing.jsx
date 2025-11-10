@@ -1,4 +1,4 @@
-"use client"
+ "use client"
 
 import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
@@ -48,6 +48,10 @@ const ProductListing = () => {
     const [loadingProducts, setLoadingProducts] = useState({})
     const [loadingWishlist, setLoadingWishlist] = useState({})
     const [loadingCart, setLoadingCart] = useState({})
+
+    // Add state for current category description and color
+    const [currentCategoryDescription, setCurrentCategoryDescription] = useState('');
+    const [currentCategoryDescriptionColor, setCurrentCategoryDescriptionColor] = useState('#000000');
 
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
@@ -140,10 +144,57 @@ const ProductListing = () => {
         productGroupId
     } = useProductFiltersStore()
 
-
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
     const [loadingCategories, setLoadingCategories] = useState(false)
+
+    // Function to fetch current category description and color
+    const fetchCurrentCategoryDescription = async () => {
+        try {
+            let description = '';
+            let descriptionColor = '#000000';
+            
+            if (subCategoryTwoId) {
+                // Fetch subcategory two description
+                const res = await axiosInstance.get(`subcategoryTwo/get-sub-category-two/${subCategoryTwoId}`);
+                if (res.data.statusCode === 200) {
+                    description = res.data.data.description || '';
+                    descriptionColor = res.data.data.descriptionColour || '#000000';
+                }
+            } else if (subCategoryId) {
+                // Fetch subcategory description
+                const res = await axiosInstance.get(`subcategory/get-sub-category/${subCategoryId}`);
+                if (res.data.statusCode === 200) {
+                    description = res.data.data.description || '';
+                    descriptionColor = res.data.data.descriptionColour || '#000000';
+                }
+            } else if (categoryId) {
+                // Fetch category description
+                const res = await axiosInstance.get(`category/get-category/${categoryId}`);
+                if (res.data.statusCode === 200) {
+                    description = res.data.data.description || '';
+                    descriptionColor = res.data.data.descriptionColour || '#000000';
+                }
+            }
+            
+            setCurrentCategoryDescription(description);
+            setCurrentCategoryDescriptionColor(descriptionColor);
+        } catch (error) {
+            console.error('Error fetching category description:', error);
+            setCurrentCategoryDescription('');
+            setCurrentCategoryDescriptionColor('#000000');
+        }
+    };
+
+    // Call this function whenever category/subcategory changes
+    useEffect(() => {
+        if (categoryId || subCategoryId || subCategoryTwoId) {
+            fetchCurrentCategoryDescription();
+        } else {
+            setCurrentCategoryDescription('');
+            setCurrentCategoryDescriptionColor('#000000');
+        }
+    }, [categoryId, subCategoryId, subCategoryTwoId]);
 
     // Check if item is in wishlist (for both products and product groups)
     const isItemInWishlist = (itemId, isProductGroup = false) => {
@@ -928,6 +979,9 @@ const ProductListing = () => {
             subCategoryTwoId: null,
             brandId: brandId
         });
+        
+        // Fetch category description
+        fetchCurrentCategoryDescription();
     }
 
     // Get page title based on current filter
@@ -1027,6 +1081,7 @@ const ProductListing = () => {
         const cartItem = getCartItem(itemId, isProductGroup);
         const isInWishlist = isItemInWishlist(itemId, isProductGroup);
 
+
         // Calculate stock level for product groups
         let isOutOfStock;
         if (isProductGroup) {
@@ -1045,6 +1100,7 @@ const ProductListing = () => {
         const discountPercentage = getDiscountPercentage(item, isProductGroup);
         const hasItemDiscount = hasDiscount(item, isProductGroup);
 
+        const setQuantitiesState = isProductGroup ? setProductGroupQuantities : setProductQuantities;
         const quantitiesState = isProductGroup ? productGroupQuantities : productQuantities;
         const currentQuantity = quantitiesState[itemId] || 1;
 
@@ -1097,7 +1153,7 @@ const ProductListing = () => {
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 lg:max-w-[229px]">
+                <div className="text-start space-y-2 mt-2 lg:max-w-[229px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
@@ -1109,7 +1165,7 @@ const ProductListing = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU :{" "}
+                            SKU:{" "}
                             {isProductGroup
                                 ? item.sku.length > 8
                                     ? `${item.sku.slice(0, 8)}...`
@@ -1205,6 +1261,7 @@ const ProductListing = () => {
                     )}
 
                     {/* Quantity Controls */}
+                    {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
                         <label className="block text-sm font-medium text-gray-700">Quantity</label>
                         <div className="flex items-center space-x-4">
@@ -1226,13 +1283,42 @@ const ProductListing = () => {
                             </button>
                             <input
                                 type="number"
-                                value={currentQuantity}
+                                value={quantitiesState[itemId] === '' ? '' : currentQuantity}
                                 onChange={(e) => {
                                     e.stopPropagation();
-                                    const newQuantity = parseInt(e.target.value) || 1;
-                                    const quantityDiff = newQuantity - currentQuantity;
-                                    if (newQuantity >= 1 && !isOutOfStock) {
+                                    const inputValue = e.target.value;
+
+                                    // If input is empty (backspace cleared it), set to empty string
+                                    if (inputValue === '') {
+                                        setQuantitiesState(prev => ({
+                                            ...prev,
+                                            [itemId]: '' // Set to empty string for user input
+                                        }));
+                                        return;
+                                    }
+
+                                    const newQuantity = parseInt(inputValue);
+
+                                    // If valid number entered, handle the change
+                                    if (!isNaN(newQuantity) && newQuantity >= 1 && !isOutOfStock) {
+                                        const currentQty = quantitiesState[itemId] === '' ? 1 : (quantitiesState[itemId] || 1);
+                                        const quantityDiff = newQuantity - currentQty;
                                         handleQuantityChange(itemId, quantityDiff, isProductGroup);
+                                    }
+                                }}
+                                onBlur={(e) => {
+                                    // When input loses focus, if empty, set back to 1
+                                    if (e.target.value === '' || e.target.value === '0') {
+                                        setQuantitiesState(prev => ({
+                                            ...prev,
+                                            [itemId]: 1
+                                        }));
+
+                                        // Clear any stock errors when setting back to 1
+                                        setStockErrors(prev => ({
+                                            ...prev,
+                                            [itemId]: null
+                                        }));
                                     }
                                 }}
                                 onClick={(e) => e.stopPropagation()}
@@ -1358,6 +1444,7 @@ const ProductListing = () => {
         if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
             fetchItems()
             fetchCategoriesForBrand()
+            fetchCurrentCategoryDescription()
         }
     }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
 
@@ -1543,6 +1630,9 @@ const ProductListing = () => {
         })
         // Keep subcategory expanded when clicked
         setExpandedCategory(categoryId);
+        
+        // Fetch subcategory description
+        fetchCurrentCategoryDescription();
     }
 
     const handleMinCategoryClick = (categorySlug, categoryId) => {
@@ -1560,6 +1650,9 @@ const ProductListing = () => {
         })
         // Keep subcategory expanded when clicked
         setExpandedCategory(categoryId);
+        
+        // Fetch category description
+        fetchCurrentCategoryDescription();
     }
 
     // Handle subcategory two click
@@ -1577,6 +1670,9 @@ const ProductListing = () => {
         })
         // Keep category and subcategory expanded when clicked
         setExpandedCategory(categoryId);
+        
+        // Fetch subcategory two description
+        fetchCurrentCategoryDescription();
     }
 
     if (!productID && !productGroupId) {
@@ -1591,21 +1687,102 @@ const ProductListing = () => {
                 />
 
                 {/* Breadcrumb */}
+                {/* Breadcrumb */}
                 <div className="bg-white justify-items-center pt-4">
                     <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                         <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
-                            <span className="hidden sm:inline"> {getPageTitle()}</span>
-                        </nav>
+                            <div className="flex items-center space-x-2 flex-wrap">
+                                {/* Always show brand as non-clickable */}
+                                <span className="hidden sm:inline">MATADOR WHOLESALE</span>
 
+                                {/* Dynamic breadcrumb items */}
+                                {[
+                                    {
+                                        slug: categorySlug,
+                                        id: categoryId,
+                                        type: 'category'
+                                    },
+                                    {
+                                        slug: subCategorySlug,
+                                        id: subCategoryId,
+                                        type: 'subcategory'
+                                    },
+                                    {
+                                        slug: subCategoryTwoSlug,
+                                        id: subCategoryTwoId,
+                                        type: 'subcategoryTwo'
+                                    }
+                                ]
+                                    .filter(item => item.slug)
+                                    .map((item, index, array) => (
+                                        <div key={item.slug} className="flex items-center space-x-2">
+                                            <span className="hidden sm:inline">/</span>
+                                            {index === array.length - 1 ? (
+                                                // Last item - not clickable (current page)
+                                                <span className="hidden sm:inline">
+                                                    {item.slug.split('/').pop().split('-').join(' ').toUpperCase()}
+                                                </span>
+                                            ) : (
+                                                // Previous items - clickable
+                                                <button
+                                                    onClick={() => {
+                                                        const filters = {
+                                                            categorySlug: categorySlug,
+                                                            subCategorySlug: null,
+                                                            subCategoryTwoSlug: null,
+                                                            categoryId: categoryId,
+                                                            subCategoryId: null,
+                                                            subCategoryTwoId: null,
+                                                            brandId: brandId,
+                                                            brandSlug: brandSlug
+                                                        };
+
+                                                        // Set appropriate filters based on which item is clicked
+                                                        if (item.type === 'category') {
+                                                            filters.subCategorySlug = null;
+                                                            filters.subCategoryTwoSlug = null;
+                                                            filters.subCategoryId = null;
+                                                            filters.subCategoryTwoId = null;
+                                                        } else if (item.type === 'subcategory') {
+                                                            filters.subCategorySlug = subCategorySlug;
+                                                            filters.subCategoryId = subCategoryId;
+                                                            filters.subCategoryTwoSlug = null;
+                                                            filters.subCategoryTwoId = null;
+                                                        }
+
+                                                        setFilters(filters);
+                                                        router.push(`/${item.slug}`);
+                                                    }}
+                                                    className="hidden sm:inline hover:text-[#E9098D] cursor-pointer transition-colors"
+                                                >
+                                                    {item.slug.split('/').pop().split('-').join(' ').toUpperCase()}
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                            </div>
+                        </nav>
                     </div>
-                    <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-3 sm:pb-5 tracking-widest">
-                        {
-                            subCategoryTwoSlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
-                            subCategorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
-                            categorySlug?.split('/').pop().split('-').join('  ').toUpperCase() ||
-                            brandSlug?.split('-').join(' ').toUpperCase()
-                        }
-                    </h1>
+                    
+                    {/* Updated heading section with description */}
+                    <div className="text-center">
+                        <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-2 tracking-widest">
+                            {
+                                subCategoryTwoSlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                                subCategorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
+                                categorySlug?.split('/').pop().split('-').join('  ').toUpperCase() ||
+                                brandSlug?.split('-').join(' ').toUpperCase()
+                            }
+                        </h1>
+                        {currentCategoryDescription && (
+                            <p 
+                                className="text-sm sm:text-base font-spartan max-w-4xl mx-auto px-4 pb-3 sm:pb-5"
+                                style={{ color: currentCategoryDescriptionColor }}
+                            >
+                                {currentCategoryDescription}
+                            </p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="md:max-w-[80%] mx-auto px-2  py-3 sm:py-6">
@@ -1768,18 +1945,18 @@ const ProductListing = () => {
                         {/* Main Content */}
                         <div className="flex-1">
                             {/* Products Header */}
-                            <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 px-3 lg:px-0">
-                                <div className="flex flex-col gap-3 lg:flex-row lg:justify-between lg:items-center lg:gap-4">
+                            <div className="bg-white  rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 px-3 lg:px-0">
+                                <div className="flex flex-col gap-3 lg:flex-row lg:justify-between  lg:gap-4">
                                     {/* Title */}
                                     <h2 className="text-base lg:text-[1.2rem] font-[400] text-black">
-                                        Items <span className="text-[#000000]/60">({totalItems})</span>
+                                        <span className="text-[#000000]/60">{totalItems}</span> Products
                                     </h2>
 
                                     {/* Filters Container */}
-                                    <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 xs:gap-3 w-full lg:w-auto">
+                                    <div className="flex flex gap-3 ">
 
                                         {/* Items Per Page Dropdown */}
-                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
+                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
                                             <select
                                                 value={perpageItems}
                                                 onChange={handleItemsPerPageChange}
@@ -1810,7 +1987,7 @@ const ProductListing = () => {
                                         </div>
 
                                         {/* Sort Dropdown */}
-                                        <div className="relative w-full xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
+                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
                                             <select
                                                 value={sortBy}
                                                 onChange={handleSortChange}

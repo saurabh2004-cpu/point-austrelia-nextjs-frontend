@@ -266,6 +266,16 @@ const ShoppingCartPopup = () => {
 
   // Add this function with your other functions
   const handleDirectQuantityChange = (itemId, newQuantity) => {
+    // If input is empty (backspace cleared it), set to empty string
+    if (newQuantity === '') {
+      setLocalQuantities(prev => ({
+        ...prev,
+        [itemId]: ''
+      }));
+      return;
+    }
+
+    // If it's a valid number, set the numeric value
     const validQuantity = Math.max(1, parseInt(newQuantity) || 1);
     setLocalQuantities(prev => ({
       ...prev,
@@ -545,34 +555,48 @@ const ShoppingCartPopup = () => {
                             <div className="flex items-center">
                               <button
                                 onClick={() => handleQuantityChange(item._id, -1)}
-                                className="p-1 bg-black rounded-md px-2 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 disabled={displayQuantity <= 1 || outOfStock}
                               >
-                                <Minus className="w-3 h-3 text-white" />
+                                <Image
+                                  src="/icons/minus-icon.png"
+                                  alt="Minus"
+                                  width={12}
+                                  height={12}
+                                />
                               </button>
 
                               {/* Input field for direct quantity entry */}
                               <input
                                 type="number"
                                 min="1"
-                                value={displayQuantity}
+                                value={localQuantities[item._id] ?? item.unitsQuantity} // Use nullish coalescing
                                 onChange={(e) => handleDirectQuantityChange(item._id, e.target.value)}
                                 onBlur={(e) => {
-                                  if (!e.target.value || parseInt(e.target.value) < 1) {
-                                    handleDirectQuantityChange(item._id, 1);
+                                  // When input loses focus, if empty, set back to the original quantity
+                                  if (e.target.value === '' || e.target.value === '0') {
+                                    setLocalQuantities(prev => ({
+                                      ...prev,
+                                      [item._id]: item.unitsQuantity
+                                    }));
                                   }
                                 }}
-                                className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
+                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 disabled={outOfStock}
                               />
 
                               <button
                                 onClick={() => handleQuantityChange(item._id, 1)}
-                                className="p-1 bg-black rounded-md px-2 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="w-[30px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 disabled={outOfStock || exceedsStock}
                                 title={exceedsStock ? 'Stock level exceeded' : ''}
                               >
-                                <Plus className="w-3 h-3 text-white" />
+                                <Image
+                                  src="/icons/plus-icon.png"
+                                  alt="Plus"
+                                  width={12}
+                                  height={12}
+                                />
                               </button>
                             </div>
                           </div>
@@ -586,14 +610,22 @@ const ShoppingCartPopup = () => {
                                   value={selectedPacks[item._id] || ''}
                                   onChange={(e) => handlePackChange(item._id, e.target.value)}
                                   disabled={outOfStock}
-                                  className="w-full border border-gray-200 appearance-none rounded-md pl-2 pr-8 py-1 text-xs focus:outline-none focus:ring focus:ring-[#2d2c70] disabled:bg-gray-100 disabled:cursor-not-allowed cursor-pointer"
+                                  className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 >
                                   {availablePacks.map((pack) => (
-                                    <option key={pack._id} value={pack._id} className="cursor-pointer">{pack.name}</option>
+                                    <option key={pack._id} value={pack._id} className="cursor-pointer">
+                                      {pack.name}
+                                    </option>
                                   ))}
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                                  <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center cursor-pointer">
+                                  <svg
+                                    className="w-4 h-4 text-gray-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    viewBox="0 0 24 24"
+                                  >
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                                   </svg>
                                 </div>

@@ -849,7 +849,7 @@ export default function ProductPopup({
                                             <img
                                                 src={itemImages[selectedImage] || "/placeholder.svg"}
                                                 alt={getItemName()}
-                                                className="w-full h-[260px] object-contain"
+                                                className="w-[200px] h-[200px] object-contain"
                                             />
                                         </div>
                                     </div>
@@ -861,7 +861,7 @@ export default function ProductPopup({
                                 <h1 className="text-[18px] font-semibold text-black uppercase">{getItemName()}</h1>
                                 <div className="space-y-1 flex justify-between items-center">
                                     <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                                        SKU : {getItemSku()}
+                                        SKU: {getItemSku()}
                                     </p>
 
                                     {/* Stock Status */}
@@ -922,49 +922,36 @@ export default function ProductPopup({
                                             </button>
                                             <input
                                                 type="number"
+                                                min="1"
                                                 value={quantity}
                                                 onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    
-                                                    // Allow empty input for user to type
-                                                    if (value === '') {
+                                                    const inputValue = e.target.value;
+
+                                                    // If input is empty (backspace cleared it), set to empty string
+                                                    if (inputValue === '') {
+                                                        setQuantity('');
                                                         return;
                                                     }
-                                                    
-                                                    const newQuantity = parseInt(value);
-                                                    
-                                                    // Validate the input
-                                                    if (isNaN(newQuantity) || newQuantity < 1) {
-                                                        return;
+
+                                                    const newQuantity = parseInt(inputValue);
+
+                                                    // If valid number entered, handle the change
+                                                    if (!isNaN(newQuantity) && newQuantity >= 1 && !isOutOfStock) {
+                                                        setQuantity(newQuantity);
+                                                        checkStock(newQuantity, selectedUnitId);
                                                     }
-                                                    
-                                                    // Check stock limit
-                                                    if (newQuantity > getStockLevel()) {
-                                                        return;
-                                                    }
-                                                    
-                                                    // Update quantity
-                                                    setQuantity(newQuantity);
-                                                    checkStock(newQuantity, selectedUnitId);
                                                 }}
                                                 onBlur={(e) => {
-                                                    // Reset to 1 if field is empty on blur
-                                                    if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                                                    // When input loses focus, if empty, set back to 1
+                                                    if (e.target.value === '' || e.target.value === '0') {
                                                         setQuantity(1);
                                                         checkStock(1, selectedUnitId);
                                                     }
                                                 }}
-                                                onKeyPress={(e) => {
-                                                    // Only allow numbers
-                                                    if (!/[0-9]/.test(e.key)) {
-                                                        e.preventDefault();
-                                                    }
-                                                }}
                                                 className="w-16 text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none font-medium focus:bg-gray-50 transition-colors"
-                                                min="1"
-                                                max={getStockLevel()}
                                                 disabled={isOutOfStock}
                                             />
+
                                             <button
                                                 onClick={incrementQuantity}
                                                 disabled={isOutOfStock || totalRequestedQuantity >= getStockLevel()}

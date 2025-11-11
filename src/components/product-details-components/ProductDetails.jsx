@@ -430,7 +430,8 @@ function ProductDetail() {
         axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
       ]);
 
-      // console.log("products groups response", productGroupsResponse)
+      console.log("products groups response", productGroupsResponse)
+      console.log("products response", productsResponse)
 
       let productsData = [];
       let productGroupsData = [];
@@ -460,6 +461,8 @@ function ProductDetail() {
 
       // Take only first 4 items
       combinedItems = combinedItems.slice(0, 4);
+
+      console.log("combined items ", combinedItems)
 
       setRelatedItems(combinedItems);
 
@@ -1241,7 +1244,7 @@ function ProductDetail() {
       setLoading(true);
       const response = await axiosInstance(`product-group/get-product-group/${productGroupId}`);
 
-      // console.log("response product group details", response);
+      console.log("response product group details", response);
 
       if (response.data.statusCode === 200) {
         const productGroupData = response.data.data;
@@ -1793,10 +1796,9 @@ function ProductDetail() {
         <div className="bg-gray-300 min-w-[90vw] h-[1px] flex my-8 relative lg:right-34 cursor-pointer"></div>
 
         {/* Related Items Section */}
-        {/* Related Items Section */}
         <div className="space-y-8 lg:space-y-12 pb-18 cursor-pointer">
           <h2 className="text-xl sm:text-2xl lg:text-[2rem] font-medium text-center text-[#2E2F7F] cursor-pointer">
-            Related Items
+            Related Products
           </h2>
 
           {relatedItemsLoading ? (
@@ -1825,7 +1827,7 @@ function ProductDetail() {
                 return (
                   <div key={item._id} className="bg-white rounded-lg p-4 border border-gray-200 flex flex-col h-full cursor-pointer">
                     {/* Wishlist Icon & Badge Container */}
-                    <div className="relative mb-3 cursor-pointer">
+                    <div className="relative  cursor-pointer">
                       <button
                         onClick={() => handleRelatedAddToWishList(item._id, isProductGroup)}
                         disabled={isWishlistLoading}
@@ -1856,7 +1858,7 @@ function ProductDetail() {
 
                     {/* Item Image - Fixed Height Container */}
                     <div
-                      className="relative flex justify-center items-center py-6 mb-4  rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
+                      className="relative flex justify-center items-center pb-4 mb-4  rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
                       onClick={() => handleRelatedItemClick(
                         isProductGroup ? item.name : item.ProductName,
                         item._id,
@@ -1864,9 +1866,9 @@ function ProductDetail() {
                       )}
                     >
                       <img
-                        src={itemImages[0] || "/placeholder.svg"}
+                        src={item.images || "/placeholder.svg"}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="max-h-[140px] w-auto object-contain cursor-pointer"
+                        className="h-[250px] w-[250px]  w-auto object-contain cursor-pointer"
                       />
                     </div>
 

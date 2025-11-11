@@ -90,7 +90,6 @@ export default function ProductPopup({
     };
 
     // Get item images for both products and product groups
-    // Get item images for both products and product groups
     const getItemImages = (item) => {
         if (!item) return [];
 
@@ -217,19 +216,22 @@ export default function ProductPopup({
         return 0;
     };
 
-    // UPDATED: Calculate discounted price for both products and product groups
+    // ✅ UPDATED: Calculate discounted price with new compare price logic
     const calculateDiscountedPrice = (targetItem = null) => {
         const itemToUse = targetItem || getCurrentItem();
-        if (!itemToUse || !itemToUse.eachPrice) return 0;
+        if (!itemToUse) return 0;
 
-        const originalPrice = itemToUse.eachPrice;
+        const originalPrice = itemToUse.eachPrice || 0;
 
-        // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+        // NEW LOGIC: If item has comparePrice, use original price as selling price
+        // and comparePrice becomes the "original" price to show discount
         if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
-            return itemToUse.comparePrice;
+            // Now we return the original price as selling price
+            // comparePrice will be used to calculate discount percentage for display
+            return originalPrice;
         }
 
-        // If no comparePrice or comparePrice is 0, check for discounts
+        // If no comparePrice or comparePrice is 0, check for discounts (existing logic)
         if (!currentUser || !currentUser.customerId) {
             return originalPrice;
         }
@@ -239,7 +241,6 @@ export default function ProductPopup({
             discount => discount.productSku === itemToUse.sku && discount.customerId === currentUser.customerId
         );
 
-        // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
             return Math.max(0, originalPrice - discountAmount);
@@ -269,7 +270,7 @@ export default function ProductPopup({
                         return originalPrice + (originalPrice * percentage / 100);
                     } else {
                         // Negative percentage means price decrease
-                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                        return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
                     }
                 }
             }
@@ -279,17 +280,21 @@ export default function ProductPopup({
         return originalPrice;
     };
 
-    // UPDATED: Get discount percentage for display for both products and product groups
+    // ✅ UPDATED: Get discount percentage for display with new compare price logic
     const getDiscountPercentage = (targetItem = null) => {
         const itemToUse = targetItem || getCurrentItem();
         if (!itemToUse) return null;
 
-        // If item has comparePrice, show comparePrice discount
+        const originalPrice = itemToUse.eachPrice || 0;
+
+        // NEW LOGIC: If product has comparePrice, calculate discount percentage
         if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
-            const originalPrice = itemToUse.eachPrice || 0;
-            const discountAmount = originalPrice - itemToUse.comparePrice;
-            const discountPercentage = (discountAmount / originalPrice) * 100;
-            return Math.round(discountPercentage);
+            if (itemToUse.comparePrice > originalPrice && originalPrice > 0) {
+                const discountAmount = itemToUse.comparePrice - originalPrice;
+                const discountPercentage = (discountAmount / itemToUse.comparePrice) * 100;
+                return Math.round(discountPercentage);
+            }
+            return null;
         }
 
         if (!currentUser || !currentUser.customerId) {
@@ -321,13 +326,7 @@ export default function ProductPopup({
                 );
 
                 if (customerDiscount) {
-                    const percentageValue = parseFloat(customerDiscount.percentage);
-                    // For display purposes, we show the absolute value for negative percentages (discounts)
-                    // For positive percentages (price increases), we don't show a discount percentage
-                    if (percentageValue < 0) {
-                        return Math.abs(percentageValue);
-                    }
-                    return null;
+                    return parseFloat(customerDiscount.percentage);
                 }
             }
         }
@@ -335,18 +334,44 @@ export default function ProductPopup({
         return null;
     };
 
-    // UPDATED: Check if item has any discount or comparePrice
+    // ✅ UPDATED: Check if item has any discount or comparePrice
     const hasDiscount = (targetItem = null) => {
         const itemToUse = targetItem || getCurrentItem();
         if (!itemToUse) return false;
 
-        return (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) ||
-            getDiscountPercentage(itemToUse) !== null;
+        // Check if product has comparePrice discount
+        if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+            const originalPrice = itemToUse.eachPrice || 0;
+            if (itemToUse.comparePrice > originalPrice) {
+                return true;
+            }
+        }
+
+        // Check if product has item-based or pricing group discount
+        return getDiscountPercentage(itemToUse) !== null;
+    };
+
+    // ✅ UPDATED: Get the price to show as "original" price (for strikethrough)
+    const getOriginalPriceForDisplay = (targetItem = null) => {
+        const itemToUse = targetItem || getCurrentItem();
+        if (!itemToUse) return 0;
+
+        // If compare price exists and is higher than current price, show compare price as original
+        if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+            const currentPrice = itemToUse.eachPrice || 0;
+            if (itemToUse.comparePrice > currentPrice) {
+                return itemToUse.comparePrice;
+            }
+        }
+
+        // Otherwise, show the actual original price
+        return itemToUse.eachPrice || 0;
     };
 
     const discountedPrice = calculateDiscountedPrice();
     const discountPercentage = getDiscountPercentage();
     const hasItemDiscount = hasDiscount();
+    const originalPriceForDisplay = getOriginalPriceForDisplay();
 
     const incrementQuantity = () => {
         const newQuantity = quantity + 1;
@@ -471,7 +496,6 @@ export default function ProductPopup({
     }
 
     // Fetch product group details
-    // Fetch product group details
     const fetchProductGroupDetail = async (productGroupId) => {
         try {
             setLoading(true)
@@ -558,7 +582,7 @@ export default function ProductPopup({
         }
     }, [product, productGroup, cartItems, itemType])
 
-    // UPDATED: Add to cart function for both products and product groups
+    // ✅ UPDATED: Add to cart function with new compare price logic
     const handleAddToCart = async () => {
         if (!currentUser?._id) {
             setError("Please login to add to cart")
@@ -584,24 +608,28 @@ export default function ProductPopup({
 
             const totalQuantity = packQuantity * quantity
 
-            // Calculate the discounted price for this item
+            // ✅ UPDATED: Calculate the discounted price using new logic
             const currentDiscountedPrice = calculateDiscountedPrice();
 
             // Calculate total amount using the discounted price
             const totalAmount = currentDiscountedPrice;
 
-            // Determine discount type and percentage
+            // ✅ UPDATED: Determine discount type and percentage with new compare price logic
             let discountType = "";
             let discountPercentages = 0;
+            let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
-            // Priority 1: Check if item has comparePrice
+            // NEW LOGIC: Priority 1 - Check comparePrice discount
             if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-                const originalPrice = item.eachPrice || 0;
-                const discountAmount = originalPrice - item.comparePrice;
-                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                discountType = "compare_price";
+                const currentPrice = item.eachPrice || 0;
+                // Only apply compare price discount if comparePrice is higher than current price
+                if (item.comparePrice > currentPrice) {
+                    const discountAmount = item.comparePrice - currentPrice;
+                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
+                    discountType = "Compare Price";
+                }
             }
-            // Priority 2: Check for item-based discount
+            // Priority 2: Check item-based discount (only if no compare price discount applied)
             else if (currentUser && currentUser.customerId) {
                 const itemDiscount = itemBasedDiscounts.find(
                     discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
@@ -609,9 +637,9 @@ export default function ProductPopup({
 
                 if (itemDiscount) {
                     discountPercentages = itemDiscount.percentage;
-                    discountType = "item_based";
+                    discountType = "Item Discount";
                 }
-                // Priority 3: Check for pricing group discount
+                // Priority 3: Check pricing group discount (only if no item-based discount)
                 else if (item.pricingGroup) {
                     const itemPricingGroupId = typeof item.pricingGroup === 'object'
                         ? item.pricingGroup._id
@@ -627,8 +655,16 @@ export default function ProductPopup({
                         );
 
                         if (customerDiscount) {
-                            discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-                            discountType = "pricing_group";
+                            originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+                            discountPercentages = Math.abs(originalPricingGroupPercentage);
+                            discountType = "Pricing Group";
+
+                            // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+                            if (originalPricingGroupPercentage > 0) {
+                                discountPercentages = `+${discountPercentages}`;
+                            } else if (originalPricingGroupPercentage < 0) {
+                                discountPercentages = `-${discountPercentages}`;
+                            }
                         }
                     }
                 }
@@ -889,16 +925,17 @@ export default function ProductPopup({
                                     <span className="text-[24px] font-semibold text-[#2D2C70]">
                                         ${discountedPrice.toFixed(2)}
                                     </span>
-                                    {hasItemDiscount && getCurrentItem().eachPrice && discountedPrice < getCurrentItem().eachPrice && (
+                                    {/* ✅ UPDATED: Show strikethrough price if there's a discount */}
+                                    {hasItemDiscount && discountedPrice < originalPriceForDisplay && (
                                         <span className="text-sm text-gray-500 line-through">
-                                            ${getCurrentItem().eachPrice.toFixed(2)}
+                                            ${originalPriceForDisplay.toFixed(2)}
                                         </span>
                                     )}
-                                    {discountPercentage && discountPercentage > 0 && (
+                                    {/* {discountPercentage && discountPercentage > 0 && (
                                         <span className="text-sm text-green-600 font-semibold">
                                             ({discountPercentage}% OFF)
                                         </span>
-                                    )}
+                                    )} */}
                                 </div>
 
                                 {/* Stock Error Message */}

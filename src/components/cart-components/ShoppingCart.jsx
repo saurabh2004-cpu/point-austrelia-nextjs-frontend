@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, Plus, Minus, Check, AlertTriangle, X, AlertCircle, ChevronDownIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -17,6 +16,7 @@ const ShoppingCart = () => {
     const [localQuantities, setLocalQuantities] = useState({});
     const [selectedPacks, setSelectedPacks] = useState({});
     const [removingOutOfStock, setRemovingOutOfStock] = useState(false);
+    const [removingExceedsStock, setRemovingExceedsStock] = useState(false); // New state for removing exceeds stock items
     const currentUser = useUserStore((state) => state.user);
     const router = useRouter();
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
@@ -30,8 +30,6 @@ const ShoppingCart = () => {
         totalItems: 0
     });
     const [brandWiseTotals, setBrandWiseTotals] = useState([]);
-
-
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -286,6 +284,62 @@ const ShoppingCart = () => {
         }
     };
 
+    // NEW FUNCTION: Remove all items that exceed stock levels
+    const removeExceedsStockItems = async () => {
+        if (!currentUser || !currentUser._id) {
+            setError("Please login to remove items");
+            return;
+        }
+
+        if (exceedingStockCount === 0) {
+            setError("No items exceed stock levels");
+            return;
+        }
+
+        setRemovingExceedsStock(true);
+
+        try {
+            // Prepare items to remove with proper type identification
+            const itemsToRemove = itemsExceedingStock.map(item => {
+                if (item.product) {
+                    return { productId: item.product._id };
+                } else if (item.productGroup) {
+                    return { productGroupId: item.productGroup._id };
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            if (itemsToRemove.length === 0) {
+                setError('No valid items to remove');
+                return;
+            }
+
+            const response = await axiosInstance.put(
+                `cart/remove-multiple-from-cart/${currentUser._id}`,
+                { itemsToRemove }
+            );
+
+            console.log("remove multiple exceeds stock items", response);
+
+            if (response.data.statusCode === 200) {
+                // Update local state
+                setCartItems(prev => prev.filter(item => !exceedsStockLevel(item)));
+                setCartItemsCount(response.data.data.cartItems?.length || 0);
+                setError(null);
+
+                // Refresh totals
+                await fetchCustomersCart(1, false);
+            } else {
+                setError(response.data.message || "Failed to remove items that exceed stock levels");
+            }
+        } catch (error) {
+            console.error('Error removing items that exceed stock levels:', error);
+            setError('An error occurred while removing items that exceed stock levels');
+        } finally {
+            setRemovingExceedsStock(false);
+        }
+    };
+
     // Show current displayed quantity
     const getDisplayQuantity = (item) => {
         const localQty = localQuantities[item._id];
@@ -327,7 +381,6 @@ const ShoppingCart = () => {
         // This will trigger the useEffect and update the UI immediately
     };
 
-    // Update cart item using add-to-cart API
     // Update cart item using add-to-cart API
     const updateCartItem = async (item) => {
         if (!currentUser || !currentUser._id) {
@@ -409,7 +462,6 @@ const ShoppingCart = () => {
             setUpdatingItems(prev => ({ ...prev, [item._id]: false }));
         }
     };
-
 
     // Calculate real-time subtotal for display (before API refresh)
     const calculateRealtimeSubtotal = () => {
@@ -706,50 +758,36 @@ const ShoppingCart = () => {
                 </div>
             )}
 
-            {/* Out of Stock Warning */}
-            {/* {outOfStockCount > 0 && (
-                <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-start">
-                                <AlertTriangle className="h-5 w-5 text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
-                                <div>
-                                    <h3 className="text-sm font-semibold text-yellow-800">
-                                        Out of Stock Items
-                                    </h3>
-                                    <p className="text-sm text-yellow-700 mt-1">
-                                        {outOfStockCount} {outOfStockCount === 1 ? 'item is' : 'items are'} currently out of stock in your cart.
-                                    </p>
-                                    <div className="mt-2">
-                                        <button
-                                            onClick={removeOutOfStockItems}
-                                            disabled={removingOutOfStock}
-                                            className="text-sm font-medium text-yellow-800 hover:text-yellow-900 underline disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {removingOutOfStock ? 'Removing...' : 'Remove out of stock items'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )} */}
-
-            {/* Exceeding Stock Level Warning - Only show when NO out of stock items */}
-            {exceedingStockCount > 0 && outOfStockCount === 0 && (
+            {/* Exceeding Stock Level Warning - Show with remove button */}
+            {exceedingStockCount > 0 && (
                 <div className="md:max-w-[80%] mx-auto px-4 pt-2 mb-4">
                     <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-lg">
-                        <div className="flex items-start">
-                            <AlertCircle className="h-5 w-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
-                            <div>
-                                <h3 className="text-sm font-semibold text-orange-800">
-                                    Stock Level Exceeded
-                                </h3>
-                                <p className="text-sm text-orange-700 mt-1">
-                                    {exceedingStockCount} {exceedingStockCount === 1 ? 'item exceeds' : 'items exceed'} available stock. Please reduce quantities before checkout.
-                                </p>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex items-start">
+                                <AlertCircle className="h-5 w-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
+                                <div>
+                                    <h3 className="text-sm font-semibold text-orange-800">
+                                        Stock Level Exceeded
+                                    </h3>
+                                    <p className="text-sm text-orange-700 mt-1">
+                                        {exceedingStockCount} {exceedingStockCount === 1 ? 'item exceeds' : 'items exceed'} available stock. Please reduce quantities before checkout.
+                                    </p>
+                                </div>
                             </div>
+                            <button
+                                onClick={removeExceedsStockItems}
+                                disabled={removingExceedsStock}
+                                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                            >
+                                {removingExceedsStock ? (
+                                    <div className="flex items-center gap-2">
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        Removing...
+                                    </div>
+                                ) : (
+                                    `Remove ${exceedingStockCount} Item${exceedingStockCount > 1 ? 's' : ''}`
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -797,7 +835,7 @@ const ShoppingCart = () => {
                                                 const isProductGroupItem = isProductGroup(item);
 
                                                 return (
-                                                    <div key={item._id} className="lg:py-6">
+                                                    <div key={item._id} className="lg:py-2">
                                                         <div className={`flex flex-col md:flex-row items-center space-x-4 border p-3 rounded-lg px-8 lg:pl-0   ${outOfStock
                                                             ? 'border-red-300 bg-red-50/30'
                                                             : exceedsStock
@@ -855,17 +893,10 @@ const ShoppingCart = () => {
                                                                     <div className="flex items-center space-x-2 mt-2 mb-2 bg-orange-100 border border-orange-300 rounded-md p-2">
                                                                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
                                                                         <p className="text-xs text-orange-700">
-                                                                            Requested quantity ({totalQuantity}) exceeds available stock  Please reduce quantity.
+                                                                            Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
                                                                         </p>
                                                                     </div>
                                                                 )}
-
-                                                                {/* Available Stock Display */}
-                                                                {/* {!outOfStock && (
-                                                                    <p className="text-[12px] text-gray-600 mb-1">
-                                                                        Available: {stockLevel} units
-                                                                    </p>
-                                                                )} */}
 
                                                                 {/* Price */}
                                                                 <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
@@ -878,7 +909,7 @@ const ShoppingCart = () => {
                                                                     <div className="flex flex-col xl:flex-row   align-middle sm:space-x-8 space-y-4 sm:space-y-0">
                                                                         {/* Pack Type Dropdown (only for products) */}
                                                                         {item.product && item.product.typesOfPacks && item.product.typesOfPacks.length > 0 && (
-                                                                            <div className="mb-3  space-x-12 align-center items-center font-spartan">
+                                                                            <div className="mb-3 space-x-6 align-center items-center font-spartan">
                                                                                 <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Pack Type</label>
                                                                                 <div className="relative w-full">
                                                                                     <select
@@ -1101,14 +1132,6 @@ const ShoppingCart = () => {
                                                 <span className="text-[14px] font-medium">${brand.totalAmount?.toFixed(2)}</span>
                                             </div>
                                         )}
-
-                                        {/* Tax Breakdown */}
-                                        {/* {calculateRealtimeTax() > 0 && (
-                                            <div className="flex justify-between text-sm border-t border-gray-200 pt-2">
-                                                <span className="text-[14px] text-[500] text-[#000000]/80">Tax</span>
-                                                <span className="text-[14px] font-medium">${totals.tax.toFixed(2)}</span>
-                                            </div>
-                                        )} */}
 
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">

@@ -16,6 +16,7 @@ import useWishlistStore from "@/zustand/wishList"
 import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
+import { path } from "framer-motion/m"
 
 const debounce = (func, wait) => {
   let timeout;
@@ -83,7 +84,7 @@ export function Navbar() {
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
   const desktopSearchRef = useClickOutside(() => setIsDesktopSearchOpen(false));
   const { showCartPopup, setShowCartPopup, toggleCartPopup } = useCartPopupStateStore();
-  const isCheckoutPage = pathname === '/checkout';
+  const isCheckoutPage = pathname === '/checkout' || pathname === '/cart';
   const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {

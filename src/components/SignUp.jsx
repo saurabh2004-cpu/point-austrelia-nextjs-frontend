@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import axiosInstance from '@/axios/axiosInstance' // Make sure to import axiosInstance
+import axiosInstance from '@/axios/axiosInstance'
 import useUserStore from '@/zustand/user'
 
 export default function SignUpComponent() {
@@ -10,12 +10,12 @@ export default function SignUpComponent() {
     contactName: '',
     contactEmail: '',
     customerEmail: '',
-    CustomerPhoneNo: '',
-    contactPhone: '',
+    CustomerPhoneNo: '+61 ',
+    contactPhone: '+61 ',
     storeName: '',
     abn: '',
-    category: '', // This will store the business type
-    customCategory: '', // For "Other" option
+    category: '',
+    customCategory: '',
     address1: '',
     address2: '',
     suburb: '',
@@ -38,6 +38,80 @@ export default function SignUpComponent() {
     'Other'
   ]
 
+  // Function to format Australian phone numbers
+  const formatAustralianPhoneNumber = (phone) => {
+    // Remove all non-digit characters except +
+    const cleaned = phone.replace(/[^\d\+]/g, '');
+
+    // If it starts with +61, handle international format
+    if (cleaned.startsWith('61')) {
+      const mobilePart = cleaned.substring(2);
+      if (mobilePart.startsWith('4') && mobilePart.length === 9) {
+        // Mobile: +61 4XX XXX XXX
+        const firstPart = mobilePart.substring(0, 3);
+        const secondPart = mobilePart.substring(3, 6);
+        const thirdPart = mobilePart.substring(6, 9);
+        return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+      } else if (mobilePart.length === 9) {
+        // Landline: +61 X XXXX XXXX
+        const areaCode = mobilePart.substring(0, 1);
+        const firstPart = mobilePart.substring(1, 5);
+        const secondPart = mobilePart.substring(5, 9);
+        return `+61 ${areaCode} ${firstPart} ${secondPart}`;
+      }
+    } else if (cleaned.startsWith('4') && cleaned.length === 9) {
+      // Mobile without country code: 4XX XXX XXX
+      const firstPart = cleaned.substring(0, 3);
+      const secondPart = cleaned.substring(3, 6);
+      const thirdPart = cleaned.substring(6, 9);
+      return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+    } else if (cleaned.startsWith('0') && cleaned.length === 10) {
+      // Domestic format: 04XX XXX XXX or 0X XXXX XXXX
+      const areaCode = cleaned.substring(0, 2);
+      const rest = cleaned.substring(2);
+
+      if (areaCode === '04') {
+        // Mobile: 04XX XXX XXX -> +61 4XX XXX XXX
+        const firstPart = rest.substring(0, 3);
+        const secondPart = rest.substring(3, 6);
+        const thirdPart = rest.substring(6, 9);
+        return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+      } else {
+        // Landline: 0X XXXX XXXX -> +61 X XXXX XXXX
+        const areaCodeNum = areaCode.substring(1);
+        const firstPart = rest.substring(0, 4);
+        const secondPart = rest.substring(4, 8);
+        return `+61 ${areaCodeNum} ${firstPart} ${secondPart}`;
+      }
+    }
+
+    // Return original if no specific format matches
+    return phone;
+  };
+
+  // Function to validate Australian phone number
+  const isValidAustralianPhoneNumber = (phone) => {
+    const cleaned = phone.replace(/[^\d\+]/g, '');
+
+    // Australian phone number patterns:
+    // - Domestic mobile: 04XXXXXXXX (10 digits)
+    // - Domestic landline: 0XXXXXXXXX (10 digits starting with 02, 03, 07, 08)
+    // - International mobile: 614XXXXXXXX (11 digits)
+    // - International landline: 61XXXXXXXXX (11 digits)
+    // - With +61 prefix: +61 4XXXXXXXX or +61 XXXXXXXXX
+
+    const patterns = [
+      /^\+61\s?[4]\d{8}$/,          // +61 4XX XXX XXX
+      /^\+61\s?[2378]\d{8}$/,       // +61 X XXXX XXXX (landlines)
+      /^04\d{8}$/,                  // 04XX XXX XXX
+      /^0[2378]\d{8}$/,             // 0X XXXX XXXX (landlines)
+      /^61[4]\d{8}$/,               // 614XX XXX XXX
+      /^61[2378]\d{8}$/,            // 61X XXXX XXXX (landlines)
+    ];
+
+    return patterns.some(pattern => pattern.test(cleaned));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -52,6 +126,120 @@ export default function SignUpComponent() {
       }))
     }
   }
+
+  // Handle phone number input with real-time formatting
+  const handlePhoneChange = (e, fieldName) => {
+    let input = e.target.value;
+
+    // Ensure +61 prefix is always present and not editable
+    if (!input.startsWith('+61')) {
+      input = '+61 ' + input.replace(/[^\d]/g, '');
+    }
+
+    // Allow only numbers, spaces after +61
+    const prefix = '+61 ';
+    let numbers = input.substring(prefix.length).replace(/[^\d]/g, '');
+
+    // Limit to 9 digits after +61 (actual digits, not including spaces)
+    if (numbers.length > 9) {
+      numbers = numbers.substring(0, 9);
+    }
+
+    // Auto-format as user types
+    let formatted = prefix;
+    if (numbers.length > 0) {
+      if (numbers.startsWith('4')) {
+        // Mobile format: +61 4XX XXX XXX
+        if (numbers.length <= 3) {
+          formatted += numbers;
+        } else if (numbers.length <= 6) {
+          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3)}`;
+        } else {
+          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+        }
+      } else {
+        // Landline format: +61 X XXXX XXXX
+        if (numbers.length <= 1) {
+          formatted += numbers;
+        } else if (numbers.length <= 5) {
+          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1)}`;
+        } else {
+          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1, 5)} ${numbers.substring(5)}`;
+        }
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: formatted
+    }));
+
+    // Clear error when user starts typing again
+    if (errors[fieldName] && numbers.length > 0) {
+      // Validate in real-time and remove error if valid
+      const testPhone = prefix + numbers;
+      if (isValidAustralianPhoneNumber(testPhone)) {
+        setErrors(prev => ({
+          ...prev,
+          [fieldName]: ''
+        }));
+      }
+    }
+  };
+
+  // Format phone number on blur and validate
+  const handlePhoneBlur = (e, fieldName) => {
+    const input = e.target.value;
+
+    if (input && isValidAustralianPhoneNumber(input)) {
+      const formatted = formatAustralianPhoneNumber(input);
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: formatted
+      }));
+      // Clear error when valid
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    } else if (input === '+61 ') {
+      // Keep the default if user clears the input
+      setFormData(prev => ({
+        ...prev,
+        [fieldName]: '+61 '
+      }));
+      // Clear error for empty field
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    } else if (input && !isValidAustralianPhoneNumber(input)) {
+      // Set error for invalid number
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: 'Please enter a valid Australian phone number'
+      }));
+    }
+  };
+
+  // Handle phone input focus - select the number part for easy editing
+  const handlePhoneFocus = (e, fieldName) => {
+    // Select the number part after +61 for easy editing
+    setTimeout(() => {
+      const input = e.target;
+      if (input.value.startsWith('+61 ')) {
+        input.setSelectionRange(4, input.value.length);
+      }
+    }, 0);
+
+    // Clear error when user focuses on the field to make corrections
+    if (errors[fieldName]) {
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
+    }
+  };
 
   const handleBusinessTypeChange = (e) => {
     const value = e.target.value
@@ -108,6 +296,14 @@ export default function SignUpComponent() {
       newErrors.customerEmail = 'Please enter a valid email address'
     }
 
+    // Validate phone numbers
+    if (formData.CustomerPhoneNo && !isValidAustralianPhoneNumber(formData.CustomerPhoneNo)) {
+      newErrors.CustomerPhoneNo = 'Please enter a valid Australian phone number'
+    }
+    if (formData.contactPhone && !isValidAustralianPhoneNumber(formData.contactPhone)) {
+      newErrors.contactPhone = 'Please enter a valid Australian phone number'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -118,6 +314,16 @@ export default function SignUpComponent() {
 
     setIsLoading(true)
 
+    // Format phone numbers before submitting and remove +61 prefix
+    const formatPhoneForBackend = (phone) => {
+      if (!phone || phone === '+61 ') return '';
+      // Remove +61 prefix and any spaces, keep only the numbers
+      return phone.replace(/^\+61\s?/, '').replace(/\s/g, '');
+    };
+
+    const formattedCustomerPhone = formatPhoneForBackend(formData.CustomerPhoneNo);
+    const formattedContactPhone = formatPhoneForBackend(formData.contactPhone);
+
     // Create address objects from form data
     const shippingAddress = {
       shippingAddressOne: formData.address1,
@@ -125,7 +331,8 @@ export default function SignUpComponent() {
       shippingAddressThree: '',
       shippingCity: formData.suburb,
       shippingState: formData.state,
-      shippingZip: formData.postcode
+      shippingZip: formData.postcode,
+      CustomerPhoneNo: formattedCustomerPhone
     }
 
     const billingAddress = {
@@ -134,7 +341,8 @@ export default function SignUpComponent() {
       billingAddressThree: '',
       billingCity: formData.suburb,
       billingState: formData.state,
-      billingZip: formData.postcode
+      billingZip: formData.postcode,
+      CustomerPhoneNo: formattedCustomerPhone
     }
 
     // Prepare submission data
@@ -143,8 +351,8 @@ export default function SignUpComponent() {
       contactName: formData.contactName,
       contactEmail: formData.contactEmail,
       customerEmail: formData.customerEmail,
-      CustomerPhoneNo: formData.CustomerPhoneNo,
-      contactPhone: formData.CustomerPhoneNo, // Using same as customer phone
+      CustomerPhoneNo: formattedCustomerPhone,
+      contactPhone: formattedContactPhone,
       storeName: formData.storeName,
       abn: formData.abn,
       category: formData.category === 'Other' ? formData.customCategory : formData.category,
@@ -163,7 +371,7 @@ export default function SignUpComponent() {
 
     console.log("Form submitted:", submissionData)
     try {
-      const res = await axiosInstance.post('/user/user-signup', submissionData,
+      const res = await axiosInstance.post('user/user-signup', submissionData,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -172,27 +380,25 @@ export default function SignUpComponent() {
 
       console.log("signup response:", res)
       if (res.data.statusCode === 200) {
-        // setUser(res.data.data);
-        // window.location.href = '/my-account-review'
         setSuccessMessage('Thank you for signing up! We are reviewing your account for approval.')
         setFormData({
           customerName: '',
           contactName: '',
           contactEmail: '',
           customerEmail: '',
-          CustomerPhoneNo: '',
-          contactPhone: '',
+          CustomerPhoneNo: '+61 ',
+          contactPhone: '+61 ',
           storeName: '',
           abn: '',
-          category: '', // This will store the business type
-          customCategory: '', // For "Other" option
+          category: '',
+          customCategory: '',
           address1: '',
           address2: '',
           suburb: '',
           country: '',
           state: '',
           postcode: '',
-          password: '' // Default password
+          password: ''
         });
         setErrors({
           success: 'Thank you for signing up! We are reviewing your account for approval.'
@@ -265,8 +471,6 @@ export default function SignUpComponent() {
                 Required<span className="text-red-500 ml-1">*</span>
               </label>
             </div>
-
-
 
             {/* Customer Name & Contact Name Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
@@ -368,31 +572,88 @@ export default function SignUpComponent() {
               </div>
             </div>
 
-            {/* Customer Phone & Store Name Row */}
+            {/* Customer Phone & Contact Phone Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="CustomerPhoneNo" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Customer Phone<span className="text-red-500 ml-1">*</span>
                 </label>
-                <input
-                  id="CustomerPhoneNo"
-                  name="CustomerPhoneNo"
-                  type="tel"
-                  value={formData.CustomerPhoneNo}
-                  onChange={handleInputChange}
-                  className={`
-                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-                    border border-gray-300 placeholder-gray-400 text-gray-900 
-                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.CustomerPhoneNo ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                  `}
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    {/* Australian Flag Emoji */}
+                    <span className="text-lg">🇦🇺</span>
+                  </div>
+                  <input
+                    id="CustomerPhoneNo"
+                    name="CustomerPhoneNo"
+                    type="text"
+                    value={formData.CustomerPhoneNo}
+                    onChange={(e) => handlePhoneChange(e, 'CustomerPhoneNo')}
+                    onBlur={(e) => handlePhoneBlur(e, 'CustomerPhoneNo')}
+                    onFocus={(e) => handlePhoneFocus(e, 'CustomerPhoneNo')}
+                    placeholder="+61 4XX XXX XXX"
+                    className={`
+                      appearance-none relative block w-full pl-10 pr-3 py-2 sm:py-0
+                      border border-gray-300 placeholder-gray-400 text-gray-900 
+                      rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                      focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                      transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                      ${errors.CustomerPhoneNo ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    `}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {formData.CustomerPhoneNo.startsWith('+61 4') ?
+                    'Mobile format: +61 4XX XXX XXX' :
+                    'Landline format: +61 X XXXX XXXX'
+                  }
+                </div>
                 {errors.CustomerPhoneNo && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.CustomerPhoneNo}</p>
                 )}
               </div>
+              <div>
+                <label htmlFor="contactPhone" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                  Contact Phone<span className="text-red-500 ml-1">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    {/* Australian Flag Emoji */}
+                    <span className="text-lg">🇦🇺</span>
+                  </div>
+                  <input
+                    id="contactPhone"
+                    name="contactPhone"
+                    type="text"
+                    value={formData.contactPhone}
+                    onChange={(e) => handlePhoneChange(e, 'contactPhone')}
+                    onBlur={(e) => handlePhoneBlur(e, 'contactPhone')}
+                    onFocus={(e) => handlePhoneFocus(e, 'contactPhone')}
+                    placeholder="+61 4XX XXX XXX"
+                    className={`
+                      appearance-none relative block w-full pl-10 pr-3 py-2 sm:py-0
+                      border border-gray-300 placeholder-gray-400 text-gray-900 
+                      rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                      focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                      transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                      ${errors.contactPhone ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                    `}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {formData.contactPhone.startsWith('+61 4') ?
+                    'Mobile format: +61 4XX XXX XXX' :
+                    'Landline format: +61 X XXXX XXXX'
+                  }
+                </div>
+                {errors.contactPhone && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactPhone}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Store Name & ABN Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="storeName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Store Name<span className="text-red-500 ml-1">*</span>
@@ -416,10 +677,6 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.storeName}</p>
                 )}
               </div>
-            </div>
-
-            {/* ABN & Type of Business Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
               <div>
                 <label htmlFor="abn" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   ABN<span className="text-red-500 ml-1">*</span>
@@ -443,6 +700,11 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.abn}</p>
                 )}
               </div>
+            </div>
+
+            {/* Type of Business */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
+              <div></div> {/* Empty div for spacing */}
               <div>
                 <label
                   htmlFor="category"
@@ -457,13 +719,13 @@ export default function SignUpComponent() {
                   value={formData.category}
                   onChange={handleBusinessTypeChange}
                   className={`
-      appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-      border border-gray-700  text-black
-      rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-      focus:border-blue-500 focus:z-10 text-sm sm:text-base
-      transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-      ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-    `}
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-700  text-black
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
                 >
                   <option value="">Select Business Type</option>
                   {businessTypes.map((type) => (
@@ -477,7 +739,6 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.category}</p>
                 )}
               </div>
-
             </div>
 
             {/* Custom Business Type (shown only when "Other" is selected) */}
@@ -598,13 +859,13 @@ export default function SignUpComponent() {
                   value={formData.country}
                   onChange={handleInputChange}
                   className={`
-    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-    border border-gray-300 placeholder-gray-400 text-[#000000]/50
-    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-    ${errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-  `}
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.country ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
                 >
                   <option value="" className="bg-gray-500 text-white">Select Country</option>
                   <option value="australia" className="bg-gray-500 text-white">Australia</option>
@@ -628,13 +889,13 @@ export default function SignUpComponent() {
                   value={formData.state}
                   onChange={handleInputChange}
                   className={`
-    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-    border border-gray-300 placeholder-gray-400 text-[#000000]/50
-    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-    ${errors.state ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-  `}
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-300 placeholder-gray-400 text-[#000000]/50
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.state ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
                 >
                   <option value="" className="bg-gray-500 text-white">Select State</option>
                   <option value="nsw" className="bg-gray-500 text-white">New South Wales</option>
@@ -674,9 +935,9 @@ export default function SignUpComponent() {
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.postcode}</p>
                 )}
               </div>
-
             </div>
 
+            {/* Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
               <div>
                 <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">

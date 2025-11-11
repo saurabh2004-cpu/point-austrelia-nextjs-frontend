@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { Heart, ShoppingCart, Share2, Minus, Plus, Check, Trash2, AlertCircle } from 'lucide-react';
+import { Heart, ShoppingCart, Share2, Minus, Plus, Check, Trash2, AlertCircle, X } from 'lucide-react';
 import Image from 'next/image';
 import axiosInstance from '@/axios/axiosInstance';
 import useUserStore from '@/zustand/user';
@@ -24,7 +24,8 @@ const ProductCard = ({
     onRemoveFromWishlist,
     customerGroupsDiscounts,
     itemBasedDiscounts,
-    cartItems
+    cartItems,
+    onShowWarning
 }) => {
     // Determine if it's a product or product group
     const isProductGroup = !!item.productGroup;
@@ -33,11 +34,8 @@ const ProductCard = ({
 
     const isLoading = loadingProducts[productId];
 
-
-
     // ✅ Check if product/group is already in cart
     const isItemInCart = cartItems?.some(cartItem =>
-
         isProductGroup
             ? cartItem.productGroup?._id === productId
             : cartItem.product?._id === productId
@@ -298,12 +296,37 @@ const ProductCard = ({
 
     const hasModifications = isCartItemModified();
 
+    // Handle quantity updates with stock validation
+    const handleQuantityUpdate = (productId, newQuantity) => {
+        const finalQuantity = Math.max(1, newQuantity);
+        onUpdateQuantity(productId, finalQuantity);
+        
+        // Check if this update causes stock issues
+        const updatedTotalQuantity = isProductGroup ? finalQuantity : finalQuantity * getPackQuantity(selectedUnits[productId]);
+        if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
+            onShowWarning(productId, 'exceeds_stock', getProductName(), updatedTotalQuantity, stockLevel);
+        }
+    };
+
+    // Handle unit changes with stock validation
+    const handleUnitUpdate = (productId, unitId) => {
+        onUpdateUnit(productId, unitId);
+        
+        const unitsQuantity = productQuantities[productId] || 1;
+        const packQuantity = getPackQuantity(unitId);
+        const updatedTotalQuantity = unitsQuantity * packQuantity;
+        
+        if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
+            onShowWarning(productId, 'exceeds_stock', getProductName(), updatedTotalQuantity, stockLevel);
+        }
+    };
+
     return (
-        <div className="bg-white  border border-gray-200 rounded-lg shadow-sm p-2 font-spartan   mx-auto  xl:h-full xl:w-[552px] mx-auto">
-            <div className="flex flex-col xl:flex-row h-full ">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2 font-spartan mx-auto xl:h-full xl:w-[552px]">
+            <div className="flex flex-col xl:flex-row h-full">
                 {/* Product Image */}
-                <div className="flex-shrink-0 mr-4 ">
-                    <div className=" rounded-lg flex items-center justify-center align-middle relative cursor-pointer">
+                <div className="flex-shrink-0 mr-4">
+                    <div className="rounded-lg flex items-center justify-center align-middle relative cursor-pointer">
                         <img
                             src={getImageUrl()}
                             alt={getProductName()}
@@ -322,12 +345,12 @@ const ProductCard = ({
                 </div>
 
                 {/* Product Details */}
-                <div className="flex flex-col min-w-0  lg:max-w-[350px] mx-auto xl:mx-0">
-                    <h3 className="text-[15px] font-semibold line-clamp-2 ">
+                <div className="flex flex-col min-w-0 lg:max-w-[350px] mx-auto xl:mx-0">
+                    <h3 className="text-[15px] font-semibold line-clamp-2">
                         {getProductName()}
                     </h3>
 
-                    <div className="flex items-center space-x-10  justify-between align-middle">
+                    <div className="flex items-center space-x-10 justify-between align-middle">
                         <span className="font-medium text-[13px]">
                             SKU: {getSku()}
                         </span>
@@ -338,46 +361,18 @@ const ProductCard = ({
                             </div>
                         ) : (
                             <div className="flex items-center text-[14px] font-medium text-black p-1 font-semibold text-[11px] bg-[#FFEAEA]">
-                                <Check strokeWidth={2} className="w-4 h-4 mr-1" />
+                                <AlertCircle strokeWidth={2} className="w-4 h-4 mr-1" />
                                 {isOutOfStock ? 'OUT OF STOCK' : 'EXCEEDS STOCK'}
                             </div>
                         )}
                     </div>
-
-                    {/* Available Stock Display */}
-                    {/* {!isOutOfStock && (
-                        <p className="text-[12px] text-gray-600 mb-1">
-                            Available: {stockLevel} {isProductGroup ? 'groups' : 'units'}
-                        </p>
-                    )} */}
-
-                    {/* Out of Stock Warning */}
-                    {isOutOfStock && (
-                        <div className="bg-red-50 border border-red-200 rounded-md p-2 mb-2">
-                            <p className="text-red-600 text-[12px] font-medium">
-                                This {isProductGroup ? 'product group' : 'product'} is currently out of stock and cannot be added to cart.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Exceeds Stock Warning */}
-                    {exceedsStock && (
-                        <div className="bg-orange-50 border border-orange-200 rounded-md p-2 mb-2">
-                            <div className="flex items-start">
-                                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
-                                <p className="text-orange-600 text-[12px] font-medium">
-                                    Requested quantity ({totalQuantity}) exceeds available stock . Please reduce quantity.
-                                </p>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Price with Discount */}
                     <div className="flex items-center space-x-2">
                         <span className="text-[#2D2C70] font-semibold text-[24px]">
                             ${discountedPrice.toFixed(2)}
                         </span>
-                        {hasProductDiscount && !discountPercentage > productData.eachPrice && (
+                        {hasProductDiscount && discountPercentage > 0 && (
                             <span className="text-sm text-gray-500 line-through">
                                 ${productData.eachPrice ? productData.eachPrice.toFixed(2) : '0.00'}
                             </span>
@@ -392,11 +387,11 @@ const ProductCard = ({
                                 <div className="relative w-full">
                                     <select
                                         value={selectedUnits[productId] || ''}
-                                        onChange={(e) => onUpdateUnit(productId, e.target.value)}
+                                        onChange={(e) => handleUnitUpdate(productId, e.target.value)}
                                         className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
-                                                   appearance-none ${!isAvailable ? 'bg-gray-100 ' : ''} cursor-pointer`}
-                                        disabled={isLoading}
+                                                   appearance-none ${!isAvailable ? 'bg-gray-100' : ''} cursor-pointer`}
+                                        disabled={isLoading || !isAvailable}
                                     >
                                         {productData.typesOfPacks && productData.typesOfPacks.length > 0 ? (
                                             productData.typesOfPacks.map((pack) => (
@@ -432,9 +427,9 @@ const ProductCard = ({
                             <span className="text-[13px] font-medium cursor-pointer">Quantity</span>
                             <div className="flex items-center rounded-lg">
                                 <button
-                                    onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) - 1)}
+                                    onClick={() => handleQuantityUpdate(productId, (productQuantities[productId] || 1) - 1)}
                                     className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50 cursor-pointer"
-                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1}
+                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1 || !isAvailable}
                                 >
                                     <Minus className="w-3 h-3 text-white" />
                                 </button>
@@ -446,46 +441,45 @@ const ProductCard = ({
                                     value={productQuantities[productId] || 1}
                                     onChange={(e) => {
                                         const newQuantity = parseInt(e.target.value) || 1;
-                                        const validQuantity = Math.max(1, newQuantity);
-                                        onUpdateQuantity(productId, validQuantity);
+                                        handleQuantityUpdate(productId, newQuantity);
                                     }}
                                     onBlur={(e) => {
                                         if (!e.target.value || parseInt(e.target.value) < 1) {
-                                            onUpdateQuantity(productId, 1);
+                                            handleQuantityUpdate(productId, 1);
                                         }
                                     }}
                                     className="w-12 h-[25px] mx-2 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#2D2C70] cursor-pointer"
-                                    disabled={isLoading}
+                                    disabled={isLoading || !isAvailable}
                                 />
 
                                 <button
-                                    onClick={() => onUpdateQuantity(productId, (productQuantities[productId] || 1) + 1)}
+                                    onClick={() => handleQuantityUpdate(productId, (productQuantities[productId] || 1) + 1)}
                                     className="p-1 bg-black rounded-md py-[5px] px-2 transition-colors disabled:opacity-50 cursor-pointer"
-                                    disabled={isLoading || !isAvailable || exceedsStock}
-                                    title={exceedsStock ? 'Stock level exceeded' : !isAvailable ? 'Out of stock' : ''}
+                                    disabled={isLoading || !isAvailable}
+                                    title={!isAvailable ? (isOutOfStock ? 'Out of stock' : 'Stock level exceeded') : ''}
                                 >
                                     <Plus className="w-3 h-3 text-white" />
                                 </button>
                             </div>
                         </div>
-
                     </div>
 
-                    <div className='text-[16px] font-semibold  gap-2 flex'>
+                    <div className='text-[16px] font-semibold gap-2 flex'>
                         <span>Amount:</span>
                         <span className="text-[#2D2C70] text-[18px]">
                             ${calculateAmount(productData, productId)}
                         </span>
                     </div>
 
-                    <div className="flex text-[13px] font-semibold justify-between items-center gap-3 sm:gap-4 md:gap-6 ">
-                        {/* ✅ UPDATE BUTTON */}
+                    <div className="flex text-[13px] font-semibold justify-between items-center gap-3 sm:gap-4 md:gap-6">
+                        {/* ✅ UPDATE BUTTON - Fixed height */}
                         <button
-                            onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`text-[13px] font-semibold border border-black text-white rounded-2xl py-1 px-6 disabled:opacity-50 ${hasModifications && isAvailable && isItemInCart
-                                ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
-                                : 'bg-gray-400 cursor-not-allowed'
-                                }`}
+                            onClick={() => onUpdateCart(productId, isProductGroup)}
+                            className={`min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${
+                                hasModifications && isAvailable && isItemInCart
+                                    ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
+                                    : 'bg-gray-400 cursor-not-allowed'
+                            }`}
                             disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
                                 !isItemInCart
@@ -502,13 +496,14 @@ const ProductCard = ({
                             {isLoading ? 'Updating...' : 'Update'}
                         </button>
 
-                        {/* ✅ ADD TO CART BUTTON */}
+                        {/* ✅ ADD TO CART BUTTON - Fixed height */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`flex items-center py-2 gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl px-6 disabled:opacity-50 ${isAvailable && !isItemInCart
-                                ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
-                                : 'bg-gray-400 cursor-not-allowed'
-                                }`}
+                            className={`min-h-[36px] flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${
+                                isAvailable && !isItemInCart
+                                    ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
+                                    : 'bg-gray-400 cursor-not-allowed'
+                            }`}
                             disabled={isLoading || !isAvailable || isItemInCart}
                             title={
                                 isItemInCart
@@ -528,26 +523,20 @@ const ProductCard = ({
                             >
                                 <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
                             </svg>
-                            {!isAvailable
-                                ? isOutOfStock
-                                    ? 'Out of Stock'
-                                    : 'Exceeds Stock'
-                                : isItemInCart
-                                    ? 'In Cart'
-                                    : 'Add to Cart'}
+                            {isItemInCart ? 'In Cart' : 'Add to Cart'}
                         </button>
 
                         {/* ✅ REMOVE BUTTON */}
                         <button
                             onClick={() => onRemoveFromWishlist(productId, isProductGroup)}
-                            className={`h-9 w-9 border cursor-pointer rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
-                                }`}
+                            className={`h-9 w-9 border cursor-pointer rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${
+                                isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
+                            }`}
                             disabled={isLoading}
                         >
                             <img src="/icons/dustbin-1.png" className="w-4 h-4" alt="remove" />
                         </button>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -561,6 +550,7 @@ const WishListComponent = () => {
     const [error, setError] = useState(null);
     const [loadingProducts, setLoadingProducts] = useState({});
     const [cartItems, setCartItems] = useState([]);
+    const [warnings, setWarnings] = useState([]);
 
     // State to track quantities and selected units for each product
     const [productQuantities, setProductQuantities] = useState({});
@@ -573,6 +563,33 @@ const WishListComponent = () => {
     const [itemBasedDiscounts, setItemBasedDiscounts] = useState([]);
 
     const router = useRouter();
+
+    // Add warning to the warnings list
+    const addWarning = (productId, type, productName, requestedQty = null, availableQty = null) => {
+        setWarnings(prev => {
+            // Remove existing warning for this product
+            const filtered = prev.filter(warning => warning.productId !== productId);
+            
+            let message = '';
+            if (type === 'out_of_stock') {
+                message = `${productName} is currently out of stock and cannot be added to cart.`;
+            } else if (type === 'exceeds_stock') {
+                message = `${productName} requested quantity (${requestedQty}) exceeds available stock (${availableQty}). Please reduce quantity.`;
+            }
+            
+            return [...filtered, { productId, type, productName, message, requestedQty, availableQty }];
+        });
+    };
+
+    // Remove warning
+    const removeWarning = (productId) => {
+        setWarnings(prev => prev.filter(warning => warning.productId !== productId));
+    };
+
+    // Clear all warnings
+    const clearAllWarnings = () => {
+        setWarnings([]);
+    };
 
     // Fetch discount data
     const fetchCustomersGroupsDiscounts = async () => {
@@ -698,7 +715,7 @@ const WishListComponent = () => {
         }));
     };
 
-    // ✅ UPDATED: Add to cart function that handles both products and product groups
+    // ✅ UPDATED: Add to cart function that handles both products and product groups and removes from wishlist
     const handleAddToCart = async (productId, isProductGroup = false) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart");
@@ -746,10 +763,20 @@ const WishListComponent = () => {
                 ? Math.min(...productData.products.map(p => p.stockLevel || 0))
                 : productData.stockLevel || 0;
 
-            if (totalQuantity > stockLevel) {
-                setError(`Requested quantity (${totalQuantity}) exceeds available stock `);
+            if (stockLevel <= 0) {
+                addWarning(productId, 'out_of_stock', getProductName(productData));
+                setError(`${getProductName(productData)} is out of stock`);
                 return;
             }
+
+            if (totalQuantity > stockLevel) {
+                addWarning(productId, 'exceeds_stock', getProductName(productData), totalQuantity, stockLevel);
+                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${stockLevel})`);
+                return;
+            }
+
+            // Remove any warnings for this product since it's valid
+            removeWarning(productId);
 
             // Calculate discounted price with comparePrice priority
             const calculateDiscountedPrice = (productData) => {
@@ -860,6 +887,10 @@ const WishListComponent = () => {
             if (response.data.statusCode === 200) {
                 setError(null);
                 console.log("Added to cart successfully");
+                
+                // ✅ REMOVE FROM WISHLIST AFTER SUCCESSFULLY ADDING TO CART
+                await removeFromWishlist(productId, isProductGroup);
+                
                 await fetchCustomersCart();
             } else {
                 setError(response.data.message || "Failed to add to cart");
@@ -870,6 +901,11 @@ const WishListComponent = () => {
         } finally {
             setLoadingProducts(prev => ({ ...prev, [productId]: false }));
         }
+    };
+
+    // Helper function to get product name
+    const getProductName = (productData) => {
+        return productData.name || productData.ProductName || 'Product';
     };
 
     // ✅ UPDATED: Remove from wishlist function to match backend
@@ -902,6 +938,8 @@ const WishListComponent = () => {
                 ));
                 setWishlistItemsCount(res.data.data.wishlistItems?.length || 0);
                 setError(null);
+                // Remove any warnings for this product when it's removed from wishlist
+                removeWarning(productId);
             } else {
                 setError(res.data.message);
             }
@@ -961,7 +999,7 @@ const WishListComponent = () => {
 
     if (loading) {
         return (
-            <div className="bg-gray-50 min-h-screen  p-4 pb-16 font-spartan flex items-center justify-center">
+            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading wishlist...</p>
@@ -973,7 +1011,7 @@ const WishListComponent = () => {
     return (
         <>
             {/* <Navbar /> */}
-            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan ">
+            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
                 <div className="lg:max-w-[80%] mx-auto">
                     {/* Header */}
                     <div className="mb-6">
@@ -985,10 +1023,66 @@ const WishListComponent = () => {
                         <div className="w-full h-[2px] bg-[#2D2C70] mt-2"></div>
                     </div>
 
-                    {/* Error Message */}
+                    {/* Global Error Message */}
                     {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                            {error}
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+                            <span>{error}</span>
+                            <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
+                                <X size={18} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Stock Warnings - Show at the top */}
+                    {warnings.length > 0 && (
+                        <div className="mb-6 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-lg font-semibold text-orange-800">Stock Issues</h3>
+                                <button 
+                                    onClick={clearAllWarnings}
+                                    className="text-sm text-orange-600 hover:text-orange-800 underline"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                            {warnings.map((warning, index) => (
+                                <div 
+                                    key={`${warning.productId}-${index}`} 
+                                    className={`border rounded-md p-3 flex justify-between items-start ${
+                                        warning.type === 'out_of_stock' 
+                                            ? 'bg-red-50 border-red-200' 
+                                            : 'bg-orange-50 border-orange-200'
+                                    }`}
+                                >
+                                    <div className="flex items-start">
+                                        <AlertCircle className={`h-5 w-5 mt-0.5 mr-3 flex-shrink-0 ${
+                                            warning.type === 'out_of_stock' ? 'text-red-600' : 'text-orange-600'
+                                        }`} />
+                                        <div>
+                                            <p className={`text-sm font-medium ${
+                                                warning.type === 'out_of_stock' ? 'text-red-800' : 'text-orange-800'
+                                            }`}>
+                                                {warning.message}
+                                            </p>
+                                            {warning.type === 'exceeds_stock' && (
+                                                <p className="text-xs text-orange-600 mt-1">
+                                                    Current selection: {warning.requestedQty} units | Available: {warning.availableQty} units
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => removeWarning(warning.productId)}
+                                        className={`ml-4 p-1 rounded ${
+                                            warning.type === 'out_of_stock' 
+                                                ? 'text-red-600 hover:text-red-800' 
+                                                : 'text-orange-600 hover:text-orange-800'
+                                        }`}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
 
@@ -1016,11 +1110,12 @@ const WishListComponent = () => {
                                             onUpdateQuantity={updateQuantity}
                                             onUpdateUnit={updateSelectedUnit}
                                             onAddToCart={handleAddToCart}
-                                            onUpdateCart={handleAddToCart} // Using same function for update
+                                            onUpdateCart={handleAddToCart}
                                             onRemoveFromWishlist={removeFromWishlist}
                                             customerGroupsDiscounts={customerGroupsDiscounts}
                                             itemBasedDiscounts={itemBasedDiscounts}
                                             cartItems={cartItems}
+                                            onShowWarning={addWarning}
                                         />
                                     ))}
                                 </div>
@@ -1038,11 +1133,12 @@ const WishListComponent = () => {
                                                 onUpdateQuantity={updateQuantity}
                                                 onUpdateUnit={updateSelectedUnit}
                                                 onAddToCart={handleAddToCart}
-                                                onUpdateCart={handleAddToCart} // Using same function for update
+                                                onUpdateCart={handleAddToCart}
                                                 onRemoveFromWishlist={removeFromWishlist}
                                                 customerGroupsDiscounts={customerGroupsDiscounts}
                                                 itemBasedDiscounts={itemBasedDiscounts}
                                                 cartItems={cartItems}
+                                                onShowWarning={addWarning}
                                             />
                                         </div>
                                     ))}

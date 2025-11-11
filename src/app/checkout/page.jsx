@@ -88,7 +88,7 @@ const AddressPopup = ({
         zip: '',
         CustomerPhoneNo: `+61 ${addressData?.phone} `,
     });
-    const [phoneError, setPhoneError] = useState(''); 
+    const [phoneError, setPhoneError] = useState('');
 
 
     // Function to format Australian phone numbers
@@ -338,7 +338,7 @@ const AddressPopup = ({
 
     return (
         <div className="fixed inset-0 bg-[#000000]/20 bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white border border-gray-400 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white border border-gray-400 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between p-4 border-b ">
                     <h2 className="text-lg font-semibold ">
                         {mode === 'add' ? 'Add New' : 'Edit'} {type === 'shipping' ? 'Shipping' : 'Billing'} Address
@@ -398,15 +398,25 @@ const AddressPopup = ({
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
-                            <input
-                                type="text"
+                            <select
                                 name="state"
                                 value={formData.state}
                                 onChange={handleChange}
                                 required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
-                            />
+                                className="w-full px-2 py-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
+                            >
+                                <option value="">Select State</option>
+                                <option value="New South Wales">New South Wales (NSW)</option>
+                                <option value="Victoria">Victoria (VIC)</option>
+                                <option value="Queensland">Queensland (QLD)</option>
+                                <option value="Western Australia">Western Australia (WA)</option>
+                                <option value="South Australia">South Australia (SA)</option>
+                                <option value="Tasmania">Tasmania (TAS)</option>
+                                <option value="Australian Capital Territory">Australian Capital Territory (ACT)</option>
+                                <option value="Northern Territory">Northern Territory (NT)</option>
+                            </select>
                         </div>
+
                     </div>
 
                     <div>

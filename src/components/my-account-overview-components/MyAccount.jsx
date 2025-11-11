@@ -10,6 +10,7 @@ import axiosInstance from "@/axios/axiosInstance"
 import { set } from "nprogress"
 
 // Address Popup Component
+// Address Popup Component
 const AddressPopup = ({
   isOpen,
   onClose,
@@ -25,15 +26,105 @@ const AddressPopup = ({
     addressThree: '',
     city: '',
     state: '',
-    zip: ''
+    zip: '',
+    CustomerPhoneNo: '+61 '
   })
 
+  const [phoneError, setPhoneError] = useState('')
   const [addToBoth, setAddToBoth] = useState(true)
+
+  // Function to format Australian phone numbers
+  const formatAustralianPhoneNumber = (phone) => {
+    // Remove all non-digit characters except +
+    const cleaned = phone.replace(/[^\d\+]/g, '');
+
+    // If it starts with +61, handle international format
+    if (cleaned.startsWith('61')) {
+      const mobilePart = cleaned.substring(2);
+      if (mobilePart.startsWith('4') && mobilePart.length === 9) {
+        // Mobile: +61 4XX XXX XXX
+        const firstPart = mobilePart.substring(0, 3);
+        const secondPart = mobilePart.substring(3, 6);
+        const thirdPart = mobilePart.substring(6, 9);
+        return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+      } else if (mobilePart.length === 9) {
+        // Landline: +61 X XXXX XXXX
+        const areaCode = mobilePart.substring(0, 1);
+        const firstPart = mobilePart.substring(1, 5);
+        const secondPart = mobilePart.substring(5, 9);
+        return `+61 ${areaCode} ${firstPart} ${secondPart}`;
+      }
+    } else if (cleaned.startsWith('4') && cleaned.length === 9) {
+      // Mobile without country code: 4XX XXX XXX
+      const firstPart = cleaned.substring(0, 3);
+      const secondPart = cleaned.substring(3, 6);
+      const thirdPart = cleaned.substring(6, 9);
+      return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+    } else if (cleaned.startsWith('0') && cleaned.length === 10) {
+      // Domestic format: 04XX XXX XXX or 0X XXXX XXXX
+      const areaCode = cleaned.substring(0, 2);
+      const rest = cleaned.substring(2);
+
+      if (areaCode === '04') {
+        // Mobile: 04XX XXX XXX -> +61 4XX XXX XXX
+        const firstPart = rest.substring(0, 3);
+        const secondPart = rest.substring(3, 6);
+        const thirdPart = rest.substring(6, 9);
+        return `+61 ${firstPart} ${secondPart} ${thirdPart}`;
+      } else {
+        // Landline: 0X XXXX XXXX -> +61 X XXXX XXXX
+        const areaCodeNum = areaCode.substring(1);
+        const firstPart = rest.substring(0, 4);
+        const secondPart = rest.substring(4, 8);
+        return `+61 ${areaCodeNum} ${firstPart} ${secondPart}`;
+      }
+    }
+
+    // Return original if no specific format matches
+    return phone;
+  };
+
+  // Function to validate Australian phone number
+  const isValidAustralianPhoneNumber = (phone) => {
+    const cleaned = phone.replace(/[^\d\+]/g, '');
+
+    // Australian phone number patterns:
+    // - Domestic mobile: 04XXXXXXXX (10 digits)
+    // - Domestic landline: 0XXXXXXXXX (10 digits starting with 02, 03, 07, 08)
+    // - International mobile: 614XXXXXXXX (11 digits)
+    // - International landline: 61XXXXXXXXX (11 digits)
+    // - With +61 prefix: +61 4XXXXXXXX or +61 XXXXXXXXX
+
+    const patterns = [
+      /^\+61\s?[4]\d{8}$/,          // +61 4XX XXX XXX
+      /^\+61\s?[2378]\d{8}$/,       // +61 X XXXX XXXX (landlines)
+      /^04\d{8}$/,                  // 04XX XXX XXX
+      /^0[2378]\d{8}$/,             // 0X XXXX XXXX (landlines)
+      /^61[4]\d{8}$/,               // 614XX XXX XXX
+      /^61[2378]\d{8}$/,            // 61X XXXX XXXX (landlines)
+    ];
+
+    return patterns.some(pattern => pattern.test(cleaned));
+  };
+
+  // Function to format phone for backend (remove +61 prefix)
+  const formatPhoneForBackend = (phone) => {
+    if (!phone || phone === '+61 ') return '';
+    // Remove +61 prefix and any spaces, keep only the numbers
+    return phone.replace(/^\+61\s?/, '').replace(/\s/g, '');
+  };
 
   // Use useEffect to update form data when addressData or mode changes
   useEffect(() => {
     if (mode === 'edit' && addressData && addressType) {
       // For edit mode, use the specific address type fields
+      let phoneNumber = addressData.CustomerPhoneNo || '+61 ';
+
+      // Format the phone number for display if it exists
+      if (phoneNumber && phoneNumber !== '+61 ') {
+        phoneNumber = formatAustralianPhoneNumber(phoneNumber);
+      }
+
       if (addressType === 'shipping') {
         setFormData({
           addressOne: addressData.shippingAddressOne || '',
@@ -41,7 +132,8 @@ const AddressPopup = ({
           addressThree: addressData.shippingAddressThree || '',
           city: addressData.shippingCity || '',
           state: addressData.shippingState || '',
-          zip: addressData.shippingZip || ''
+          zip: addressData.shippingZip || '',
+          CustomerPhoneNo: phoneNumber
         })
       } else if (addressType === 'billing') {
         setFormData({
@@ -50,7 +142,8 @@ const AddressPopup = ({
           addressThree: addressData.billingAddressThree || '',
           city: addressData.billingCity || '',
           state: addressData.billingState || '',
-          zip: addressData.billingZip || ''
+          zip: addressData.billingZip || '',
+          CustomerPhoneNo: phoneNumber
         })
       }
     } else {
@@ -61,13 +154,121 @@ const AddressPopup = ({
         addressThree: '',
         city: '',
         state: '',
-        zip: ''
+        zip: '',
+        CustomerPhoneNo: '+61 '
       })
     }
+    setPhoneError(''); // Clear any previous errors
   }, [isOpen, addressData, mode, addressType]) // Re-run when these props change
+
+  // Handle phone number input with real-time formatting
+  const handlePhoneChange = (e) => {
+    let input = e.target.value;
+
+    // Ensure +61 prefix is always present and not editable
+    if (!input.startsWith('+61')) {
+      input = '+61 ' + input.replace(/[^\d]/g, '');
+    }
+
+    // Allow only numbers, spaces after +61
+    const prefix = '+61 ';
+    let numbers = input.substring(prefix.length).replace(/[^\d]/g, '');
+
+    // Limit to 9 digits after +61 (actual digits, not including spaces)
+    if (numbers.length > 9) {
+      numbers = numbers.substring(0, 9);
+    }
+
+    // Auto-format as user types
+    let formatted = prefix;
+    if (numbers.length > 0) {
+      if (numbers.startsWith('4')) {
+        // Mobile format: +61 4XX XXX XXX
+        if (numbers.length <= 3) {
+          formatted += numbers;
+        } else if (numbers.length <= 6) {
+          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3)}`;
+        } else {
+          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
+        }
+      } else {
+        // Landline format: +61 X XXXX XXXX
+        if (numbers.length <= 1) {
+          formatted += numbers;
+        } else if (numbers.length <= 5) {
+          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1)}`;
+        } else {
+          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1, 5)} ${numbers.substring(5)}`;
+        }
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      CustomerPhoneNo: formatted
+    }));
+
+    // Clear error when user starts typing again
+    if (phoneError && numbers.length > 0) {
+      // Validate in real-time and remove error if valid
+      const testPhone = prefix + numbers;
+      if (isValidAustralianPhoneNumber(testPhone)) {
+        setPhoneError('');
+      }
+    }
+  };
+
+  // Format phone number on blur and validate
+  const handlePhoneBlur = (e) => {
+    const input = e.target.value;
+
+    if (input && isValidAustralianPhoneNumber(input)) {
+      const formatted = formatAustralianPhoneNumber(input);
+      setFormData(prev => ({
+        ...prev,
+        CustomerPhoneNo: formatted
+      }));
+      setPhoneError(''); // Clear error when valid
+    } else if (input === '+61 ') {
+      // Keep the default if user clears the input
+      setFormData(prev => ({
+        ...prev,
+        CustomerPhoneNo: '+61 '
+      }));
+      setPhoneError(''); // Clear error for empty field
+    } else if (input && !isValidAustralianPhoneNumber(input)) {
+      // Set error for invalid number
+      setPhoneError('Please enter a valid Australian phone number');
+    }
+  };
+
+  // Handle phone input focus - select the number part for easy editing
+  const handlePhoneFocus = (e) => {
+    // Select the number part after +61 for easy editing
+    setTimeout(() => {
+      const input = e.target;
+      if (input.value.startsWith('+61 ')) {
+        input.setSelectionRange(4, input.value.length);
+      }
+    }, 0);
+
+    // Clear error when user focuses on the field to make corrections
+    if (phoneError) {
+      setPhoneError('');
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault()
+
+    // Validate phone number before submission
+    if (formData.CustomerPhoneNo && !isValidAustralianPhoneNumber(formData.CustomerPhoneNo)) {
+      setPhoneError('Please enter a valid Australian phone number');
+      return;
+    }
+
+    // Format phone for backend
+    const formattedPhone = formatPhoneForBackend(formData.CustomerPhoneNo);
 
     const shippingAddress = {
       shippingAddressOne: formData.addressOne,
@@ -75,7 +276,8 @@ const AddressPopup = ({
       shippingAddressThree: formData.addressThree,
       shippingCity: formData.city,
       shippingState: formData.state,
-      shippingZip: formData.zip
+      shippingZip: formData.zip,
+      CustomerPhoneNo: formattedPhone
     }
 
     const billingAddress = {
@@ -84,7 +286,8 @@ const AddressPopup = ({
       billingAddressThree: formData.addressThree,
       billingCity: formData.city,
       billingState: formData.state,
-      billingZip: formData.zip
+      billingZip: formData.zip,
+      CustomerPhoneNo: formattedPhone
     }
 
     // For edit mode, only update the specific address type
@@ -193,14 +396,23 @@ const AddressPopup = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 State *
               </label>
-              <input
-                type="text"
+              <select
                 name="state"
                 value={formData.state}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
-              />
+                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
+              >
+                <option value="">Select State</option>
+                <option value="Australian Capital Territory">Australian Capital Territory</option>
+                <option value="New South Wales">New South Wales</option>
+                <option value="Northern Territory">Northern Territory</option>
+                <option value="Queensland">Queensland</option>
+                <option value="South Australia">South Australia</option>
+                <option value="Tasmania">Tasmania</option>
+                <option value="Victoria">Victoria</option>
+                <option value="Western Australia">Western Australia</option>
+              </select>
             </div>
           </div>
 
@@ -216,6 +428,41 @@ const AddressPopup = ({
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
             />
+          </div>
+
+          {/* Phone Number Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                {/* Australian Flag Emoji */}
+                <span className="text-lg">🇦🇺</span>
+              </div>
+              <input
+                type="text"
+                name="CustomerPhoneNo"
+                value={formData.CustomerPhoneNo}
+                onChange={handlePhoneChange}
+                onBlur={handlePhoneBlur}
+                onFocus={handlePhoneFocus}
+                placeholder="+61 4XX XXX XXX"
+                required
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#2D2C70]"
+              />
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {formData.CustomerPhoneNo.startsWith('+61 4') ?
+                'Mobile format: +61 4XX XXX XXX' :
+                'Landline format: +61 X XXXX XXXX'
+              }
+            </div>
+            {phoneError && (
+              <p className="text-red-500 text-xs mt-1">
+                {phoneError}
+              </p>
+            )}
           </div>
 
           {mode === 'add' && (

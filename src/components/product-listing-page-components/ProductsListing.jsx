@@ -1,10 +1,10 @@
- "use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
 import { Heart, HeartIcon, Minus, Plus } from "lucide-react"
-import { useRouter, useSearchParams, } from "next/navigation"
+import { usePathname, useRouter, useSearchParams, } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"
 import useWishlistStore from "@/zustand/wishList"
@@ -143,6 +143,7 @@ const ProductListing = () => {
         productID,
         productGroupId
     } = useProductFiltersStore()
+    const pathname = usePathname();
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
@@ -153,30 +154,56 @@ const ProductListing = () => {
         try {
             let description = '';
             let descriptionColor = '#000000';
-            
+
+            const path = pathname.split('/');
+            console.log("paths", path.join('/').slice(1));
+
+            let brandSlug = path[1] || null;
+            let categorySlug = null;
+            let subCategorySlug = null;
+            let subCategoryTwoSlug = null;
+
+            if (path.length > 2) {
+                categorySlug = path.join('/').slice(1).trim();
+                console.log("category slug", categorySlug)
+            }
+            if (path.length > 3) {
+                subCategorySlug = path.join('/').slice(1).trim();
+                console.log("sub category slug", subCategorySlug)
+            }
+            if (path.length > 4) {
+                subCategoryTwoSlug = path.join('/').slice(1).trim();
+                console.log("subCategoryTwoSlug", subCategoryTwoSlug)
+            }
+
+
+
             if (subCategoryTwoId) {
                 // Fetch subcategory two description
-                const res = await axiosInstance.get(`subcategoryTwo/get-sub-category-two/${subCategoryTwoId}`);
+                const res = await axiosInstance.get(`subcategoryTwo/get-sub-category-two-by-slug?slug=${subCategoryTwoSlug}`);
                 if (res.data.statusCode === 200) {
                     description = res.data.data.description || '';
                     descriptionColor = res.data.data.descriptionColour || '#000000';
                 }
-            } else if (subCategoryId) {
+            } else if (subCategorySlug) {
                 // Fetch subcategory description
-                const res = await axiosInstance.get(`subcategory/get-sub-category/${subCategoryId}`);
+                const res = await axiosInstance.get(`subcategory/get-sub-category-by-slug?slug=${subCategorySlug}`);
                 if (res.data.statusCode === 200) {
                     description = res.data.data.description || '';
                     descriptionColor = res.data.data.descriptionColour || '#000000';
                 }
-            } else if (categoryId) {
+            } else if (categorySlug) {
                 // Fetch category description
-                const res = await axiosInstance.get(`category/get-category/${categoryId}`);
+                const res = await axiosInstance.get(`category/get-category-by-slug?slug=${categorySlug}`);
+
+                console.log("category response by slug", res)
+
                 if (res.data.statusCode === 200) {
                     description = res.data.data.description || '';
                     descriptionColor = res.data.data.descriptionColour || '#000000';
                 }
             }
-            
+
             setCurrentCategoryDescription(description);
             setCurrentCategoryDescriptionColor(descriptionColor);
         } catch (error) {
@@ -188,13 +215,8 @@ const ProductListing = () => {
 
     // Call this function whenever category/subcategory changes
     useEffect(() => {
-        if (categoryId || subCategoryId || subCategoryTwoId) {
-            fetchCurrentCategoryDescription();
-        } else {
-            setCurrentCategoryDescription('');
-            setCurrentCategoryDescriptionColor('#000000');
-        }
-    }, [categoryId, subCategoryId, subCategoryTwoId]);
+        fetchCurrentCategoryDescription();
+    }, [categoryId, subCategoryId, subCategoryTwoId, window.location.path, pathname]);
 
     // Check if item is in wishlist (for both products and product groups)
     const isItemInWishlist = (itemId, isProductGroup = false) => {
@@ -214,14 +236,19 @@ const ProductListing = () => {
 
     // Calculate discounted price for both products and product groups
     const calculateDiscountedPrice = (item, isProductGroup = false) => {
+        if (!item) return 0;
+
         const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
 
-        // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+        // NEW LOGIC: If item has comparePrice, use original price as selling price
+        // and comparePrice becomes the "original" price to show discount
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            return item.comparePrice;
+            // Now we return the original price as selling price
+            // comparePrice will be used to calculate discount percentage for display
+            return originalPrice;
         }
 
-        // If no comparePrice or comparePrice is 0, check for discounts
+        // If no comparePrice or comparePrice is 0, check for discounts (existing logic)
         if (!currentUser || !currentUser.customerId) {
             return originalPrice;
         }
@@ -231,10 +258,9 @@ const ProductListing = () => {
             discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
         );
 
-        // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-            return originalPrice - discountAmount;
+            return Math.max(0, originalPrice - discountAmount);
         }
 
         // Priority 3: Check for pricing group discount
@@ -261,7 +287,7 @@ const ProductListing = () => {
                         return originalPrice + (originalPrice * percentage / 100);
                     } else {
                         // Negative percentage means price decrease
-                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                        return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
                     }
                 }
             }
@@ -273,12 +299,18 @@ const ProductListing = () => {
 
     // Get discount percentage for display
     const getDiscountPercentage = (item, isProductGroup = false) => {
-        // If item has comparePrice, show comparePrice discount
+        if (!item) return null;
+
+        const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+
+        // NEW LOGIC: If product has comparePrice, calculate discount percentage
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
-            const discountAmount = originalPrice - item.comparePrice;
-            const discountPercentage = (discountAmount / originalPrice) * 100;
-            return Math.round(discountPercentage);
+            if (item.comparePrice > originalPrice && originalPrice > 0) {
+                const discountAmount = item.comparePrice - originalPrice;
+                const discountPercentage = (discountAmount / item.comparePrice) * 100;
+                return Math.round(discountPercentage);
+            }
+            return null;
         }
 
         if (!currentUser || !currentUser.customerId) {
@@ -320,8 +352,33 @@ const ProductListing = () => {
 
     // Check if item has any discount or comparePrice
     const hasDiscount = (item, isProductGroup = false) => {
-        return (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) ||
-            getDiscountPercentage(item, isProductGroup) !== null;
+        if (!item) return false;
+
+        // Check if product has comparePrice discount
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            if (item.comparePrice > originalPrice) {
+                return true;
+            }
+        }
+
+        // Check if product has item-based or pricing group discount
+        return getDiscountPercentage(item, isProductGroup) !== null;
+    };
+
+    const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
+        if (!item) return 0;
+
+        // If compare price exists and is higher than current price, show compare price as original
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            const currentPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            if (item.comparePrice > currentPrice) {
+                return item.comparePrice;
+            }
+        }
+
+        // Otherwise, show the actual original price
+        return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
     };
 
     // Check if item is in cart (for both products and product groups)
@@ -525,6 +582,7 @@ const ProductListing = () => {
     }
 
     // Add to cart function for both products and product groups
+    // Add to cart function for both products and product groups
     const handleAddToCart = async (itemId, isProductGroup = false) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart")
@@ -568,24 +626,28 @@ const ProductListing = () => {
             const unitsQuantity = quantitiesState[itemId] || 1;
             const totalQuantity = packQuantity * unitsQuantity;
 
-            // Calculate the discounted price for this item
+            // ✅ UPDATED: Calculate the discounted price using new logic
             const discountedPrice = calculateDiscountedPrice(item, isProductGroup);
 
             // Calculate total amount using the discounted price
             const totalAmount = discountedPrice;
 
-            // Determine discount type and percentage
+            // ✅ UPDATED: Determine discount type and percentage with new compare price logic
             let discountType = "";
             let discountPercentages = 0;
+            let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
-            // Priority 1: Check comparePrice discount
+            // NEW LOGIC: Priority 1 - Check comparePrice discount
             if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-                const originalPrice = isProductGroup ? item.eachPrice : item.eachPrice;
-                const discountAmount = originalPrice - item.comparePrice;
-                discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                discountType = "compare_price";
+                const currentPrice = isProductGroup ? item.eachPrice : item.eachPrice;
+                // Only apply compare price discount if comparePrice is higher than current price
+                if (item.comparePrice > currentPrice) {
+                    const discountAmount = item.comparePrice - currentPrice;
+                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
+                    discountType = "compare_price";
+                }
             }
-            // Priority 2: Check item-based discount
+            // Priority 2: Check item-based discount (only if no compare price discount applied)
             else if (currentUser && currentUser.customerId) {
                 const itemDiscount = itemBasedDiscounts.find(
                     discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
@@ -593,9 +655,9 @@ const ProductListing = () => {
 
                 if (itemDiscount) {
                     discountPercentages = itemDiscount.percentage;
-                    discountType = "item_based";
+                    discountType = "Item Discount";
                 }
-                // Priority 3: Check pricing group discount
+                // Priority 3: Check pricing group discount (only if no item-based discount)
                 else if (item.pricingGroup) {
                     const itemPricingGroupId = typeof item.pricingGroup === 'object'
                         ? item.pricingGroup._id
@@ -611,8 +673,16 @@ const ProductListing = () => {
                         );
 
                         if (customerDiscount) {
-                            discountPercentages = parseFloat(customerDiscount.percentage);
-                            discountType = "pricing_group";
+                            originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+                            discountPercentages = Math.abs(originalPricingGroupPercentage);
+                            discountType = "Pricing Group";
+
+                            // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+                            if (originalPricingGroupPercentage > 0) {
+                                discountPercentages = `+${discountPercentages}`;
+                            } else if (originalPricingGroupPercentage < 0) {
+                                discountPercentages = `-${discountPercentages}`;
+                            }
                         }
                     }
                 }
@@ -631,6 +701,8 @@ const ProductListing = () => {
                 discountType: discountType,
                 discountPercentages: discountPercentages
             };
+
+            console.log("Sending cart data:", cartData);
 
             const response = await axiosInstance.post('cart/add-to-cart', cartData);
 
@@ -722,28 +794,47 @@ const ProductListing = () => {
             setLoading(true);
             const sortParams = getSortParams(sortOption);
 
-            // Build query parameters based on URL params
+            const path = window.location.pathname.split('/');
+
+            console.log("paths", path.join('/').slice(1));
+
+            let brandSlug = path[1] || null;
+            let categorySlug = null;
+            let subCategorySlug = null;
+            let subCategoryTwoSlug = null;
+
+            if (path.length > 2) {
+                categorySlug = path.join('/').slice(1);
+            }
+            if (path.length > 3) {
+                subCategorySlug = path.join('/').slice(1);
+            }
+            if (path.length > 4) {
+                subCategoryTwoSlug = path.join('/').slice(1);
+            }
+
             const queryParams = {
+                brandSlug,
+                categorySlug,
+                subCategorySlug,
+                subCategoryTwoSlug,
                 page: page,
                 limit: itemsPerPage,
                 sortBy: sortParams.sortBy,
                 sortOrder: sortParams.sortOrder
-            };
+            }
 
-            // Add filter parameters if they exist
-            if (categoryId) queryParams.categoryId = categoryId;
-            if (subCategoryId) queryParams.subCategoryId = subCategoryId;
-            if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId;
-            if (brandId) queryParams.brandId = brandId;
+
 
 
             // Fetch both products and product groups in parallel
             const [productsResponse, productGroupsResponse] = await Promise.all([
-                axiosInstance.get('products/get-products-by-filters', { params: queryParams }),
-                axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
+                axiosInstance.get('products/get-products-by-category-slugs', { params: queryParams }),
+                axiosInstance.get('product-group/get-product-groups-by-category-slugs', { params: queryParams })
             ]);
 
-            console.log("products response", productsResponse)
+            console.log("products  response", productsResponse)
+            console.log("products groups response", productsResponse)
 
             let productsData = [];
             let productGroupsData = [];
@@ -782,7 +873,7 @@ const ProductListing = () => {
 
             setCurrentPage(paginationInfo.currentPage || 1);
             setTotalPages(paginationInfo.totalPages || 1);
-            setTotalItems(paginationInfo.totalProducts || paginationInfo.totalProductGroups || 0);
+            setTotalItems((paginationInfo.totalProducts || paginationInfo.totalProductGroups || 0) + productGroupsData.length);
 
             // Initialize quantities and selected units for products
             const initialQuantities = {};
@@ -820,7 +911,6 @@ const ProductListing = () => {
         }
     }
 
-    // NEW: Client-side sorting function for combined items
     // UPDATED: Client-side sorting function for combined items
     const applyClientSideSorting = (items, sortOption) => {
         const sortedItems = [...items];
@@ -979,36 +1069,24 @@ const ProductListing = () => {
             subCategoryTwoId: null,
             brandId: brandId
         });
-        
+
         // Fetch category description
         fetchCurrentCategoryDescription();
     }
 
     // Get page title based on current filter
+    // Get page title based on current URL path
     const getPageTitle = () => {
-        if (subCategoryTwoSlug)
-            return subCategoryTwoSlug
-                .split('-')
-                .join(' ')
-                .replaceAll('/', ' / ')
-                .toUpperCase();
+        if (typeof window === 'undefined') return "ALL PRODUCTS";
 
-        if (subCategorySlug)
-            return subCategorySlug
-                .split('-')
-                .join(' ')
-                .replaceAll('/', ' / ')
-                .toUpperCase();
+        const path = window.location.pathname;
+        const pathParts = path.split('/').filter(part => part.trim() !== '');
 
+        // if (pathParts.length === 0) return "ALL PRODUCTS";
 
-        if (categorySlug)
-            return categorySlug
-                .split('-')
-                .join(' ')
-                .replaceAll('/', ' / ')
-                .toUpperCase();
-
-        return "ALL PRODUCTS";
+        // Get the last part of the URL for the title
+        const lastPart = pathParts[pathParts.length - 1];
+        return lastPart?.split('-').join(' ').toUpperCase();
     };
 
     // Get page description based on current filter
@@ -1159,13 +1237,17 @@ const ProductListing = () => {
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
                         className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
                     >
-                        {isProductGroup ? item.name : item.ProductName}
+                        {(() => {
+                            const name = isProductGroup ? item.name : item.ProductName;
+                            return name.length > 40 ? name.slice(0, 40) + "..." : name;
+                        })()}
+
                     </h3>
 
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU:{" "}
+                            SKU:
                             {isProductGroup
                                 ? item.sku.length > 8
                                     ? `${item.sku.slice(0, 8)}...`
@@ -1192,9 +1274,10 @@ const ProductListing = () => {
                         <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
                             ${discountedPrice.toFixed(2)}
                         </span>
-                        {discountedPrice < item.eachPrice && (
+                        {/* Show strikethrough price if there's a discount */}
+                        {hasDiscount(item, isProductGroup) && discountedPrice < getOriginalPriceForDisplay(item, isProductGroup) && (
                             <span className="text-sm text-gray-500 line-through">
-                                ${isProductGroup ? (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00') : (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00')}
+                                ${getOriginalPriceForDisplay(item, isProductGroup).toFixed(2)}
                             </span>
                         )}
                     </div>
@@ -1207,7 +1290,7 @@ const ProductListing = () => {
                     )}
 
                     {/* Discount Badge */}
-                    {/* {hasItemDiscount && discountPercentage !== null && discountPercentage !== 0 && (
+                    {/* {hasDiscount(item, isProductGroup) && discountPercentage !== null && discountPercentage !== 0 && (
                         <div className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold w-fit">
                             {discountPercentage}% OFF
                         </div>
@@ -1444,11 +1527,9 @@ const ProductListing = () => {
         if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
             fetchItems()
             fetchCategoriesForBrand()
-            fetchCurrentCategoryDescription()
         }
-    }, [categoryId, subCategoryId, subCategoryTwoId, brandId])
+    }, [categoryId, subCategoryId, subCategoryTwoId, brandId,])
 
-    // Generate pagination buttons
     // Generate pagination buttons
     const renderPaginationButtons = () => {
         const buttons = []
@@ -1630,7 +1711,7 @@ const ProductListing = () => {
         })
         // Keep subcategory expanded when clicked
         setExpandedCategory(categoryId);
-        
+
         // Fetch subcategory description
         fetchCurrentCategoryDescription();
     }
@@ -1650,7 +1731,7 @@ const ProductListing = () => {
         })
         // Keep subcategory expanded when clicked
         setExpandedCategory(categoryId);
-        
+
         // Fetch category description
         fetchCurrentCategoryDescription();
     }
@@ -1670,10 +1751,41 @@ const ProductListing = () => {
         })
         // Keep category and subcategory expanded when clicked
         setExpandedCategory(categoryId);
-        
+
         // Fetch subcategory two description
         fetchCurrentCategoryDescription();
     }
+
+    // Function to generate breadcrumbs from window.location.pathname
+    const generateBreadcrumbsFromPathname = () => {
+        if (typeof window === 'undefined') return [];
+
+        const path = window.location.pathname;
+        const pathParts = path.split('/').filter(part => part.trim() !== '');
+
+        const breadcrumbs = [];
+
+        // // Always start with home
+        // breadcrumbs.push({
+        //     name: 'MATADOR WHOLESALE',
+        //     href: '/'
+        // });
+
+        // Build breadcrumbs dynamically from path parts
+        let currentPath = '';
+        pathParts.forEach((part, index) => {
+            currentPath += `/${part}`;
+            const isLast = index === pathParts.length - 1;
+
+            breadcrumbs.push({
+                name: part.split('-').join(' ').toUpperCase(),
+                href: isLast ? null : currentPath, // Last item is not clickable
+                isLast: isLast
+            });
+        });
+
+        return breadcrumbs;
+    };
 
     if (!productID && !productGroupId) {
         return (
@@ -1687,95 +1799,42 @@ const ProductListing = () => {
                 />
 
                 {/* Breadcrumb */}
-                {/* Breadcrumb */}
                 <div className="bg-white justify-items-center pt-4">
                     <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
                         <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
                             <div className="flex items-center space-x-2 flex-wrap">
-                                {/* Always show brand as non-clickable */}
-                                <span className="hidden sm:inline">MATADOR WHOLESALE</span>
+                                {generateBreadcrumbsFromPathname().map((breadcrumb, index, array) => (
+                                    <div key={index} className="flex items-center space-x-2">
+                                        {index > 0 && <span className="hidden sm:inline">/</span>}
+                                        {!breadcrumb.isLast ? (
+                                            // Last item - not clickable (current page)
+                                            <span onClick={() => {
+                                                router.push(breadcrumb.href);
+                                            }} className="hidden sm:inline hover:text-[#E9098D] cursor-pointer">
+                                                {breadcrumb.name}
+                                            </span>
+                                        ) : (
+                                            // Previous items - clickable
+                                            <button
 
-                                {/* Dynamic breadcrumb items */}
-                                {[
-                                    {
-                                        slug: categorySlug,
-                                        id: categoryId,
-                                        type: 'category'
-                                    },
-                                    {
-                                        slug: subCategorySlug,
-                                        id: subCategoryId,
-                                        type: 'subcategory'
-                                    },
-                                    {
-                                        slug: subCategoryTwoSlug,
-                                        id: subCategoryTwoId,
-                                        type: 'subcategoryTwo'
-                                    }
-                                ]
-                                    .filter(item => item.slug)
-                                    .map((item, index, array) => (
-                                        <div key={item.slug} className="flex items-center space-x-2">
-                                            <span className="hidden sm:inline">/</span>
-                                            {index === array.length - 1 ? (
-                                                // Last item - not clickable (current page)
-                                                <span className="hidden sm:inline">
-                                                    {item.slug.split('/').pop().split('-').join(' ').toUpperCase()}
-                                                </span>
-                                            ) : (
-                                                // Previous items - clickable
-                                                <button
-                                                    onClick={() => {
-                                                        const filters = {
-                                                            categorySlug: categorySlug,
-                                                            subCategorySlug: null,
-                                                            subCategoryTwoSlug: null,
-                                                            categoryId: categoryId,
-                                                            subCategoryId: null,
-                                                            subCategoryTwoId: null,
-                                                            brandId: brandId,
-                                                            brandSlug: brandSlug
-                                                        };
-
-                                                        // Set appropriate filters based on which item is clicked
-                                                        if (item.type === 'category') {
-                                                            filters.subCategorySlug = null;
-                                                            filters.subCategoryTwoSlug = null;
-                                                            filters.subCategoryId = null;
-                                                            filters.subCategoryTwoId = null;
-                                                        } else if (item.type === 'subcategory') {
-                                                            filters.subCategorySlug = subCategorySlug;
-                                                            filters.subCategoryId = subCategoryId;
-                                                            filters.subCategoryTwoSlug = null;
-                                                            filters.subCategoryTwoId = null;
-                                                        }
-
-                                                        setFilters(filters);
-                                                        router.push(`/${item.slug}`);
-                                                    }}
-                                                    className="hidden sm:inline hover:text-[#E9098D] cursor-pointer transition-colors"
-                                                >
-                                                    {item.slug.split('/').pop().split('-').join(' ').toUpperCase()}
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                                className="hidden sm:inline  transition-colors"
+                                            >
+                                                {breadcrumb.name}
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </nav>
                     </div>
-                    
+
                     {/* Updated heading section with description */}
                     <div className="text-center">
                         <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-2 tracking-widest">
-                            {
-                                subCategoryTwoSlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
-                                subCategorySlug?.split('/').pop().split('-').join(' ').toUpperCase() ||
-                                categorySlug?.split('/').pop().split('-').join('  ').toUpperCase() ||
-                                brandSlug?.split('-').join(' ').toUpperCase()
-                            }
+                            {getPageTitle()}
                         </h1>
                         {currentCategoryDescription && (
-                            <p 
+                            <p
                                 className="text-sm sm:text-base font-spartan max-w-4xl mx-auto px-4 pb-3 sm:pb-5"
                                 style={{ color: currentCategoryDescriptionColor }}
                             >
@@ -1810,8 +1869,8 @@ const ProductListing = () => {
                             <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
                                 <h1 className="hidden lg:block px-2 text-lg font-bold">
                                     {(() => {
-                                        const slugText = categorySlug?.split('/').pop().split('-').join(' ').toUpperCase() || '';
-                                        return slugText.length > 18 ? slugText.slice(0, 15) + '...' : slugText;
+                                        const title = getPageTitle();
+                                        return title?.length > 18 ? title.slice(0, 15) + '...' : title;
                                     })()}
                                 </h1>
 

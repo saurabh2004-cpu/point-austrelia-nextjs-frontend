@@ -1037,7 +1037,10 @@ const SearchPage = () => {
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
                         className="text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[60px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
-                        {isProductGroup ? item.name : item.ProductName}
+                        {(isProductGroup ? item.name : item.ProductName)?.length > 35
+                            ? (isProductGroup ? item.name : item.ProductName).slice(0, 35) + "..."
+                            : (isProductGroup ? item.name : item.ProductName)}
+
                     </h3>
 
                     {/* SKU */}

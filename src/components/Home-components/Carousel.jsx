@@ -87,7 +87,7 @@ const Carousel = () => {
         <div
           className={`flex transition-transform duration-[2000ms] ease-in-out h-full`}
           style={{
-            transform: `translateX(-${currentIndex * 100}%)`,
+            transform: `translateX(-${currentIndex * 50}%)`,
             width: `${carouselImages.length * 100}%`,
           }}
         >

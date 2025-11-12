@@ -675,7 +675,7 @@ const ProductListing = () => {
                         if (customerDiscount) {
                             originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
                             discountPercentages = Math.abs(originalPricingGroupPercentage);
-                            discountType = "Pricing Group";
+                            discountType = "Pricing Group Discount";
 
                             // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
                             if (originalPricingGroupPercentage > 0) {
@@ -2096,7 +2096,7 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 

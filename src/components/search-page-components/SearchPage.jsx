@@ -496,26 +496,28 @@ const SearchPage = () => {
             const unitsQuantity = quantitiesState[itemId] || 1;
             const totalQuantity = packQuantity * unitsQuantity;
 
-            // Calculate the discounted price for this item
+            // ✅ UPDATED: Calculate the discounted price using new logic
             const discountedPrice = calculateDiscountedPrice(item, isProductGroup);
 
             // Calculate total amount using the discounted price
             const totalAmount = discountedPrice;
 
-            // Determine discount type and percentage
+            // ✅ UPDATED: Determine discount type and percentage with new compare price logic
             let discountType = "";
             let discountPercentages = 0;
+            let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
-            // Priority 1: Check if item has comparePrice
+            // NEW LOGIC: Priority 1 - Check comparePrice discount
             if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-                const originalPrice = isProductGroup ? item.eachPrice : item.eachPrice;
-                if (originalPrice > 0) {
-                    const discountAmount = originalPrice - item.comparePrice;
-                    discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                    discountType = "Compare Price";
+                const currentPrice = isProductGroup ? item.eachPrice : item.eachPrice;
+                // Only apply compare price discount if comparePrice is higher than current price
+                if (item.comparePrice > currentPrice) {
+                    const discountAmount = item.comparePrice - currentPrice;
+                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
+                    discountType = "compare_price";
                 }
             }
-            // Priority 2: Check for item-based discount
+            // Priority 2: Check item-based discount (only if no compare price discount applied)
             else if (currentUser && currentUser.customerId) {
                 const itemDiscount = itemBasedDiscounts.find(
                     discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
@@ -523,9 +525,9 @@ const SearchPage = () => {
 
                 if (itemDiscount) {
                     discountPercentages = itemDiscount.percentage;
-                    discountType = "Item Based Discount";
+                    discountType = "Item Discount";
                 }
-                // Priority 3: Check for pricing group discount
+                // Priority 3: Check pricing group discount (only if no item-based discount)
                 else if (item.pricingGroup) {
                     const itemPricingGroupId = typeof item.pricingGroup === 'object'
                         ? item.pricingGroup._id
@@ -541,8 +543,16 @@ const SearchPage = () => {
                         );
 
                         if (customerDiscount && customerDiscount.percentage) {
-                            discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-                            discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
+                            originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+                            discountPercentages = Math.abs(originalPricingGroupPercentage);
+                            discountType = "Pricing Group Discount";
+
+                            // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+                            if (originalPricingGroupPercentage > 0) {
+                                discountPercentages = `+${discountPercentages}`;
+                            } else if (originalPricingGroupPercentage < 0) {
+                                discountPercentages = `-${discountPercentages}`;
+                            }
                         }
                     }
                 }
@@ -665,7 +675,7 @@ const SearchPage = () => {
 
             // Fetch both products and product groups in parallel
             const [productsResponse, productGroupsResponse] = await Promise.all([
-                axiosInstance.get('products/search-products', { params: queryParams}),
+                axiosInstance.get('products/search-products', { params: queryParams }),
                 axiosInstance.get('product-group/search-product-groups', { params: queryParams })
             ])
 
@@ -1529,7 +1539,7 @@ const SearchPage = () => {
                         {/* Items Grid */}
                         {!loading && allItems.length > 0 && (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
                                     {sortedItems.map((item) => renderItemCard(item))}
                                 </div>
 

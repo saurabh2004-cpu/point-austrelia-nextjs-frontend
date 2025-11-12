@@ -499,7 +499,7 @@ const ProductCard = ({
                             className={`min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${hasModifications && isAvailable && isItemInCart
                                 ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
-                                }`}
+                                } ${isLoading ? 'h-[40px]' : 'h-[36px]'}`}
                             disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
                                 !isItemInCart
@@ -516,13 +516,13 @@ const ProductCard = ({
                             {isLoading ? 'Updating...' : 'Update'}
                         </button>
 
-                        {/* ✅ ADD TO CART BUTTON - Fixed height */}
+                        {/* ✅ ADD TO CART BUTTON - Dynamic height on click */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`min-h-[36px] flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${isAvailable && !isItemInCart
+                            className={`flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${isAvailable && !isItemInCart
                                 ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
-                                }`}
+                                } ${isLoading ? 'min-h-[40px] h-[40px]' : 'min-h-[36px] h-[36px]'}`}
                             disabled={isLoading || !isAvailable || isItemInCart}
                             title={
                                 isItemInCart
@@ -534,15 +534,21 @@ const ProductCard = ({
                                         : 'Add to cart'
                             }
                         >
-                            <svg
-                                className="w-5 h-5 transition-colors duration-300"
-                                viewBox="0 0 21 21"
-                                fill="currentColor"
-                                xmlns="http://www.w3.org/2000/svg"
-                            >
-                                <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
-                            </svg>
-                            {isItemInCart ? 'In Cart' : 'Add to Cart'}
+                            {isLoading ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            ) : (
+                                <>
+                                    <svg
+                                        className="w-5 h-5 transition-colors duration-300"
+                                        viewBox="0 0 21 21"
+                                        fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                    </svg>
+                                    {isItemInCart ? 'In Cart' : 'Add to Cart'}
+                                </>
+                            )}
                         </button>
 
                         {/* ✅ REMOVE BUTTON */}
@@ -733,7 +739,7 @@ const WishListComponent = () => {
         }));
     };
 
-    // ✅ UPDATED: Add to cart function that handles both products and product groups and removes from wishlist
+    // ✅ CORRECTED: Add to cart function that handles both products and product groups and removes from wishlist
     const handleAddToCart = async (productId, isProductGroup = false) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to add items to cart");
@@ -796,18 +802,24 @@ const WishListComponent = () => {
             // Remove any warnings for this product since it's valid
             removeWarning(productId);
 
-            // Calculate discounted price with comparePrice priority
+            // ✅ CORRECTED: Calculate discounted price with proper priority
             const calculateDiscountedPrice = (productData) => {
+                if (!productData) return 0;
+
                 const originalPrice = productData.eachPrice || 0;
 
+                // Priority 1: If product has comparePrice, use comparePrice as the selling price
                 if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+                    // Use comparePrice as the discounted selling price
                     return productData.comparePrice;
                 }
 
+                // If no comparePrice or comparePrice is 0, check for other discounts
                 if (!currentUser || !currentUser.customerId) {
                     return originalPrice;
                 }
 
+                // Priority 2: Check for item-based discount
                 const itemDiscount = itemBasedDiscounts.find(
                     discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
                 );
@@ -817,6 +829,7 @@ const WishListComponent = () => {
                     return Math.max(0, originalPrice - discountAmount);
                 }
 
+                // Priority 3: Check for pricing group discount
                 if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
                     for (const groupDiscountDoc of customerGroupsDiscounts) {
                         if (groupDiscountDoc && groupDiscountDoc.customers) {
@@ -826,9 +839,12 @@ const WishListComponent = () => {
 
                             if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
                                 const percentage = parseFloat(customerDiscount.percentage);
+
                                 if (percentage > 0) {
+                                    // Positive percentage means price increase
                                     return originalPrice + (originalPrice * percentage / 100);
                                 } else if (percentage < 0) {
+                                    // Negative percentage means price decrease
                                     return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
                                 }
                             }
@@ -839,29 +855,37 @@ const WishListComponent = () => {
                 return originalPrice;
             };
 
+            // ✅ CORRECTED: Use the discounted price for amount calculation
             const discountedPrice = calculateDiscountedPrice(productData);
-            const totalAmount = discountedPrice.toFixed(2);
+            const totalAmount = (discountedPrice * totalQuantity).toFixed(2);
 
-            // Determine discount type and percentage
+            // ✅ CORRECTED: Determine discount type and percentage with proper sign handling
             let discountType = "";
             let discountPercentages = 0;
+            let originalPricingGroupPercentage = 0;
 
+            // Priority 1: Check if product has comparePrice
             if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
                 const originalPrice = productData.eachPrice || 0;
-                if (originalPrice > 0 && productData.comparePrice < originalPrice) {
+                // Only apply compare price discount if comparePrice is lower than original price
+                if (productData.comparePrice < originalPrice && originalPrice > 0) {
                     const discountAmount = originalPrice - productData.comparePrice;
                     discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-                    discountType = "Compare Price";
+                    discountType = "compare_price";
                 }
-            } else if (currentUser && currentUser.customerId) {
+            }
+            // Priority 2: Check for item-based discount (only if no compare price discount applied)
+            else if (currentUser && currentUser.customerId) {
                 const itemDiscount = itemBasedDiscounts.find(
                     discount => discount.productSku === productData.sku && discount.customerId === currentUser.customerId
                 );
 
                 if (itemDiscount) {
                     discountPercentages = itemDiscount.percentage;
-                    discountType = "Item Based Discount";
-                } else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
+                    discountType = "Item Discount";
+                }
+                // Priority 3: Check pricing group discount (only if no item-based discount)
+                else if (customerGroupsDiscounts && customerGroupsDiscounts.length > 0) {
                     for (const groupDiscountDoc of customerGroupsDiscounts) {
                         if (groupDiscountDoc && groupDiscountDoc.customers) {
                             const customerDiscount = groupDiscountDoc.customers.find(
@@ -869,8 +893,16 @@ const WishListComponent = () => {
                             );
 
                             if (customerDiscount && customerDiscount.percentage !== undefined && customerDiscount.percentage !== null) {
-                                discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-                                discountType = groupDiscountDoc.pricingGroup?.name || "Pricing Group Discount";
+                                originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+                                discountPercentages = Math.abs(originalPricingGroupPercentage);
+                                discountType = "Pricing Group Discount";
+
+                                // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+                                if (originalPricingGroupPercentage > 0) {
+                                    discountPercentages = `+${discountPercentages}`;
+                                } else if (originalPricingGroupPercentage < 0) {
+                                    discountPercentages = `-${discountPercentages}`;
+                                }
                                 break;
                             }
                         }

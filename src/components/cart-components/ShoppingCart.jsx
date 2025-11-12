@@ -631,7 +631,7 @@ const ShoppingCart = () => {
 
             if (wishlistResponse.data.statusCode === 200) {
                 // Remove from cart after successfully adding to wishlist
-                handleRemoveItemClick(item);
+                // handleRemoveItemClick(item);
                 setError(null);
             } else {
                 setError(wishlistResponse.data.message || "Failed to move to wishlist");
@@ -1022,13 +1022,13 @@ const ShoppingCart = () => {
                                                                             } disabled:opacity-50`}
                                                                         title={exceedsStock ? 'Cannot update: stock level exceeded' : ''}
                                                                     >
-                                                                        {isLoading ? 'Updating...' : 'Update'}
+                                                                        {isLoading ? 'Updating' : 'Update'}
                                                                     </button>
-                                                                    <div className='flex items-center space-x-3 w-full xl:w-auto'>
+                                                                    <div className='flex items-center space-x-3 w-full'>
                                                                         <button
                                                                             onClick={() => moveToWishlist(item)}
                                                                             disabled={isLoading}
-                                                                            className="flex items-center w-full xl:w-auto justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer">
+                                                                            className="flex items-center w-full justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer">
                                                                             <Heart className="h-4 w-4" />
                                                                             <span className='mt-1'>Move to wishlist</span>
                                                                         </button>
@@ -1044,19 +1044,22 @@ const ShoppingCart = () => {
                                                                         </button>
                                                                     </div>
 
-                                                                    <button
-                                                                        onClick={() => handleRemoveItemClick(item)}
-                                                                        disabled={isLoading}
-                                                                        className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer"
-                                                                    >
-                                                                        <Image
-                                                                            src="/icons/dustbin-1.png"
-                                                                            alt="Remove item"
-                                                                            width={16}
-                                                                            height={16}
-                                                                            className="object-contain"
-                                                                        />
-                                                                    </button>
+                                                                    <div className='w-6'>
+                                                                        <button
+                                                                            onClick={() => handleRemoveItemClick(item)}
+                                                                            disabled={isLoading}
+                                                                            className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer"
+                                                                        >
+                                                                            <Image
+                                                                                src="/icons/dustbin-1.png"
+                                                                                alt="Remove item"
+                                                                                width={16}
+                                                                                height={16}
+                                                                                className="object-contain"
+                                                                            />
+                                                                        </button>
+                                                                    </div>
+
                                                                 </div>
                                                             </div>
                                                         </div>

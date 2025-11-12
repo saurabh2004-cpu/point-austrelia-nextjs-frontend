@@ -722,6 +722,7 @@ function ProductDetail() {
       // Determine discount type and percentage
       let discountType = "";
       let discountPercentages = 0;
+      let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
       // Priority 1: Check comparePrice discount
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
@@ -756,8 +757,16 @@ function ProductDetail() {
             );
 
             if (customerDiscount) {
-              discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
+              originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+              discountPercentages = Math.abs(originalPricingGroupPercentage);
               discountType = "pricing_group";
+
+              // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+              if (originalPricingGroupPercentage > 0) {
+                discountPercentages = `+${discountPercentages}`;
+              } else if (originalPricingGroupPercentage < 0) {
+                discountPercentages = `-${discountPercentages}`;
+              }
             }
           }
         }
@@ -1051,13 +1060,14 @@ function ProductDetail() {
       // Determine discount type and percentage
       let discountType = "";
       let discountPercentages = 0;
+      let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
       // Priority 1: Check if item has comparePrice
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
         const originalPrice = item.eachPrice || 0;
         const discountAmount = originalPrice - item.comparePrice;
         discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-        discountType = "compare_price";
+        discountType = "Compare Price";
       }
       // Priority 2: Check for item-based discount
       else if (currentUser && currentUser.customerId) {
@@ -1067,7 +1077,7 @@ function ProductDetail() {
 
         if (itemDiscount) {
           discountPercentages = itemDiscount.percentage;
-          discountType = "item_based";
+          discountType = "Item Discount";
         }
         // Priority 3: Check for pricing group discount
         else if (item.pricingGroup) {
@@ -1085,8 +1095,16 @@ function ProductDetail() {
             );
 
             if (customerDiscount) {
-              discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
-              discountType = "pricing_group";
+              originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+              discountPercentages = Math.abs(originalPricingGroupPercentage);
+              discountType = "Pricing Group";
+
+              // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+              if (originalPricingGroupPercentage > 0) {
+                discountPercentages = `+${discountPercentages}`;
+              } else if (originalPricingGroupPercentage < 0) {
+                discountPercentages = `-${discountPercentages}`;
+              }
             }
           }
         }
@@ -1165,6 +1183,7 @@ function ProductDetail() {
       // Determine discount type and percentage
       let discountType = "";
       let discountPercentages = 0;
+      let originalPricingGroupPercentage = 0; // Store original percentage for pricing groups
 
       // Priority 1: Check if item has comparePrice
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
@@ -1199,8 +1218,16 @@ function ProductDetail() {
             );
 
             if (customerDiscount) {
-              discountPercentages = Math.abs(parseFloat(customerDiscount.percentage));
+              originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
+              discountPercentages = Math.abs(originalPricingGroupPercentage);
               discountType = "pricing_group";
+
+              // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
+              if (originalPricingGroupPercentage > 0) {
+                discountPercentages = `+${discountPercentages}`;
+              } else if (originalPricingGroupPercentage < 0) {
+                discountPercentages = `-${discountPercentages}`;
+              }
             }
           }
         }

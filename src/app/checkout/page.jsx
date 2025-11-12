@@ -542,6 +542,7 @@ const CheckoutComponent = () => {
     // Stock validation state
     const [outOfStockItems, setOutOfStockItems] = useState([]);
     const [checkingStock, setCheckingStock] = useState(false);
+    const [totalsLoading, setTotalsLoading] = useState(true);
 
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -1021,6 +1022,7 @@ const CheckoutComponent = () => {
                     totalQuantity: 0,
                     totalItems: 0
                 });
+                setTotalsLoading(false);
 
                 setBrandWiseTotals(brandWiseTotals || {});
 
@@ -1352,34 +1354,43 @@ const CheckoutComponent = () => {
                     <div className={`lg:col-span-1 ${step === 1 ? 'xl:mt-27' : 'xl:mt-18'}`}>
                         <div className="bg-white rounded-lg sticky top-6">
                             <div className="md:p-0 xl:p-4">
-                                <div className="border-2 border-gray-300 rounded-lg space-y-3 font-spartan">
-                                    <div className="flex items-center justify-center mb-4 py-4 border-b">
-                                        <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
+
+                                {totalsLoading ? (
+                                    <div className="flex justify-center py-2">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2D2C70]"></div>
                                     </div>
-                                    <div className="px-4">
-                                        <div className="flex justify-between">
-                                            <span className="text-base sm:text-lg lg:text-[20px] font-medium">
-                                                Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totals.totalQuantity} Items</span>
-                                            </span>
-                                            <span className="text-[#2D2C70] font-semibold text-[20px]">${totals.subtotal.toFixed(2)}</span>
+                                ) : (
+                                    <div className="border-2 border-gray-300 rounded-lg space-y-3 font-spartan">
+                                        <div className="flex items-center justify-center mb-4 py-4 border-b">
+                                            <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
                                         </div>
-                                        <div className="mb-2 text-xs sm:text-sm lg:text-[14px] font-[400]">Subtotal does not include shipping or taxes</div>
-                                    </div>
-                                    <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
-                                        <div className="flex justify-between">
-                                            <span className="text-[#000000]/80">Shipping</span>
-                                            <span>${(currentUser?.defaultShippingRate || 0).toFixed(2)}</span>
+                                        <div className="px-4">
+                                            <div className="flex justify-between">
+                                                <span className="text-base sm:text-lg lg:text-[20px] font-medium">
+                                                    Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totals.totalQuantity} Items</span>
+                                                </span>
+                                                <span className="text-[#2D2C70] font-semibold text-[20px]">
+                                                    ${(totals.subtotal || 0).toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <div className="mb-2 text-xs sm:text-sm lg:text-[14px] font-[400]">Subtotal does not include shipping or taxes</div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-[#000000]/80">GST</span>
-                                            <span>${totals.tax.toFixed(2)}</span>
+                                        <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
+                                            <div className="flex justify-between">
+                                                <span className="text-[#000000]/80">Shipping</span>
+                                                <span>${((currentUser?.defaultShippingRate) || 0).toFixed(2)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[#000000]/80">GST</span>
+                                                <span>${(totals.tax || 0).toFixed(2)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
+                                            <span>Total</span>
+                                            <span>${(totals.grandTotal || 0).toFixed(2)}</span>
                                         </div>
                                     </div>
-                                    <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
-                                        <span>Total</span>
-                                        <span>${totals.grandTotal.toFixed(2)}</span>
-                                    </div>
-                                </div>
+                                )}
 
                                 {step < 3 ? (
                                     <>

@@ -115,16 +115,21 @@ const SearchPage = () => {
         });
     }
 
-    // UPDATED: Calculate discounted price for both products and product groups
+    // Calculate discounted price for both products and product groups
     const calculateDiscountedPrice = (item, isProductGroup = false) => {
+        if (!item) return 0;
+
         const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
 
-        // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+        // NEW LOGIC: If item has comparePrice, use original price as selling price
+        // and comparePrice becomes the "original" price to show discount
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            return item.comparePrice;
+            // Now we return the original price as selling price
+            // comparePrice will be used to calculate discount percentage for display
+            return originalPrice;
         }
 
-        // If no comparePrice or comparePrice is 0, check for discounts
+        // If no comparePrice or comparePrice is 0, check for discounts (existing logic)
         if (!currentUser || !currentUser.customerId) {
             return originalPrice;
         }
@@ -134,10 +139,9 @@ const SearchPage = () => {
             discount => discount.productSku === item.sku && discount.customerId === currentUser.customerId
         );
 
-        // If item-based discount exists, apply it
         if (itemDiscount) {
             const discountAmount = (originalPrice * itemDiscount.percentage) / 100;
-            return originalPrice - discountAmount;
+            return Math.max(0, originalPrice - discountAmount);
         }
 
         // Priority 3: Check for pricing group discount
@@ -146,18 +150,17 @@ const SearchPage = () => {
                 ? item.pricingGroup._id
                 : item.pricingGroup;
 
-            // Find matching pricing group discount document
+            // Find matching pricing group discount for this customer
             const groupDiscountDoc = customerGroupsDiscounts.find(
                 discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
-            if (groupDiscountDoc && groupDiscountDoc.customers) {
-                // Find the specific customer discount within the pricing group
+            if (groupDiscountDoc) {
                 const customerDiscount = groupDiscountDoc.customers.find(
-                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                    customer => customer.user.customerId === currentUser.customerId
                 );
 
-                if (customerDiscount && customerDiscount.percentage) {
+                if (customerDiscount) {
                     const percentage = parseFloat(customerDiscount.percentage);
                     // Handle both positive and negative percentages
                     if (percentage > 0) {
@@ -165,7 +168,7 @@ const SearchPage = () => {
                         return originalPrice + (originalPrice * percentage / 100);
                     } else {
                         // Negative percentage means price decrease
-                        return originalPrice - (originalPrice * Math.abs(percentage) / 100);
+                        return Math.max(0, originalPrice - (originalPrice * Math.abs(percentage) / 100));
                     }
                 }
             }
@@ -175,17 +178,20 @@ const SearchPage = () => {
         return originalPrice;
     };
 
-    // UPDATED: Get discount percentage for display for both products and product groups
+    // Get discount percentage for display
     const getDiscountPercentage = (item, isProductGroup = false) => {
-        // If item has comparePrice, show comparePrice discount
+        if (!item) return null;
+
+        const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+
+        // NEW LOGIC: If product has comparePrice, calculate discount percentage
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
-            if (originalPrice > 0) {
-                const discountAmount = originalPrice - item.comparePrice;
-                const discountPercentage = (discountAmount / originalPrice) * 100;
+            if (item.comparePrice > originalPrice && originalPrice > 0) {
+                const discountAmount = item.comparePrice - originalPrice;
+                const discountPercentage = (discountAmount / item.comparePrice) * 100;
                 return Math.round(discountPercentage);
             }
-            return 0;
+            return null;
         }
 
         if (!currentUser || !currentUser.customerId) {
@@ -211,12 +217,12 @@ const SearchPage = () => {
                 discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
-            if (groupDiscountDoc && groupDiscountDoc.customers) {
+            if (groupDiscountDoc) {
                 const customerDiscount = groupDiscountDoc.customers.find(
-                    customer => customer.user && customer.user.customerId === currentUser.customerId
+                    customer => customer.user.customerId === currentUser.customerId
                 );
 
-                if (customerDiscount && customerDiscount.percentage) {
+                if (customerDiscount) {
                     return parseFloat(customerDiscount.percentage);
                 }
             }
@@ -225,10 +231,35 @@ const SearchPage = () => {
         return null;
     };
 
-    // UPDATED: Check if item has any discount or comparePrice
+    // Check if item has any discount or comparePrice
     const hasDiscount = (item, isProductGroup = false) => {
-        return (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) ||
-            getDiscountPercentage(item, isProductGroup) !== null;
+        if (!item) return false;
+
+        // Check if product has comparePrice discount
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            if (item.comparePrice > originalPrice) {
+                return true;
+            }
+        }
+
+        // Check if product has item-based or pricing group discount
+        return getDiscountPercentage(item, isProductGroup) !== null;
+    };
+
+    const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
+        if (!item) return 0;
+
+        // If compare price exists and is higher than current price, show compare price as original
+        if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
+            const currentPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            if (item.comparePrice > currentPrice) {
+                return item.comparePrice;
+            }
+        }
+
+        // Otherwise, show the actual original price
+        return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
     };
 
     // Check if item is in cart (for both products and product groups)
@@ -625,7 +656,7 @@ const SearchPage = () => {
             const sortParams = getSortParams(sortOption)
 
             const queryParams = {
-                q: searchQuery,
+                q: searchQuery.split('-').join(' '),
                 page: page,
                 limit: itemsPerPage,
                 sortBy: sortParams.sortBy,
@@ -634,7 +665,7 @@ const SearchPage = () => {
 
             // Fetch both products and product groups in parallel
             const [productsResponse, productGroupsResponse] = await Promise.all([
-                axiosInstance.get('products/search-products', { params: queryParams }),
+                axiosInstance.get('products/search-products', { params: queryParams}),
                 axiosInstance.get('product-group/search-product-groups', { params: queryParams })
             ])
 
@@ -1065,26 +1096,16 @@ const SearchPage = () => {
                     </div>
 
                     {/* Price */}
-                    <div className="flex justify-between">
-                        <div className="flex items-center space-x-2">
-                            <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
-                                ${discountedPrice.toFixed(2)}
+                    <div className="flex items-center space-x-2">
+                        <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                            ${discountedPrice.toFixed(2)}
+                        </span>
+                        {/* Show strikethrough price if there's a discount */}
+                        {hasDiscount(item, isProductGroup) && discountedPrice < getOriginalPriceForDisplay(item, isProductGroup) && (
+                            <span className="text-sm text-gray-500 line-through">
+                                ${getOriginalPriceForDisplay(item, isProductGroup).toFixed(2)}
                             </span>
-                            {/* Show original price with line-through ONLY if discounted price is less than original price */}
-                            {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && (
-                                <span className="text-sm text-gray-500 line-through">
-                                    ${isProductGroup ? (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00') : (item.eachPrice ? item.eachPrice.toFixed(2) : '0.00')}
-                                </span>
-                            )}
-                            {/* Show discount percentage ONLY if discounted price is less than original price */}
-                            {discountedPrice < (isProductGroup ? item.eachPrice : item.eachPrice) && discountPercentage && discountPercentage > 0 && (
-                                <span className="text-sm text-green-600 font-semibold">
-                                    {discountPercentage}% OFF
-                                </span>
-                            )}
-                        </div>
-
-
+                        )}
                     </div>
 
                     {/* Product Group Info */}
@@ -1263,7 +1284,7 @@ const SearchPage = () => {
 
                     {/* Action Buttons Row - Only show when item is in cart */}
                     {isInCart && (
-                        <div className="flex space-x-2 mt-1">
+                        <div className="flex space-x-1 mt-1">
                             <button
                                 className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 onClick={(e) => e.stopPropagation()}

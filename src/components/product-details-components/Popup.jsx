@@ -817,10 +817,10 @@ export default function ProductPopup({
                     ) : getCurrentItem() ? (
                         <div className="flex flex-col lg:flex-row gap-6">
                             {/* Left side images */}
-                            <div className="flex-1">
+                            <div className="flex-1 y-6">
                                 <div className="flex flex-col-reverse xl:flex-row space-x-8">
                                     {itemImages.length > 0 && (
-                                        <div className="flex xl:flex-col space-x-2 xl:space-x-0 space-y-2 justify-center">
+                                        <div className="flex xl:flex-col space-x-2 xl:space-x-0 xl:space-y-2 justify-center max-h-[300px] lg:pt-18 overflow-y-auto ">
                                             {itemImages.map((image, index) => (
                                                 <button
                                                     key={index}

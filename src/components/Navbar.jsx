@@ -17,6 +17,7 @@ import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
 import { path } from "framer-motion/m"
+import { set } from "nprogress"
 
 const debounce = (func, wait) => {
   let timeout;
@@ -93,8 +94,11 @@ export function Navbar() {
         const response = await axiosInstance.get('user/get-current-user');
         if (response.data.statusCode === 200 && response.data.data.inactive == false) {
           setUser(response.data.data);
+        } else {
+          setUser(null)
         }
       } catch (error) {
+        setUser(null)
         console.error("Error fetching current user:", error);
       } finally {
         setLoading(false);
@@ -146,7 +150,7 @@ export function Navbar() {
   const handleSearch = useCallback((e) => {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
-        handleFastNavigation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        handleFastNavigation(`/search?q=${encodeURIComponent(searchQuery.trim().trim().split(' ').join('-'))}`);
         setIsSearchOpen(false);
       }
     }
@@ -377,7 +381,7 @@ export function Navbar() {
       if (!currentUser?._id) return;
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
       if (response.data.statusCode === 200) {
-        const cartData = response.data.data;
+        const cartData = response.data.data.items;
         setCartItems(cartData.length);
       }
     } catch (error) {

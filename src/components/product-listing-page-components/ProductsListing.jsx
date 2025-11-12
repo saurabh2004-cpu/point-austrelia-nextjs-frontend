@@ -1757,6 +1757,7 @@ const ProductListing = () => {
     }
 
     // Function to generate breadcrumbs from window.location.pathname
+    // Function to generate breadcrumbs from window.location.pathname
     const generateBreadcrumbsFromPathname = () => {
         if (typeof window === 'undefined') return [];
 
@@ -1765,22 +1766,21 @@ const ProductListing = () => {
 
         const breadcrumbs = [];
 
-        // // Always start with home
-        // breadcrumbs.push({
-        //     name: 'MATADOR WHOLESALE',
-        //     href: '/'
-        // });
-
         // Build breadcrumbs dynamically from path parts
         let currentPath = '';
         pathParts.forEach((part, index) => {
             currentPath += `/${part}`;
             const isLast = index === pathParts.length - 1;
 
+            // First part (index 0) is the brand - make it non-clickable
+            // Only category, subcategory, and subcategory two (index 1, 2, 3) are clickable
+            const isClickable = index > 0 && !isLast;
+
             breadcrumbs.push({
                 name: part.split('-').join(' ').toUpperCase(),
-                href: isLast ? null : currentPath, // Last item is not clickable
-                isLast: isLast
+                href: isClickable ? currentPath : null, // Only make category/subcategory clickable
+                isLast: isLast,
+                isBrand: index === 0 // Mark if it's the brand
             });
         });
 
@@ -1806,29 +1806,27 @@ const ProductListing = () => {
                                 {generateBreadcrumbsFromPathname().map((breadcrumb, index, array) => (
                                     <div key={index} className="flex items-center space-x-2">
                                         {index > 0 && <span className="hidden sm:inline">/</span>}
-                                        {!breadcrumb.isLast ? (
-                                            // Last item - not clickable (current page)
-                                            <span onClick={() => {
-                                                router.push(breadcrumb.href);
-                                            }} className="hidden sm:inline hover:text-[#E9098D] cursor-pointer">
+                                        {breadcrumb.href ? (
+                                            // Category, Subcategory, Subcategory Two - clickable
+                                            <span
+                                                onClick={() => {
+                                                    router.push(breadcrumb.href);
+                                                }}
+                                                className="hidden sm:inline hover:text-[#E9098D] cursor-pointer transition-colors"
+                                            >
                                                 {breadcrumb.name}
                                             </span>
                                         ) : (
-                                            // Previous items - clickable
-                                            <button
-
-                                                className="hidden sm:inline  transition-colors"
-                                            >
+                                            // Brand (first item) and current page (last item) - not clickable
+                                            <span className="hidden sm:inline">
                                                 {breadcrumb.name}
-                                            </button>
+                                            </span>
                                         )}
                                     </div>
                                 ))}
                             </div>
                         </nav>
                     </div>
-
-                    {/* Updated heading section with description */}
                     <div className="text-center">
                         <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-2 tracking-widest">
                             {getPageTitle()}

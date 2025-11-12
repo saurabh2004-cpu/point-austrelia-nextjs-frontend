@@ -50,11 +50,14 @@ const ProductCard = ({
     const calculateDiscountedPrice = (productData) => {
         if (!productData) return 0;
 
-        const originalPrice = isProductGroup ? productData.eachPrice : productData.eachPrice;
+        const originalPrice = productData.eachPrice || 0;
 
-        // Priority 1: If product has comparePrice (not null, not undefined, and not 0), use it
+        // Priority 1: If product has comparePrice, use original price as selling price
+        // and comparePrice becomes the "original" price to show discount
         if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
-            return productData.comparePrice;
+            // Now we return the original price as selling price
+            // comparePrice will be used to calculate discount percentage for display
+            return originalPrice;
         }
 
         // If no comparePrice or comparePrice is 0, check for discounts
@@ -102,12 +105,13 @@ const ProductCard = ({
     const getDiscountPercentage = (productData) => {
         if (!productData) return null;
 
-        // If product has comparePrice, show comparePrice discount
+        const originalPrice = productData.eachPrice || 0;
+
+        // NEW LOGIC: If product has comparePrice, calculate discount percentage
         if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
-            const originalPrice = productData.eachPrice || 0;
-            if (originalPrice > 0 && productData.comparePrice < originalPrice) {
-                const discountAmount = originalPrice - productData.comparePrice;
-                const discountPercentage = (discountAmount / originalPrice) * 100;
+            if (productData.comparePrice > originalPrice && originalPrice > 0) {
+                const discountAmount = productData.comparePrice - originalPrice;
+                const discountPercentage = (discountAmount / productData.comparePrice) * 100;
                 return Math.round(discountPercentage);
             }
             return null;
@@ -151,13 +155,29 @@ const ProductCard = ({
         // Check if product has comparePrice discount
         if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
             const originalPrice = productData.eachPrice || 0;
-            if (productData.comparePrice < originalPrice) {
+            if (productData.comparePrice > originalPrice) {
                 return true;
             }
         }
 
         // Check if product has item-based or pricing group discount
         return getDiscountPercentage(productData) !== null;
+    };
+
+    // Add this function to get the original price for display
+    const getOriginalPriceForDisplay = (productData) => {
+        if (!productData) return 0;
+
+        // If compare price exists and is higher than current price, show compare price as original
+        if (productData.comparePrice !== null && productData.comparePrice !== undefined && productData.comparePrice !== 0) {
+            const currentPrice = productData.eachPrice || 0;
+            if (productData.comparePrice > currentPrice) {
+                return productData.comparePrice;
+            }
+        }
+
+        // Otherwise, show the actual original price
+        return productData.eachPrice || 0;
     };
 
     // Get image URL for product or product group
@@ -300,7 +320,7 @@ const ProductCard = ({
     const handleQuantityUpdate = (productId, newQuantity) => {
         const finalQuantity = Math.max(1, newQuantity);
         onUpdateQuantity(productId, finalQuantity);
-        
+
         // Check if this update causes stock issues
         const updatedTotalQuantity = isProductGroup ? finalQuantity : finalQuantity * getPackQuantity(selectedUnits[productId]);
         if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
@@ -311,11 +331,11 @@ const ProductCard = ({
     // Handle unit changes with stock validation
     const handleUnitUpdate = (productId, unitId) => {
         onUpdateUnit(productId, unitId);
-        
+
         const unitsQuantity = productQuantities[productId] || 1;
         const packQuantity = getPackQuantity(unitId);
         const updatedTotalQuantity = unitsQuantity * packQuantity;
-        
+
         if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
             onShowWarning(productId, 'exceeds_stock', getProductName(), updatedTotalQuantity, stockLevel);
         }
@@ -372,9 +392,10 @@ const ProductCard = ({
                         <span className="text-[#2D2C70] font-semibold text-[24px]">
                             ${discountedPrice.toFixed(2)}
                         </span>
-                        {hasProductDiscount && discountPercentage > 0 && (
+                        {/* Show strikethrough price if there's a discount */}
+                        {hasProductDiscount && discountedPrice < getOriginalPriceForDisplay(productData) && (
                             <span className="text-sm text-gray-500 line-through">
-                                ${productData.eachPrice ? productData.eachPrice.toFixed(2) : '0.00'}
+                                ${getOriginalPriceForDisplay(productData).toFixed(2)}
                             </span>
                         )}
                     </div>
@@ -475,11 +496,10 @@ const ProductCard = ({
                         {/* ✅ UPDATE BUTTON - Fixed height */}
                         <button
                             onClick={() => onUpdateCart(productId, isProductGroup)}
-                            className={`min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${
-                                hasModifications && isAvailable && isItemInCart
-                                    ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
-                                    : 'bg-gray-400 cursor-not-allowed'
-                            }`}
+                            className={`min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${hasModifications && isAvailable && isItemInCart
+                                ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
                             disabled={isLoading || !hasModifications || !isAvailable || !isItemInCart}
                             title={
                                 !isItemInCart
@@ -499,11 +519,10 @@ const ProductCard = ({
                         {/* ✅ ADD TO CART BUTTON - Fixed height */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`min-h-[36px] flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${
-                                isAvailable && !isItemInCart
-                                    ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
-                                    : 'bg-gray-400 cursor-not-allowed'
-                            }`}
+                            className={`min-h-[36px] flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${isAvailable && !isItemInCart
+                                ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
+                                : 'bg-gray-400 cursor-not-allowed'
+                                }`}
                             disabled={isLoading || !isAvailable || isItemInCart}
                             title={
                                 isItemInCart
@@ -529,9 +548,8 @@ const ProductCard = ({
                         {/* ✅ REMOVE BUTTON */}
                         <button
                             onClick={() => onRemoveFromWishlist(productId, isProductGroup)}
-                            className={`h-9 w-9 border cursor-pointer rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${
-                                isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
-                            }`}
+                            className={`h-9 w-9 border cursor-pointer rounded-full flex items-center justify-center hover:bg-[#E9098D] hover:text-white transition-colors disabled:opacity-50 ${isAvailable ? 'border-[#E799A9]' : 'border-gray-400'
+                                }`}
                             disabled={isLoading}
                         >
                             <img src="/icons/dustbin-1.png" className="w-4 h-4" alt="remove" />
@@ -569,14 +587,14 @@ const WishListComponent = () => {
         setWarnings(prev => {
             // Remove existing warning for this product
             const filtered = prev.filter(warning => warning.productId !== productId);
-            
+
             let message = '';
             if (type === 'out_of_stock') {
                 message = `${productName} is currently out of stock and cannot be added to cart.`;
             } else if (type === 'exceeds_stock') {
                 message = `${productName} requested quantity (${requestedQty}) exceeds available stock (${availableQty}). Please reduce quantity.`;
             }
-            
+
             return [...filtered, { productId, type, productName, message, requestedQty, availableQty }];
         });
     };
@@ -887,10 +905,10 @@ const WishListComponent = () => {
             if (response.data.statusCode === 200) {
                 setError(null);
                 console.log("Added to cart successfully");
-                
+
                 // ✅ REMOVE FROM WISHLIST AFTER SUCCESSFULLY ADDING TO CART
                 await removeFromWishlist(productId, isProductGroup);
-                
+
                 await fetchCustomersCart();
             } else {
                 setError(response.data.message || "Failed to add to cart");
@@ -1038,7 +1056,7 @@ const WishListComponent = () => {
                         <div className="mb-6 space-y-3">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-lg font-semibold text-orange-800">Stock Issues</h3>
-                                <button 
+                                <button
                                     onClick={clearAllWarnings}
                                     className="text-sm text-orange-600 hover:text-orange-800 underline"
                                 >
@@ -1046,22 +1064,19 @@ const WishListComponent = () => {
                                 </button>
                             </div>
                             {warnings.map((warning, index) => (
-                                <div 
-                                    key={`${warning.productId}-${index}`} 
-                                    className={`border rounded-md p-3 flex justify-between items-start ${
-                                        warning.type === 'out_of_stock' 
-                                            ? 'bg-red-50 border-red-200' 
-                                            : 'bg-orange-50 border-orange-200'
-                                    }`}
+                                <div
+                                    key={`${warning.productId}-${index}`}
+                                    className={`border rounded-md p-3 flex justify-between items-start ${warning.type === 'out_of_stock'
+                                        ? 'bg-red-50 border-red-200'
+                                        : 'bg-orange-50 border-orange-200'
+                                        }`}
                                 >
                                     <div className="flex items-start">
-                                        <AlertCircle className={`h-5 w-5 mt-0.5 mr-3 flex-shrink-0 ${
-                                            warning.type === 'out_of_stock' ? 'text-red-600' : 'text-orange-600'
-                                        }`} />
+                                        <AlertCircle className={`h-5 w-5 mt-0.5 mr-3 flex-shrink-0 ${warning.type === 'out_of_stock' ? 'text-red-600' : 'text-orange-600'
+                                            }`} />
                                         <div>
-                                            <p className={`text-sm font-medium ${
-                                                warning.type === 'out_of_stock' ? 'text-red-800' : 'text-orange-800'
-                                            }`}>
+                                            <p className={`text-sm font-medium ${warning.type === 'out_of_stock' ? 'text-red-800' : 'text-orange-800'
+                                                }`}>
                                                 {warning.message}
                                             </p>
                                             {warning.type === 'exceeds_stock' && (
@@ -1071,13 +1086,12 @@ const WishListComponent = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => removeWarning(warning.productId)}
-                                        className={`ml-4 p-1 rounded ${
-                                            warning.type === 'out_of_stock' 
-                                                ? 'text-red-600 hover:text-red-800' 
-                                                : 'text-orange-600 hover:text-orange-800'
-                                        }`}
+                                        className={`ml-4 p-1 rounded ${warning.type === 'out_of_stock'
+                                            ? 'text-red-600 hover:text-red-800'
+                                            : 'text-orange-600 hover:text-orange-800'
+                                            }`}
                                     >
                                         <X size={16} />
                                     </button>

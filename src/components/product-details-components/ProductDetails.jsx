@@ -276,16 +276,19 @@ function ProductDetail() {
     return 0;
   };
 
-  // EXACT SAME DISCOUNT CALCULATION AS PRODUCT LISTING PAGE
+  // ✅ UPDATED: Calculate discounted price with new compare price logic
   const calculateDiscountedPrice = (targetItem = null) => {
     const itemToUse = targetItem || getCurrentItem();
     if (!itemToUse) return 0;
 
     const originalPrice = itemToUse.eachPrice || 0;
 
-    // Priority 1: If item has comparePrice (not null, not undefined, and not 0), use it
+    // ✅ NEW LOGIC: If item has comparePrice, use original price as selling price
+    // and comparePrice becomes the "original" price to show discount
     if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
-      return itemToUse.comparePrice;
+      // Now we return the original price as selling price
+      // comparePrice will be used to calculate discount percentage for display
+      return originalPrice;
     }
 
     // If no comparePrice or comparePrice is 0, check for discounts
@@ -338,17 +341,20 @@ function ProductDetail() {
     return originalPrice;
   };
 
-  // FIXED: Get discount percentage for display
   const getDiscountPercentage = (targetItem = null) => {
     const itemToUse = targetItem || getCurrentItem();
     if (!itemToUse) return null;
 
-    // If item has comparePrice, show comparePrice discount
+    const originalPrice = itemToUse.eachPrice || 0;
+
+    // ✅ NEW LOGIC: If product has comparePrice, calculate discount percentage
     if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
-      const originalPrice = itemToUse.eachPrice || 0;
-      const discountAmount = originalPrice - itemToUse.comparePrice;
-      const discountPercentage = (discountAmount / originalPrice) * 100;
-      return Math.round(discountPercentage);
+      if (itemToUse.comparePrice > originalPrice && originalPrice > 0) {
+        const discountAmount = itemToUse.comparePrice - originalPrice;
+        const discountPercentage = (discountAmount / itemToUse.comparePrice) * 100;
+        return Math.round(discountPercentage);
+      }
+      return null;
     }
 
     if (!currentUser || !currentUser.customerId) {
@@ -394,16 +400,41 @@ function ProductDetail() {
     return null;
   };
 
-  // FIXED: Check if item has any discount or comparePrice
+  // ✅ UPDATED: Check if item has any discount or comparePrice
   const hasDiscount = (targetItem = null) => {
     const itemToUse = targetItem || getCurrentItem();
     if (!itemToUse) return false;
 
-    return (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) ||
-      getDiscountPercentage(itemToUse) !== null;
+    const originalPrice = itemToUse.eachPrice || 0;
+
+    // Check comparePrice discount
+    if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+      if (itemToUse.comparePrice > originalPrice) {
+        return true;
+      }
+    }
+
+    // Check other discounts
+    return getDiscountPercentage(itemToUse) !== null;
   };
 
-  // RELATED ITEMS FUNCTIONS
+  // ✅ NEW: Get original price for display (for strikethrough)
+  const getOriginalPriceForDisplay = (targetItem = null) => {
+    const itemToUse = targetItem || getCurrentItem();
+    if (!itemToUse) return 0;
+
+    const currentPrice = itemToUse.eachPrice || 0;
+
+    // If compare price exists and is higher than current price, show compare price as original
+    if (itemToUse.comparePrice !== null && itemToUse.comparePrice !== undefined && itemToUse.comparePrice !== 0) {
+      if (itemToUse.comparePrice > currentPrice) {
+        return itemToUse.comparePrice;
+      }
+    }
+
+    // Otherwise, show the actual original price
+    return currentPrice;
+  };
 
   // Fetch related items based on current filters
   const fetchRelatedItems = async () => {
@@ -884,8 +915,8 @@ function ProductDetail() {
 
   const getPageTitle = () => {
     if (subCategoryTwoSlug) return subCategoryTwoSlug?.split('-').join(' ').toUpperCase();
-    if (subCategorySlug) return `${subCategorySlug?.split('-').join(' ').toUpperCase()}/${getItemName()}`;
-    if (categorySlug) return `${brandSlug?.split('-').join(' ').toUpperCase()}/${getItemName()}`;
+    if (subCategorySlug) return `${subCategorySlug?.split('-').join(' ').toUpperCase()} / ${getItemName()}`;
+    if (categorySlug) return `${brandSlug?.split('-').join(' ').toUpperCase()} / ${getItemName()}`;
     if (brandSlug) return brandSlug?.split('-').join(' ').toUpperCase();
     return "ALL PRODUCTS";
   };
@@ -1459,8 +1490,8 @@ function ProductDetail() {
       <div className="bg-white justify-items-center pt-4 overflow-x-hidden cursor-pointer">
         <div className="md mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
           <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full cursor-pointer">
-            <span className="uppercase">Home</span>
-            <span className="">/</span>
+            <span className="uppercase">Home </span>
+            <span className="">/ </span>
             <span className="hidden sm:inline">{getPageTitle()}</span>
           </nav>
         </div>
@@ -1489,7 +1520,7 @@ function ProductDetail() {
           <div className="space-y-4 flex flex-col lg:flex-row lg:space-x-16 lg:space-y-0">
             {/* Thumbnail Images */}
             {itemImages.length > 0 && (
-              <div className="order-2 lg:order-1 flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 cursor-pointer">
+              <div className="order-2 lg:order-1 flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-2 overflow-x-hidden  max-h-[500px]  overflow-y-auto pb-2 lg:pb-0 cursor-pointer">
                 {itemImages.map((image, index) => (
                   <button
                     key={index}
@@ -1586,16 +1617,17 @@ function ProductDetail() {
               <span className="text-[24px] font-semibold text-[#2D2C70] cursor-pointer">
                 ${mainDiscountedPrice.toFixed(2)}
               </span>
-              {mainHasDiscount && getCurrentItem().eachPrice && mainDiscountedPrice < getCurrentItem().eachPrice && (
+              {/* ✅ UPDATED: Show strikethrough only if there's an actual discount */}
+              {mainHasDiscount && mainDiscountedPrice < getOriginalPriceForDisplay(getCurrentItem()) && (
                 <span className="text-sm text-gray-500 line-through cursor-pointer">
-                  ${getCurrentItem().eachPrice.toFixed(2)}
+                  ${getOriginalPriceForDisplay(getCurrentItem()).toFixed(2)}
                 </span>
               )}
-              {mainDiscountPercentage && mainDiscountPercentage > 0 && (
+              {/* {mainDiscountPercentage && mainDiscountPercentage > 0 && (
                 <span className="text-sm text-green-600 font-semibold cursor-pointer">
                   ({mainDiscountPercentage}% OFF)
                 </span>
-              )}
+              )} */}
             </div>
 
             {/* Stock Error Message */}
@@ -1912,16 +1944,17 @@ function ProductDetail() {
                           <span className="text-[#2D2C70] text-[16px] font-semibold cursor-pointer">
                             ${discountedPrice.toFixed(2)}
                           </span>
-                          {hasItemDiscount && item.eachPrice && discountedPrice < item.eachPrice && (
+                          {/* ✅ UPDATED: Show strikethrough only if there's an actual discount */}
+                          {hasItemDiscount && discountedPrice < getOriginalPriceForDisplay(item) && (
                             <span className="text-xs text-gray-500 line-through cursor-pointer">
-                              ${item.eachPrice.toFixed(2)}
+                              ${getOriginalPriceForDisplay(item).toFixed(2)}
                             </span>
                           )}
-                          {discountPercentage && discountPercentage > 0 && (
+                          {/* {discountPercentage && discountPercentage > 0 && (
                             <span className="text-xs text-green-600 font-semibold cursor-pointer">
                               ({discountPercentage}% OFF)
                             </span>
-                          )}
+                          )} */}
                         </div>
 
                         {/* Stock Error Message */}

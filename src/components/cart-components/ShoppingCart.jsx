@@ -1,11 +1,14 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, Plus, Minus, Check, AlertTriangle, X, AlertCircle, ChevronDownIcon } from 'lucide-react';
+import { Heart, Plus, Minus, Check, AlertTriangle, X, AlertCircle, ChevronDownIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import useUserStore from "@/zustand/user"
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
+import { set } from 'nprogress';
+import { useProductFiltersStore } from '@/zustand/productsFiltrs';
+import ProductPopup from '../product-details-components/Popup';
 
 const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -16,12 +19,13 @@ const ShoppingCart = () => {
     const [localQuantities, setLocalQuantities] = useState({});
     const [selectedPacks, setSelectedPacks] = useState({});
     const [removingOutOfStock, setRemovingOutOfStock] = useState(false);
-    const [removingExceedsStock, setRemovingExceedsStock] = useState(false); // New state for removing exceeds stock items
+    const [removingExceedsStock, setRemovingExceedsStock] = useState(false);
     const currentUser = useUserStore((state) => state.user);
     const router = useRouter();
     const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
     const cartItemsCount = useCartStore((state) => state.currentItems);
     const [isTaxShippingOpen, setIsTaxShippingOpen] = useState(false);
+    const [navigationLoading, setNavigationLoading] = useState(false);
     const [totals, setTotals] = useState({
         subtotal: 0,
         tax: 0,
@@ -30,6 +34,23 @@ const ShoppingCart = () => {
         totalItems: 0
     });
     const [brandWiseTotals, setBrandWiseTotals] = useState([]);
+    const [hoveredImage, setHoveredImage] = useState(null);
+    const {
+        categoryId,
+        subCategoryId,
+        subCategoryTwoId,
+        brandId,
+        categorySlug,
+        subCategorySlug,
+        subCategoryTwoSlug,
+        brandSlug,
+        setFilters,
+    } = useProductFiltersStore()
+
+
+    const [showProductPopup, setShowProductPopup] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedProductGroup, setSelectedProductGroup] = useState(null);
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -120,9 +141,22 @@ const ShoppingCart = () => {
     const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
     const exceedingStockCount = itemsExceedingStock.length;
 
-    const handleCheckoutclick = () => {
-        router.push('/checkout');
-    };
+    const handleCheckoutclick = async () => {
+        if (exceedingStockCount > 0 || outOfStockCount > 0) {
+            return; // Don't proceed if there are stock issues
+        }
+
+        setNavigationLoading(true);
+        try {
+            // Add a small delay to ensure loader is visible
+            await new Promise(resolve => setTimeout(resolve, 100));
+            router.push('/checkout');
+        } catch (error) {
+            console.error('Navigation error:', error);
+            setNavigationLoading(false);
+        }
+
+    }
 
     // Fetch customers cart with pagination
     const fetchCustomersCart = async (page = 1, isLoadMore = false) => {
@@ -702,6 +736,37 @@ const ShoppingCart = () => {
         );
     }
 
+    const handleProductClick = (itemName, itemId, isProductGroup = false) => {
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: subCategorySlug || null,
+            subCategoryTwoSlug: subCategoryTwoSlug || null,
+            brandSlug: brandSlug || null,
+            brandId: brandId || null,
+            categoryId: categoryId || null,
+            subCategoryId: subCategoryId || null,
+            subCategoryTwoId: subCategoryTwoId || null,
+            productID: isProductGroup ? null : itemId,
+            productGroupId: isProductGroup ? itemId : null
+        });
+        const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
+        router.push(`/${itemSlug}`);
+    }
+
+    const handleQuickViewClick = (item) => {
+        const isProductGroupItem = isProductGroup(item);
+
+        if (isProductGroupItem) {
+            setSelectedProductGroup(item.productGroup);
+            setSelectedProduct(null);
+        } else {
+            setSelectedProduct(item.product);
+            setSelectedProductGroup(null);
+        }
+
+        setShowProductPopup(true);
+    };
+
     return (
         <>
             {/* <Navbar /> */}
@@ -844,13 +909,43 @@ const ShoppingCart = () => {
                                                             }`}>
                                                             {/* Product Image */}
                                                             <div className="">
-                                                                <div className="rounded-lg flex items-center w-full  justify-items-center  ">
+                                                                <div
+                                                                    className="rounded-lg flex items-center w-full justify-items-center relative group"
+                                                                    onMouseEnter={() => setHoveredImage(item._id)}
+                                                                    onMouseLeave={() => setHoveredImage(null)}
+                                                                >
+                                                                    {/* Quick View Overlay */}
+                                                                    <div className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === item._id ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleQuickViewClick(item);
+                                                                            }}
+                                                                            className="bg-gray-300 text-black px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                                                                        >
+                                                                            <svg
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                                width="16"
+                                                                                height="16"
+                                                                                viewBox="0 0 24 24"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="2"
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                            >
+                                                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                                                                <circle cx="12" cy="12" r="3" />
+                                                                            </svg>
+                                                                            Quick View
+                                                                        </button>
+                                                                    </div>
+
                                                                     <img
-                                                                        className='object-contain h-[200px] w-[200px] xl:pl-2'
+                                                                        className='object-contain h-[200px] w-[200px] xl:pl-2 cursor-pointer transition-transform duration-300 group-hover:scale-105'
                                                                         src={getItemImage(item)}
                                                                         alt={getItemName(item)}
-                                                                        width={116}
-                                                                        height={116}
+                                                                        onClick={() => handleProductClick(getItemName(item), isProductGroupItem ? item.productGroup?._id : item.product?._id, isProductGroupItem)}
                                                                         onError={(e) => {
                                                                             e.target.src = '/placeholder.svg';
                                                                         }}
@@ -862,7 +957,10 @@ const ShoppingCart = () => {
                                                             <div className="flex-1 ">
                                                                 {/* Product Name */}
                                                                 <div className="flex items-center gap-2 mb-1">
-                                                                    <h3 className="text-[15px] font-semibold cursor-pointer">
+                                                                    <h3
+                                                                        className="text-[15px] font-semibold cursor-pointer hover:text-[#E9098D]"
+                                                                        onClick={() => handleProductClick(getItemName(item), isProductGroupItem ? item.productGroup?._id : item.product?._id, isProductGroupItem)}
+                                                                    >
                                                                         {getItemName(item)}
                                                                     </h3>
                                                                     {isProductGroupItem && (
@@ -1085,8 +1183,8 @@ const ShoppingCart = () => {
                                         <div className="py-6 border-t border-gray-200">
                                             <button
                                                 onClick={handleCheckoutclick}
-                                                disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors cursor-pointer ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
+                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 cursor-not-allowed'
                                                     : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
                                                     }`}
@@ -1097,8 +1195,14 @@ const ShoppingCart = () => {
                                                 }
                                             >
                                                 {exceedingStockCount > 0 || outOfStockCount > 0
-                                                    ? 'Fix Stock Issues to Proceed'
-                                                    : 'Proceed to checkout'}
+                                                    ? 'Fix Stock Issues'
+                                                    : navigationLoading ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                            Processing...
+                                                        </>
+                                                    ) : 'Proceed to checkout'
+                                                }
                                             </button>
                                         </div>
                                     )}
@@ -1202,10 +1306,10 @@ const ShoppingCart = () => {
 
                                             <button
                                                 onClick={handleCheckoutclick}
-                                                disabled={exceedingStockCount > 0 || outOfStockCount > 0}
-                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors cursor-pointer  ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
+                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 border-black cursor-not-allowed'
-                                                    : 'bg-[#2D2C70] border-[#2D2C70] ] '
+                                                    : 'bg-[#2D2C70] border-[#2D2C70]'
                                                     }`}
                                                 title={
                                                     exceedingStockCount > 0 || outOfStockCount > 0
@@ -1215,7 +1319,13 @@ const ShoppingCart = () => {
                                             >
                                                 {exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'Fix Stock Issues'
-                                                    : 'Proceed to checkout'}
+                                                    : navigationLoading ? (
+                                                        <>
+                                                            <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                            Processing...
+                                                        </>
+                                                    ) : 'Proceed to checkout'
+                                                }
                                             </button>
 
                                             <div className="flex items-center space-x-3">
@@ -1313,6 +1423,31 @@ const ShoppingCart = () => {
                     </div>
                 </div>
             )}
+            {/* Product Popup */}
+            <ProductPopup
+                isOpen={showProductPopup}
+                onClose={() => {
+                    setShowProductPopup(false);
+                    setSelectedProduct(null);
+                    setSelectedProductGroup(null);
+                }}
+                productId={selectedProduct?._id}
+                productGroupId={selectedProductGroup?._id}
+                categoryId={categoryId}
+                subCategoryId={subCategoryId}
+                subCategoryTwoId={subCategoryTwoId}
+                brandId={brandId}
+                categorySlug={categorySlug}
+                subCategorySlug={subCategorySlug}
+                subCategoryTwoSlug={subCategoryTwoSlug}
+                brandSlug={brandSlug}
+                setFilters={setFilters}
+                clearFilters={() => { }} // Add your clearFilters function if available
+                wishListItems={[]} // You'll need to pass wishlist items if available
+                setWishlistItems={() => { }} // You'll need to pass setWishlistItems if available
+                customerGroupsDiscounts={[]} // You'll need to pass customerGroupsDiscounts if available
+                itemBasedDiscounts={[]} // You'll need to pass itemBasedDiscounts if available
+            />
         </>
     );
 };

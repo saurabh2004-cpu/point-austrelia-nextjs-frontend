@@ -571,8 +571,11 @@ export function Navbar() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative">
           {/* Desktop Navigation */}
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center justify-center space-x-[36px] h-14">
+          <div
+            onMouseLeave={() => {
+              setActiveDropdown(null)
+            }}
+            className="hidden lg:flex items-center justify-center space-x-[36px] h-14">
             {navigationItems.map((item) => (
               <div key={item.index} className="relative h-full flex items-center px-2" onMouseEnter={() => {
                 if (item.hasDropdown && currentUser) {
@@ -596,14 +599,16 @@ export function Navbar() {
                 {!item.hasDropdown ? (
                   <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
-                  <button onClick={() => {
-                    // For brands when logged out, navigate directly to brand page
-                    if (item.brandId && !currentUser) {
-                      handleFastNavigation(`/brand/${item.brandSlug}`);
-                    } else {
-                      handleNavigation(item)
-                    }
-                  }} className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</button>
+                  <button
+
+                    onClick={() => {
+                      // For brands when logged out, navigate directly to brand page 
+                      if (item.brandId && !currentUser) {
+                        handleFastNavigation(`/brand/${item.brandSlug}`);
+                      } else {
+                        handleNavigation(item)
+                      }
+                    }} className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</button>
                 )}
 
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
@@ -801,13 +806,14 @@ export function Navbar() {
             </div>
           </div>
         )}
-      </nav>
+      </nav >
 
       {showCartPopup && (
         <div data-cart-popup>
           <ShoppingCartPopup onClose={() => setShowCartPopup(false)} />
         </div>
-      )}
+      )
+      }
     </>
   )
 }

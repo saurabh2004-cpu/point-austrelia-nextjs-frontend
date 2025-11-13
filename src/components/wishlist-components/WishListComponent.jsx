@@ -343,7 +343,7 @@ const ProductCard = ({
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2 font-spartan mx-auto xl:h-full xl:w-[552px]">
-            <div className="flex flex-col xl:flex-row h-full">
+            <div className="flex flex-col sm:flex-row h-full">
                 {/* Product Image */}
                 <div className="flex-shrink-0 mr-4">
                     <div className="rounded-lg flex items-center justify-center align-middle relative cursor-pointer">
@@ -1144,7 +1144,7 @@ const WishListComponent = () => {
                             {/* Product Grid */}
                             <div className="grid gap-6">
                                 {/* Large screens: 2 cards per row */}
-                                <div className="hidden md:grid md:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0">
+                                <div className="hidden lg:grid 2xl:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0">
                                     {wishListItems.map((item) => (
                                         <ProductCard
                                             key={item._id}
@@ -1167,7 +1167,7 @@ const WishListComponent = () => {
                                 </div>
 
                                 {/* Medium and smaller screens: 1 card per row */}
-                                <div className="md:hidden">
+                                <div className="lg:hidden">
                                     {wishListItems.map((item) => (
                                         <div key={item._id} className="mb-6 overflow-x-auto">
                                             <ProductCard

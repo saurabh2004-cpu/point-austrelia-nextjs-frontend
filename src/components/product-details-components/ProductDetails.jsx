@@ -12,6 +12,14 @@ import { useRouter } from "next/navigation"
 import Notification from "../Notification"
 
 function ProductDetail() {
+  const currentUser = useUserStore((state) => state.user);
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.push('/login')
+    }
+  }, [currentUser])
+
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [selectedUnitId, setSelectedUnitId] = useState("")
@@ -39,7 +47,6 @@ function ProductDetail() {
   const [stockError, setStockError] = useState(null);
   const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
   const [cartItems, setCartItems] = useState([])
-  const currentUser = useUserStore((state) => state.user);
   const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
   const [itemBasedDiscounts, setItemBasedDiscounts] = useState([])
   const [loading, setLoading] = useState(false)

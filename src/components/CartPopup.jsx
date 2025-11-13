@@ -6,6 +6,8 @@ import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
 import Link from 'next/link';
+import { useProductFiltersStore } from '@/zustand/productsFiltrs';
+import { i } from 'framer-motion/m';
 
 const ShoppingCartPopup = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -19,6 +21,21 @@ const ShoppingCartPopup = () => {
   const [updatingItems, setUpdatingItems] = useState({});
   const [packDetails, setPackDetails] = useState({});
   const setCartItemsCount = useCartStore((state) => state.setCurrentItems);
+  const [navigatingToCart, setNavigatingToCart] = useState(false);
+  const [navigatingToCheckout, setNavigatingToCheckout] = useState(false);
+
+  const {
+    categoryId,
+    subCategoryId,
+    subCategoryTwoId,
+    brandId,
+    categorySlug,
+    subCategorySlug,
+    subCategoryTwoSlug,
+    brandSlug,
+    setFilters,
+  } = useProductFiltersStore()
+
 
   const fetchCustomersCart = async () => {
     try {
@@ -392,13 +409,34 @@ const ShoppingCartPopup = () => {
     fetchCustomersCart();
   }, [currentUser]);
 
+  const handleProductClick = (itemName, itemId, isProductGroup = false) => {
+    setFilters({
+      categorySlug: categorySlug,
+      subCategorySlug: subCategorySlug || null,
+      subCategoryTwoSlug: subCategoryTwoSlug || null,
+      brandSlug: brandSlug || null,
+      brandId: brandId || null,
+      categoryId: categoryId || null,
+      subCategoryId: subCategoryId || null,
+      subCategoryTwoId: subCategoryTwoId || null,
+      productID: isProductGroup ? null : itemId,
+      productGroupId: isProductGroup ? itemId : null
+    });
+
+    console.log("itemName in handleProductClick", itemName)
+
+    const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
+    router.push(`/${itemSlug}`);
+    setIsOpen(false);
+  }
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none">
+    <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none font-spartan">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto flex flex-col">
         <div className="flex flex-col items-center justify-between px-4 pt-4">
-          <div className="w-full flex justify-end">
+          <div className="w-full flex justify-between border-b pb-3">
+            <h1 className='text-lg font-semibold uppercase'>Shopping Cart</h1>
             <button onClick={() => setIsOpen(false)} className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -496,7 +534,10 @@ const ShoppingCartPopup = () => {
                         <div className="flex justify-between items-start">
                           <div className="flex justify-between items-start">
                             <div>
-                              <h3 className="text-[14px] font-medium line-clamp-2 hover:text-[#E9098D]">
+                              <h3
+                                onClick={() => handleProductClick(getItemName(item), isProductGroup ? item.productGroup?._id : item.product?._id, isProductGroup)}
+                                className="text-[14px] cursor-pointer font-medium line-clamp-2 hover:text-[#E9098D]"
+                              >
                                 {getItemName(item)}
                               </h3>
                               {isProductGroup && (
@@ -659,21 +700,52 @@ const ShoppingCartPopup = () => {
             <span>Subtotal: ${subtotal.toFixed(2)}</span>
           </div>
           <div className="bg-gray-200 h-[0.7px] w-full"></div>
+
           <div className="flex flex-col sm:flex-row gap-2 text-[15px] font-medium p-4">
-            <Link href="/cart"
-              onClick={() => { setIsOpen(false) }}
-              className="flex-1 bg-[#2D2C70] border text-center border-black hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors"
+            <button
+              onClick={() => {
+                setNavigatingToCart(true);
+                router.push('/cart');
+                // Note: We can't reliably detect when page loads, so we'll use a timeout as fallback
+                setTimeout(() => setNavigatingToCart(false), 1000);
+                setIsOpen(false);
+              }}
+              disabled={navigatingToCart || cartItems.length === 0}
+              className="flex-1 bg-[#2D2C70] border border-black hover:bg-[#46BCF9] text-white py-2 rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              View Cart
-            </Link>
-            <Link href="/checkout"
-              onClick={() => setIsOpen(false)}
-              disabled={hasStockIssues || cartItems.length === 0}
-              className={`flex-1 border border-black text-white py-2  text-center rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${hasStockIssues ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#46BCF9] hover:bg-[#2D2C70]'}`}
+              {navigatingToCart ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Loading...
+                </>
+              ) : (
+                'View Cart'
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setNavigatingToCheckout(true);
+                router.push('/checkout');
+                // Note: We can't reliably detect when page loads, so we'll use a timeout as fallback
+                setTimeout(() => setNavigatingToCheckout(false), 1000);
+              }}
+              disabled={hasStockIssues || cartItems.length === 0 || navigatingToCheckout}
+              className={`flex-1 border border-black text-white py-2 rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${hasStockIssues || cartItems.length === 0 ? 'bg-gray-400' : 'bg-[#46BCF9] hover:bg-[#2D2C70]'
+                }`}
               title={hasStockIssues ? 'Please fix stock issues before checkout' : ''}
             >
-              {hasStockIssues ? 'Fix Stock Issues' : 'Checkout'}
-            </Link>
+              {navigatingToCheckout ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Loading...
+                </>
+              ) : hasStockIssues ? (
+                'Fix Stock Issues'
+              ) : (
+                'Checkout'
+              )}
+            </button>
           </div>
         </div>
       </div>

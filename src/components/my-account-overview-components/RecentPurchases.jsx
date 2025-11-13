@@ -277,7 +277,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4 border-r">
+                  <td className="py-4 px-4 border-r max-w-lg">
                     <div className='flex justify-start'>
                       <p className="font-medium truncate flex justify-start">{product.productName}</p>
                     </div>

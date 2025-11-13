@@ -1,56 +1,61 @@
+'use client'
 import SignUpComponent from '@/components/SignUp';
-import { metadataService } from '@/utils/metadataService';
+import { withGuest } from '@/components/withAuth';
 
-// ✅ Prevents build-time metadata fetching (avoids ECONNREFUSED)
-export const dynamic = 'force-dynamic';
+// import { metadataService } from '@/utils/metadataService';
 
-export async function generateMetadata() {
-  try {
-    const res = await metadataService.getMetadataByPage('sign-up');
+// // ✅ Prevents build-time metadata fetching (avoids ECONNREFUSED)
+// export const dynamic = 'force-dynamic';
 
-    if (res?.success && res?.data) {
-      return {
-        title: res.data.title || 'Sign Up | My Website',
-        description: res.data.description || 'Create an account to enjoy our services.',
-        keywords: res.data.keywords || 'sign up, register, create account',
-        openGraph: {
-          title: res.data.title || 'Sign Up | My Website',
-          description: res.data.description || 'Create an account to enjoy our services.',
-          type: 'website',
-          url: 'https://yourdomain.com/sign-up',
-        },
-        twitter: {
-          title: res.data.title || 'Sign Up | My Website',
-          description: res.data.description || 'Create an account to enjoy our services.',
-        },
-      };
-    }
-  } catch (err) {
-    console.error('Error fetching metadata for sign-up page:', err.message);
-  }
+// export async function generateMetadata() {
+//   try {
+//     const res = await metadataService.getMetadataByPage('sign-up');
 
-  // ✅ fallback metadata if API fails or unavailable
-  return {
-    title: 'Sign Up | My Website',
-    description: 'Create an account to enjoy our services and access exclusive offers.',
-    keywords: 'sign up, register, create account, join now',
-    openGraph: {
-      title: 'Sign Up | My Website',
-      description: 'Create an account to enjoy our services and access exclusive offers.',
-      type: 'website',
-      url: 'https://yourdomain.com/sign-up',
-    },
-    twitter: {
-      title: 'Sign Up | My Website',
-      description: 'Create an account to enjoy our services and access exclusive offers.',
-    },
-  };
-}
+//     if (res?.success && res?.data) {
+//       return {
+//         title: res.data.title || 'Sign Up | My Website',
+//         description: res.data.description || 'Create an account to enjoy our services.',
+//         keywords: res.data.keywords || 'sign up, register, create account',
+//         openGraph: {
+//           title: res.data.title || 'Sign Up | My Website',
+//           description: res.data.description || 'Create an account to enjoy our services.',
+//           type: 'website',
+//           url: 'https://yourdomain.com/sign-up',
+//         },
+//         twitter: {
+//           title: res.data.title || 'Sign Up | My Website',
+//           description: res.data.description || 'Create an account to enjoy our services.',
+//         },
+//       };
+//     }
+//   } catch (err) {
+//     console.error('Error fetching metadata for sign-up page:', err.message);
+//   }
 
-export default function SignUpPage() {
+//   // ✅ fallback metadata if API fails or unavailable
+//   return {
+//     title: 'Sign Up | My Website',
+//     description: 'Create an account to enjoy our services and access exclusive offers.',
+//     keywords: 'sign up, register, create account, join now',
+//     openGraph: {
+//       title: 'Sign Up | My Website',
+//       description: 'Create an account to enjoy our services and access exclusive offers.',
+//       type: 'website',
+//       url: 'https://yourdomain.com/sign-up',
+//     },
+//     twitter: {
+//       title: 'Sign Up | My Website',
+//       description: 'Create an account to enjoy our services and access exclusive offers.',
+//     },
+//   };
+// }
+
+function SignUpPage() {
   return (
     <>
       <SignUpComponent />
     </>
   );
 }
+
+export default withGuest(SignUpPage)

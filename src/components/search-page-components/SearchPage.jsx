@@ -22,13 +22,21 @@ const SearchPage = () => {
     const [productGroupQuantities, setProductGroupQuantities] = useState({})
     const [selectedUnits, setSelectedUnits] = useState({})
     const currentUser = useUserStore((state) => state.user)
+    const [hoveredImage, setHoveredImage] = useState(null);
+
+
+    useEffect(() => {
+        if (!currentUser) {
+            router.push('/login')
+        }
+    }, [currentUser])
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
     const [loading, setLoading] = useState(false)
-    const [perpageItems, setPerpageItems] = useState('10')
+    const [perpageItems, setPerpageItems] = useState('15')
     const [cartItems, setCartItems] = useState([])
     const [stockErrors, setStockErrors] = useState({})
     const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([])
@@ -1050,7 +1058,11 @@ const SearchPage = () => {
 
 
                 {/* Item Image */}
-                <div className="flex justify-center mb-3 sm:mb-4 rounded-lg">
+                <div
+                    className="flex justify-center mb-3 sm:mb-4 rounded-lg relative group"
+                    onMouseEnter={() => setHoveredImage(itemId)}
+                    onMouseLeave={() => setHoveredImage(null)}
+                >
                     {!isProductGroup && item.badge && (
                         <div className="absolute top-6 left-4 sm:left-6 z-10">
                             <div
@@ -1064,11 +1076,39 @@ const SearchPage = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Quick View Overlay */}
+                    <div className={`absolute xl:top-1/2 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleProductImageClick(item, isProductGroup);
+                            }}
+                            className="bg-gray-300 text-black px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Quick View
+                        </button>
+                    </div>
+
                     <img
                         src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="h-[180px] w-[180px] object-contain cursor-pointer"
-                        onClick={() => handleProductImageClick(item, isProductGroup)} // Add click handler here
+                        className="h-[180px] w-[180px] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                        onClick={() => handleProductImageClick(item, isProductGroup)}
                     />
                 </div>
 
@@ -1077,7 +1117,7 @@ const SearchPage = () => {
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[60px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
+                        className="text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
                         {(isProductGroup ? item.name : item.ProductName)?.length > 35
                             ? (isProductGroup ? item.name : item.ProductName).slice(0, 35) + "..."
                             : (isProductGroup ? item.name : item.ProductName)}
@@ -1134,9 +1174,9 @@ const SearchPage = () => {
 
                     {/* Units Dropdown (only for products, not product groups) */}
                     {!isProductGroup && getPackTypes(item).length > 0 && (
-                        <div className="mb-3 flex space-x-12 align-center items-center font-spartan">
+                        <div className="mb-3 flex space-x-5 align-center items-center font-spartan">
                             <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
-                            <div className="relative w-full">
+                            <div className="relative   w-full">
                                 <select
                                     value={selectedUnits[itemId] || ''}
                                     onChange={(e) => handleUnitChange(itemId, e.target.value, item)}

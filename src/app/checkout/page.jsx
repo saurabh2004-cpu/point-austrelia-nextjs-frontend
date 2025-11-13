@@ -1370,7 +1370,7 @@ const CheckoutComponent = () => {
                                                     Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totals.totalQuantity} Items</span>
                                                 </span>
                                                 <span className="text-[#2D2C70] font-semibold text-[20px]">
-                                                    ${(totals.subtotal || 0).toFixed(2)}
+                                                    ${(totals.subtotal.toFixed(2) || 0)}
                                                 </span>
                                             </div>
                                             <div className="mb-2 text-xs sm:text-sm lg:text-[14px] font-[400]">Subtotal does not include shipping or taxes</div>
@@ -1378,16 +1378,16 @@ const CheckoutComponent = () => {
                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-3 px-4'>
                                             <div className="flex justify-between">
                                                 <span className="text-[#000000]/80">Shipping</span>
-                                                <span>${((currentUser?.defaultShippingRate) || 0).toFixed(2)}</span>
+                                                <span>${((currentUser?.defaultShippingRate) || 0)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-[#000000]/80">GST</span>
-                                                <span>${(totals.tax || 0).toFixed(2)}</span>
+                                                <span>${(totals.tax.toFixed(2) || 0)}</span>
                                             </div>
                                         </div>
                                         <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
                                             <span>Total</span>
-                                            <span>${(totals.grandTotal || 0).toFixed(2)}</span>
+                                            <span>${(totals.grandTotal.toFixed(2) || 0)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -1476,7 +1476,7 @@ const CheckoutComponent = () => {
                                                         </h3>
                                                         <div className='flex w-full justify-between'>
                                                             <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
-                                                                ${(item.amount).toFixed(2)}
+                                                                ${(item.amount.toFixed(2))}
                                                             </p>
                                                             <div className={`flex items-center text-[12px] font-[600] py-1 px-2 w-[90px] mb-2 ${isOutOfStock
                                                                 ? 'bg-red-100 text-red-700'

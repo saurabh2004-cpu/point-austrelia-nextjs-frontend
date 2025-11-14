@@ -520,9 +520,8 @@ const SearchPage = () => {
                 const currentPrice = isProductGroup ? item.eachPrice : item.eachPrice;
                 // Only apply compare price discount if comparePrice is higher than current price
                 if (item.comparePrice > currentPrice) {
-                    const discountAmount = item.comparePrice - currentPrice;
-                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
-                    discountType = "compare_price";
+                    discountPercentages = item.comparePrice;
+                    discountType = "Compare Price";
                 }
             }
             // Priority 2: Check item-based discount (only if no compare price discount applied)

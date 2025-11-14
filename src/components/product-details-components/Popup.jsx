@@ -624,8 +624,8 @@ export default function ProductPopup({
                 const currentPrice = item.eachPrice || 0;
                 // Only apply compare price discount if comparePrice is higher than current price
                 if (item.comparePrice > currentPrice) {
-                    const discountAmount = item.comparePrice - currentPrice;
-                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
+                    // const discountAmount = item.comparePrice - currentPrice;
+                    discountPercentages = item.comparePrice;
                     discountType = "Compare Price";
                 }
             }

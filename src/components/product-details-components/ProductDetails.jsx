@@ -710,6 +710,8 @@ function ProductDetail() {
 
     try {
       const item = relatedItems.find(i => i._id === itemId);
+
+
       if (!item) return;
 
       // For product groups, we don't have typesOfPacks, so use default values
@@ -734,9 +736,10 @@ function ProductDetail() {
       // Priority 1: Check comparePrice discount
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
         const originalPrice = isProductGroup ? item.eachPrice : item.eachPrice;
-        const discountAmount = originalPrice - item.comparePrice;
-        discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-        discountType = "compare_price";
+        discountPercentages = item.comparePrice;
+
+
+        discountType = "Compare Price";
       }
       // Priority 2: Check item-based discount
       else if (currentUser && currentUser.customerId) {
@@ -746,7 +749,7 @@ function ProductDetail() {
 
         if (itemDiscount) {
           discountPercentages = itemDiscount.percentage;
-          discountType = "item_based";
+          discountType = "Item Discount";
         }
         // Priority 3: Check pricing group discount
         else if (item.pricingGroup) {
@@ -766,7 +769,7 @@ function ProductDetail() {
             if (customerDiscount) {
               originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
               discountPercentages = Math.abs(originalPricingGroupPercentage);
-              discountType = "pricing_group";
+              discountType = "Pricing Group Discount";
 
               // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
               if (originalPricingGroupPercentage > 0) {
@@ -1072,8 +1075,7 @@ function ProductDetail() {
       // Priority 1: Check if item has comparePrice
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
         const originalPrice = item.eachPrice || 0;
-        const discountAmount = originalPrice - item.comparePrice;
-        discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+        discountPercentages = item.comparePrice
         discountType = "Compare Price";
       }
       // Priority 2: Check for item-based discount
@@ -1195,9 +1197,8 @@ function ProductDetail() {
       // Priority 1: Check if item has comparePrice
       if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
         const originalPrice = item.eachPrice || 0;
-        const discountAmount = originalPrice - item.comparePrice;
-        discountPercentages = Math.round((discountAmount / originalPrice) * 100);
-        discountType = "compare_price";
+        discountPercentages = item.comparePrice
+        discountType = "Compare Price";
       }
       // Priority 2: Check for item-based discount
       else if (currentUser && currentUser.customerId) {
@@ -1207,7 +1208,7 @@ function ProductDetail() {
 
         if (itemDiscount) {
           discountPercentages = itemDiscount.percentage;
-          discountType = "item_based";
+          discountType = "Item Discount";
         }
         // Priority 3: Check for pricing group discount
         else if (item.pricingGroup) {
@@ -1227,7 +1228,7 @@ function ProductDetail() {
             if (customerDiscount) {
               originalPricingGroupPercentage = parseFloat(customerDiscount.percentage);
               discountPercentages = Math.abs(originalPricingGroupPercentage);
-              discountType = "pricing_group";
+              discountType = "Pricing Group Discount";
 
               // ✅ ADDED: For pricing group discounts, add + or - prefix to discountPercentages
               if (originalPricingGroupPercentage > 0) {

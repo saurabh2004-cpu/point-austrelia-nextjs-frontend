@@ -116,13 +116,7 @@ export function Navbar() {
 
   const handleFastNavigation = useCallback((path) => {
     setIsMenuOpen(false);
-    setShowUserDropdown(false);
-    setShowCartPopup(false);
     setActiveDropdown(null);
-    setShowCompanyDropDown(false);
-    setMobileActiveBrand(null);
-    setMobileActiveCategory(null);
-    setMobileActiveSubcategory(null);
     router.push(path);
   }, [router, setShowCartPopup]);
 
@@ -313,28 +307,10 @@ export function Navbar() {
 
   const companyDropdownRef = useClickOutside(() => setShowCompanyDropDown(false));
 
-  const handleCategoryClick = useCallback((link, categoryId = null, subCategoryId = null, subCategoryTwoId = null, categorySlug = null, subCategorySlug = null, subCategoryTwoSlug = null) => {
-    setActiveDropdown(null)
-    setHoveredCategory(null)
-    setHoveredSubcategory(null)
+  const handleCategoryClick = useCallback((link) => {
     setIsMenuOpen(false)
-    setShowUserDropdown(false)
-    setShowCartPopup(false)
-    setMobileActiveBrand(null)
-    setMobileActiveCategory(null)
-    setMobileActiveSubcategory(null)
-    setFilters({
-      categorySlug: categorySlug,
-      subCategorySlug: subCategorySlug,
-      subCategoryTwoSlug: subCategoryTwoSlug,
-      categoryId: categoryId,
-      subCategoryId: subCategoryId,
-      subCategoryTwoId: subCategoryTwoId,
-      brandId: brandId,
-      brandSlug: brandSlug
-    })
     handleFastNavigation(link);
-  }, [brandId, brandSlug, setFilters, setShowCartPopup, handleFastNavigation]);
+  }, [brandId, brandSlug, setShowCartPopup, handleFastNavigation]);
 
   const handleBrandHover = useCallback((brandId, index, brandSlug) => {
     if (currentUser) {
@@ -671,7 +647,7 @@ export function Navbar() {
                                 <div className="flex items-center justify-between">
                                   <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => {
                                     e.preventDefault();
-                                    handleCategoryClick(category.link, category.id, null, null, category.slug, null, null);
+                                    handleCategoryClick(category.link);
                                   }} className="flex-1 block text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200">{category.label}</Link>
                                   {category.hasChild && (
                                     <button onClick={(e) => {
@@ -698,7 +674,7 @@ export function Navbar() {
                                         <div className="flex items-center justify-between">
                                           <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => {
                                             e.preventDefault();
-                                            handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null);
+                                            handleCategoryClick(subcat.link,);
                                           }} className="flex-1 block text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200">{subcat.label}</Link>
                                           {subcat.hasChild && (
                                             <button onClick={(e) => {
@@ -719,7 +695,7 @@ export function Navbar() {
                                         {subcat.hasChild && mobileActiveSubcategory === subcat.id && subcat.subcategoriesTwo && (
                                           <div className="ml-4 mt-1 space-y-1 border-l-2 border-purple-200 pl-3">
                                             {subcat.subcategoriesTwo.map((subcatTwo) => (
-                                              <Link key={subcatTwo.id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`, null, null, subcatTwo.id, null, null, subcatTwo.slug); }} className="block text-left py-1.5 text-xs text-purple-600 hover:text-[#2d2c70] transition-colors duration-200">{subcatTwo.label}</Link>
+                                              <Link key={subcatTwo.id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`,); }} className="block text-left py-1.5 text-xs text-purple-600 hover:text-[#2d2c70] transition-colors duration-200">{subcatTwo.label}</Link>
                                             ))}
                                           </div>
                                         )}
@@ -758,7 +734,7 @@ export function Navbar() {
                               if (category.id) handleCategoryHover(category.id)
                             }
                           }} onMouseLeave={() => setHoveredCategory(null)}>
-                            <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(category.link, category.id, null, null, category.slug, null, null); }} className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-1 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE" ? "text-[#E9098D] font-bold" : "text-[#2d2c70] hover:text-[#E9098D]"} ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''}`}>
+                            <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(category.link); }} className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-1 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE" ? "text-[#E9098D] font-bold" : "text-[#2d2c70] hover:text-[#E9098D]"} ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''}`}>
                               <span>{category.label}</span>
                               {category.hasChild && (<ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />)}
                             </Link>
@@ -774,7 +750,7 @@ export function Navbar() {
                                         setHoveredSubcategory(subcat.id)
                                       }
                                     }} onMouseLeave={() => setHoveredSubcategory(null)}>
-                                      <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(subcat.link, null, subcat.id, null, null, subcat.slug, null); }} className={`block w-full text-left text-sm py-1 px-2 rounded transition-colors duration-200 flex items-center justify-between group cursor-pointer ${hoveredSubcategory === subcat.id ? 'bg-gray-100 text-[#E9098D]' : 'text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50'}`}>
+                                      <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(subcat.link); }} className={`block w-full text-left text-sm py-1 px-2 rounded transition-colors duration-200 flex items-center justify-between group cursor-pointer ${hoveredSubcategory === subcat.id ? 'bg-gray-100 text-[#E9098D]' : 'text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50'}`}>
                                         <span>{subcat.label}</span>
                                         {subcat.hasChild && (<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />)}
                                       </Link>
@@ -784,7 +760,7 @@ export function Navbar() {
                                         <div className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md" onMouseEnter={() => setHoveredSubcategory(subcat.id)}>
                                           <div className="p-3 space-y-1">
                                             {subCategoriesTwoBySubCategory[subcat.id].map((subcatTwo) => (
-                                              <Link key={subcatTwo._id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`, null, null, subcatTwo._id, null, null, subcatTwo.slug); }} className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200 cursor-pointer">{subcatTwo.name}</Link>
+                                              <Link key={subcatTwo._id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`); }} className="block w-full text-left text-sm text-[#2d2c70] hover:text-[#E9098D] py-1 px-2 rounded hover:bg-gray-50 transition-colors duration-200 cursor-pointer">{subcatTwo.name}</Link>
                                             ))}
                                           </div>
                                         </div>

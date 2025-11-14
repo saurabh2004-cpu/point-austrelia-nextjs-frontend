@@ -729,6 +729,7 @@ const ShoppingCartPopup = () => {
                 router.push('/checkout');
                 // Note: We can't reliably detect when page loads, so we'll use a timeout as fallback
                 setTimeout(() => setNavigatingToCheckout(false), 1000);
+                setIsOpen(false);
               }}
               disabled={hasStockIssues || cartItems.length === 0 || navigatingToCheckout}
               className={`flex-1 border border-black text-white py-2 rounded-full transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${hasStockIssues || cartItems.length === 0 ? 'bg-gray-400' : 'bg-[#46BCF9] hover:bg-[#2D2C70]'

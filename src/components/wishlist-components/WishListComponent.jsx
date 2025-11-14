@@ -869,8 +869,7 @@ const WishListComponent = () => {
                 const originalPrice = productData.eachPrice || 0;
                 // Only apply compare price discount if comparePrice is lower than original price
                 if (productData.comparePrice < originalPrice && originalPrice > 0) {
-                    const discountAmount = originalPrice - productData.comparePrice;
-                    discountPercentages = Math.round((discountAmount / originalPrice) * 100);
+                    discountPercentages = productData.comparePrice;
                     discountType = "compare_price";
                 }
             }

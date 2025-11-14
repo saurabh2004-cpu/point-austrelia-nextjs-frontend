@@ -651,8 +651,8 @@ const ProductListing = () => {
                 const currentPrice = isProductGroup ? item.eachPrice : item.eachPrice;
                 // Only apply compare price discount if comparePrice is higher than current price
                 if (item.comparePrice > currentPrice) {
-                    const discountAmount = item.comparePrice - currentPrice;
-                    discountPercentages = Math.round((discountAmount / item.comparePrice) * 100);
+                    // const discountAmount = item.comparePrice - currentPrice;
+                    discountPercentages = item.comparePrice;
                     discountType = "compare_price";
                 }
             }
@@ -948,11 +948,14 @@ const ProductListing = () => {
 
     // Fetch categories for sidebar
     const fetchCategoriesForBrand = async () => {
-        if (!brandId) return;
+        const path = window.location.pathname.split('/');
+        let brandSlug = path[1] || null;
 
         try {
             setLoadingCategories(true);
-            const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`);
+            const res = await axiosInstance.get(`category/get-category-by-brand-slug/${brandSlug}`);
+
+            console.log("get categories by brand slug ", res)
 
             if (res.data.statusCode === 200) {
                 setCategories(res.data.data || []);
@@ -1566,11 +1569,9 @@ const ProductListing = () => {
     });
 
     useEffect(() => {
-        if (categoryId || subCategoryId || subCategoryTwoId || brandId) {
-            fetchItems()
-            fetchCategoriesForBrand()
-        }
-    }, [categoryId, subCategoryId, subCategoryTwoId, brandId,])
+        fetchItems()
+        fetchCategoriesForBrand()
+    }, [window.location.pathname])
 
     // Generate pagination buttons
     const renderPaginationButtons = () => {
@@ -1905,141 +1906,141 @@ const ProductListing = () => {
                         </div> */}
 
                         {/* // Sidebar Filter */}
-                        {brandId && (
-                            <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
-                                <h1 className="hidden lg:block px-2 text-lg font-bold">
-                                    {(() => {
-                                        const title = getPageTitle();
-                                        return title?.length > 18 ? title.slice(0, 15) + '...' : title;
-                                    })()}
-                                </h1>
 
-                                {/* Categories Section */}
-                                {loadingCategories ? (
-                                    <div className="py-2 text-sm text-gray-500">Loading categories...</div>
-                                ) : categories.length > 0 ? (
-                                    categories.map((category) => {
-                                        const hasSubcategories = category.hasChild;
+                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
+                            <h1 className="hidden lg:block px-2 text-lg font-bold">
+                                {(() => {
+                                    const title = getPageTitle();
+                                    return title?.length > 18 ? title.slice(0, 15) + '...' : title;
+                                })()}
+                            </h1>
 
-                                        return (
+                            {/* Categories Section */}
+                            {loadingCategories ? (
+                                <div className="py-2 text-sm text-gray-500">Loading categories...</div>
+                            ) : categories.length > 0 ? (
+                                categories.map((category) => {
+                                    const hasSubcategories = category.hasChild;
+
+                                    return (
+                                        <div
+                                            key={category._id}
+                                            className="border-b border-dashed border-b-1 border-black"
+                                        >
+                                            {/* Main Category */}
                                             <div
-                                                key={category._id}
-                                                className="border-b border-dashed border-b-1 border-black"
+                                                className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                             >
-                                                {/* Main Category */}
-                                                <div
-                                                    className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                                {/* Category Name - Clickable for filter */}
+                                                <span
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleMinCategoryClick(category.slug, category._id);
+                                                    }}
+                                                    className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[180px]`}
                                                 >
-                                                    {/* Category Name - Clickable for filter */}
-                                                    <span
+                                                    {category.name}
+                                                </span>
+
+                                                {/* Chevron Icon - Clickable for dropdown */}
+                                                {hasSubcategories && (
+                                                    <svg
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleMinCategoryClick(category.slug, category._id);
+                                                            // Only fetch subcategories if they haven't been fetched yet
+                                                            if (!subCategoriesByCategory[category._id]) {
+                                                                fetchSubCategoriesForCategory(category._id);
+                                                            }
+                                                            // Toggle the hovered state
+                                                            setHoveredCategory(hoveredCategory === category._id ? null : category._id);
                                                         }}
-                                                        className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[180px]`}
+                                                        className={`w-4 h-4 transition-transform cursor-pointer hover:text-[#e9098d]/70 ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
                                                     >
-                                                        {category.name}
-                                                    </span>
-
-                                                    {/* Chevron Icon - Clickable for dropdown */}
-                                                    {hasSubcategories && (
-                                                        <svg
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                // Only fetch subcategories if they haven't been fetched yet
-                                                                if (!subCategoriesByCategory[category._id]) {
-                                                                    fetchSubCategoriesForCategory(category._id);
-                                                                }
-                                                                // Toggle the hovered state
-                                                                setHoveredCategory(hoveredCategory === category._id ? null : category._id);
-                                                            }}
-                                                            className={`w-4 h-4 transition-transform cursor-pointer hover:text-[#e9098d]/70 ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                        </svg>
-                                                    )}
-                                                </div>
-
-                                                {/* Subcategories - Displayed as nested list */}
-                                                {hoveredCategory === category._id && hasSubcategories && (
-                                                    <div className="ml-4 mt-1 space-y-1 pb-2">
-                                                        {subCategoriesByCategory[category._id]?.map((subCategory) => {
-                                                            const hasSubcategoriesTwo = subCategory.hasChild;
-
-                                                            return (
-                                                                <div
-                                                                    key={subCategory._id}
-                                                                    className="relative"
-                                                                >
-                                                                    <div
-                                                                        className={`flex justify-between items-center py-1 px-2 rounded transition-colors text-xs sm:text-sm lg:text-[16px] ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
-                                                                    >
-                                                                        {/* Subcategory Name - Clickable for filter */}
-                                                                        <span
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                handleSubCategoryClick(subCategory.slug, subCategory._id);
-                                                                            }}
-                                                                            className="text-base  max-w-[160px] cursor-pointer"
-                                                                        >
-                                                                            {subCategory.name}
-                                                                        </span>
-
-                                                                        {/* Chevron Icon - Clickable for dropdown */}
-                                                                        {hasSubcategoriesTwo && (
-                                                                            <svg
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    // Only fetch subcategories two if they haven't been fetched yet
-                                                                                    if (!subCategoriesTwoBySubCategory[subCategory._id]) {
-                                                                                        fetchSubCategoriesTwoForSubCategory(subCategory._id);
-                                                                                    }
-                                                                                    // Toggle the hovered state
-                                                                                    setHoveredSubCategory(hoveredSubCategory === subCategory._id ? null : subCategory._id);
-                                                                                }}
-                                                                                className="w-3 h-3 cursor-pointer hover:opacity-70"
-                                                                                fill="none"
-                                                                                stroke="currentColor"
-                                                                                viewBox="0 0 24 24"
-                                                                            >
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                            </svg>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Subcategories Two - Displayed as nested list */}
-                                                                    {hoveredSubCategory === subCategory._id && hasSubcategoriesTwo && (
-                                                                        <div className="ml-4 mt-1 space-y-1">
-                                                                            {subCategoriesTwoBySubCategory[subCategory._id]?.map((subCategoryTwo) => (
-                                                                                <div
-                                                                                    key={subCategoryTwo._id}
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id);
-                                                                                    }}
-                                                                                    className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
-                                                                                >
-                                                                                    <span className=" max-w-[140px] block">{subCategoryTwo.name}</span>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
                                                 )}
                                             </div>
-                                        );
-                                    })
-                                ) : (
-                                    <div className="py-2 text-sm text-gray-500">No categories available</div>
-                                )}
-                            </div>
-                        )}
+
+                                            {/* Subcategories - Displayed as nested list */}
+                                            {hoveredCategory === category._id && hasSubcategories && (
+                                                <div className="ml-4 mt-1 space-y-1 pb-2">
+                                                    {subCategoriesByCategory[category._id]?.map((subCategory) => {
+                                                        const hasSubcategoriesTwo = subCategory.hasChild;
+
+                                                        return (
+                                                            <div
+                                                                key={subCategory._id}
+                                                                className="relative"
+                                                            >
+                                                                <div
+                                                                    className={`flex justify-between items-center py-1 px-2 rounded transition-colors text-xs sm:text-sm lg:text-[16px] ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                                >
+                                                                    {/* Subcategory Name - Clickable for filter */}
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleSubCategoryClick(subCategory.slug, subCategory._id);
+                                                                        }}
+                                                                        className="text-base  max-w-[160px] cursor-pointer"
+                                                                    >
+                                                                        {subCategory.name}
+                                                                    </span>
+
+                                                                    {/* Chevron Icon - Clickable for dropdown */}
+                                                                    {hasSubcategoriesTwo && (
+                                                                        <svg
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                // Only fetch subcategories two if they haven't been fetched yet
+                                                                                if (!subCategoriesTwoBySubCategory[subCategory._id]) {
+                                                                                    fetchSubCategoriesTwoForSubCategory(subCategory._id);
+                                                                                }
+                                                                                // Toggle the hovered state
+                                                                                setHoveredSubCategory(hoveredSubCategory === subCategory._id ? null : subCategory._id);
+                                                                            }}
+                                                                            className="w-3 h-3 cursor-pointer hover:opacity-70"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                        </svg>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Subcategories Two - Displayed as nested list */}
+                                                                {hoveredSubCategory === subCategory._id && hasSubcategoriesTwo && (
+                                                                    <div className="ml-4 mt-1 space-y-1">
+                                                                        {subCategoriesTwoBySubCategory[subCategory._id]?.map((subCategoryTwo) => (
+                                                                            <div
+                                                                                key={subCategoryTwo._id}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id);
+                                                                                }}
+                                                                                className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                                                                            >
+                                                                                <span className=" max-w-[140px] block">{subCategoryTwo.name}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="py-2 text-sm text-gray-500">No categories available</div>
+                            )}
+                        </div>
+
 
                         {/* Main Content */}
                         <div className="flex-1">

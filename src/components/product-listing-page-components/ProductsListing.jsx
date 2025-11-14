@@ -653,7 +653,7 @@ const ProductListing = () => {
                 if (item.comparePrice > currentPrice) {
                     // const discountAmount = item.comparePrice - currentPrice;
                     discountPercentages = item.comparePrice;
-                    discountType = "compare_price";
+                    discountType = "Compare Price";
                 }
             }
             // Priority 2: Check item-based discount (only if no compare price discount applied)

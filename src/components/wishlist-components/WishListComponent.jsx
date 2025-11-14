@@ -870,7 +870,7 @@ const WishListComponent = () => {
                 // Only apply compare price discount if comparePrice is lower than original price
                 if (productData.comparePrice < originalPrice && originalPrice > 0) {
                     discountPercentages = productData.comparePrice;
-                    discountType = "compare_price";
+                    discountType = "Compare Price";
                 }
             }
             // Priority 2: Check for item-based discount (only if no compare price discount applied)

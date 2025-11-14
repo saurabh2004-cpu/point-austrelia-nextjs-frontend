@@ -9,6 +9,7 @@ import useCartStore from '@/zustand/cartPopup';
 import { set } from 'nprogress';
 import { useProductFiltersStore } from '@/zustand/productsFiltrs';
 import ProductPopup from '../product-details-components/Popup';
+import useWishlistStore from '@/zustand/wishList';
 
 const ShoppingCart = () => {
     const [cartItems, setCartItems] = useState([]);
@@ -51,6 +52,9 @@ const ShoppingCart = () => {
     const [showProductPopup, setShowProductPopup] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedProductGroup, setSelectedProductGroup] = useState(null);
+    const [wishListItems, setWishlistItems] = useState([])
+    const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
+
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -64,6 +68,27 @@ const ShoppingCart = () => {
     const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
     const [showRemoveItemConfirm, setShowRemoveItemConfirm] = useState(false);
     const [itemToRemove, setItemToRemove] = useState(null);
+
+
+    const fetchCustomersWishList = async () => {
+        try {
+            if (!currentUser || !currentUser._id) return;
+
+            const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`);
+
+            if (response.data.statusCode === 200) {
+                // Set the wishlist items from response.data.data
+                setWishlistItems(response.data.data || []);
+                setWishlistItemsCount(response.data.data?.length || 0);
+            }
+        } catch (error) {
+            console.error('Error fetching customer wishlist:', error);
+        }
+    }
+
+    useEffect(() => {
+        fetchCustomersWishList()
+    }, [currentUser?._id])
 
     // Helper functions for handling both products and product groups
     const isProductGroup = (item) => {
@@ -728,6 +753,33 @@ const ShoppingCart = () => {
         fetchCustomersCart(1, false);
     }, [currentUser]);
 
+    const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
+        if (!item) return 0;
+        // If compare price exists and is higher than current price, show compare price as original
+        if (item.discountType === "Compare Price" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            const currentPrice = isProductGroup ? (item.amount || 0) : (item.amount || 0);
+            if (item.discountPercentages > currentPrice) {
+                return item.discountPercentages;
+            }
+        } else if (item.discountType === "Item Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            return item.product.eachPrice;
+        } else if (item.discountType === "Pricing Group Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            const currentPrice = item.product.eachPrice;
+            const discountPercentages = parseFloat(item.discountPercentages);
+
+            if (discountPercentages < 0) {
+                return currentPrice;
+            } else if (discountPercentages > 0) {
+                return null;
+            }
+
+            return currentPrice;
+        }
+
+        // Otherwise, show the actual original price
+        return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
@@ -921,9 +973,9 @@ const ShoppingCart = () => {
                                                                                 e.stopPropagation();
                                                                                 handleQuickViewClick(item);
                                                                             }}
-                                                                            className="bg-gray-300 text-black px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                                                                            className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
                                                                         >
-                                                                            <svg
+                                                                            {/* <svg
                                                                                 xmlns="http://www.w3.org/2000/svg"
                                                                                 width="16"
                                                                                 height="16"
@@ -936,7 +988,7 @@ const ShoppingCart = () => {
                                                                             >
                                                                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                                                                                 <circle cx="12" cy="12" r="3" />
-                                                                            </svg>
+                                                                            </svg> */}
                                                                             Quick View
                                                                         </button>
                                                                     </div>
@@ -997,8 +1049,14 @@ const ShoppingCart = () => {
                                                                 )}
 
                                                                 {/* Price */}
-                                                                <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
-                                                                    ${item?.amount?.toFixed(2)}
+                                                                <div className='flex items-center space-x-2'>
+                                                                    <div className="text-[24px] font-semibold text-[#2D2C70] mb-1">
+                                                                        ${item?.amount?.toFixed(2)}
+                                                                    </div>
+                                                                    {getOriginalPriceForDisplay(item, isProductGroup) &&
+                                                                        <span className="text-sm text-gray-500 line-through">
+                                                                            ${parseFloat(getOriginalPriceForDisplay(item, isProductGroup)).toFixed(2)}
+                                                                        </span>}
                                                                 </div>
 
 
@@ -1442,9 +1500,9 @@ const ShoppingCart = () => {
                 subCategoryTwoSlug={subCategoryTwoSlug}
                 brandSlug={brandSlug}
                 setFilters={setFilters}
-                clearFilters={() => { }} // Add your clearFilters function if available
-                wishListItems={[]} // You'll need to pass wishlist items if available
-                setWishlistItems={() => { }} // You'll need to pass setWishlistItems if available
+                clearFilters={() => { }} 
+                wishListItems={wishListItems} 
+                setWishlistItems={setWishlistItems} 
                 customerGroupsDiscounts={[]} // You'll need to pass customerGroupsDiscounts if available
                 itemBasedDiscounts={[]} // You'll need to pass itemBasedDiscounts if available
             />

@@ -63,7 +63,7 @@ const Carousel = () => {
 
       if (res.data.statusCode === 200) {
         const { desktopImages, mobileImages } = res.data.data;
-        
+
         // Transform desktop images to match the expected format
         const formattedDesktopImages = desktopImages.map((url, index) => ({
           id: index + 1,
@@ -80,7 +80,7 @@ const Carousel = () => {
 
         setDesktopCarouselImages(formattedDesktopImages);
         setMobileCarouselImages(formattedMobileImages);
-        
+
         // Enable auto-scrolling if there are multiple images
         setIsAutoScrolling(formattedDesktopImages.length > 1);
       } else {
@@ -183,7 +183,7 @@ const Carousel = () => {
   }
 
   return (
-    <div className="w-full max-w-8xl mx-auto p-3 sm:p-4 md:py-4 xl:pb-12">
+    <div className="w-full mx-auto py-3 sm:py-4 md:py-4 xl:pb-12">
       <div
         className="relative w-full overflow-hidden rounded-lg carousel-container"
         onMouseEnter={handleMouseEnter}
@@ -208,7 +208,7 @@ const Carousel = () => {
                 alt={image.alt}
                 fill
                 priority
-                className="object-contain md:object-cover transition-transform duration-500"
+                className="object-contain transition-transform duration-500"
                 sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
               />
             </div>
@@ -216,45 +216,68 @@ const Carousel = () => {
         </div>
       </div>
 
-      {/* Responsive adjustments */}
+      {/* Responsive height adjustments for tablets and desktop */}
       <style jsx>{`
         .carousel-container {
-          height: 12rem; /* default for small screens */
+          height: 40rem; /* Mobile devices (320px+) */
         }
 
         @media (min-width: 480px) {
           .carousel-container {
-            height: 16rem; /* small tablets / large phones */
+            height: 50rem; /* Large phones */
+          }
+        }
+        @media (min-width: 520) {
+          .carousel-container {
+            height: 60rem; /* Large phones */
           }
         }
 
         @media (min-width: 640px) {
           .carousel-container {
-            height: 20rem; /* tablets */
+            height: 64rem; /* Small tablets */
+          }
+        }
+        @media (min-width: 674px) {
+          .carousel-container {
+            height: 72rem; /* Small tablets */
           }
         }
 
         @media (min-width: 768px) {
           .carousel-container {
-            height: 24rem; /* iPad Mini / medium tablets */
+            width: 100vw; /* Tablets (iPad Mini, etc.) */
+            height: 16rem;
+          }
+        }
+        @media (min-width: 796px) {
+          .carousel-container {
+            width: 100vw; /* Tablets (iPad Mini, etc.) */
+            height: 22rem;
           }
         }
 
         @media (min-width: 1024px) {
           .carousel-container {
-            height: 28rem; /* laptops */
+            height: 28rem; /* Landscape tablets & small laptops */
           }
         }
 
         @media (min-width: 1280px) {
           .carousel-container {
-            height: 32rem; /* large desktop */
+            height: 32rem; /* Desktop monitors (1280px+) */
           }
         }
 
         @media (min-width: 1536px) {
           .carousel-container {
-            height: 36rem; /* very large screens */
+            height: 36rem; /* Large desktop monitors (2K) */
+          }
+        }
+
+        @media (min-width: 1920px) {
+          .carousel-container {
+            height: 40rem; /* Full HD and larger monitors */
           }
         }
       `}</style>

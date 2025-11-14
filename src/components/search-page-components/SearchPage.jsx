@@ -1083,9 +1083,9 @@ const SearchPage = () => {
                                 e.stopPropagation();
                                 handleProductImageClick(item, isProductGroup);
                             }}
-                            className="bg-gray-300 text-black px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                            className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
                         >
-                            <svg
+                            {/* <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
@@ -1098,7 +1098,7 @@ const SearchPage = () => {
                             >
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                                 <circle cx="12" cy="12" r="3" />
-                            </svg>
+                            </svg> */}
                             Quick View
                         </button>
                     </div>

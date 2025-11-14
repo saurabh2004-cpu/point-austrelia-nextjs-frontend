@@ -702,44 +702,6 @@ export default function SignUpComponent() {
               </div>
             </div>
 
-            {/* Type of Business */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
-              <div></div> {/* Empty div for spacing */}
-              <div>
-                <label
-                  htmlFor="category"
-                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2"
-                >
-                  Type of Business<span className="text-red-500 ml-1">*</span>
-                </label>
-
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleBusinessTypeChange}
-                  className={`
-                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
-                    border border-gray-700  text-black
-                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
-                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
-                    ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-                  `}
-                >
-                  <option value="">Select Business Type</option>
-                  {businessTypes.map((type) => (
-                    <option key={type} value={type} className="bg-gray-500 text-white">
-                      {type}
-                    </option>
-                  ))}
-                </select>
-
-                {errors.category && (
-                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.category}</p>
-                )}
-              </div>
-            </div>
 
             {/* Custom Business Type (shown only when "Other" is selected) */}
             {formData.category === 'Other' && (
@@ -937,8 +899,51 @@ export default function SignUpComponent() {
               </div>
             </div>
 
+
+            {/* Type of Business
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" >
+              <div></div> {/* Empty div for spacing */}
+
+            {/* </div> /* */}
+
+
             {/* Password */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 xl:gap-22" variants={itemVariants}>
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2"
+                >
+                  Type of Business<span className="text-red-500 ml-1">*</span>
+                </label>
+
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleBusinessTypeChange}
+                  className={`
+                    appearance-none relative block w-full px-2 sm:px-3 py-2 sm:py-0
+                    border border-gray-700  text-black
+                    rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 
+                    focus:border-blue-500 focus:z-10 text-sm sm:text-base
+                    transition-colors duration-200 min-h-[40px] sm:min-h-[44px]
+                    ${errors.category ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
+                  `}
+                >
+                  <option value="">Select Business Type</option>
+                  {businessTypes.map((type) => (
+                    <option key={type} value={type} className="bg-gray-500 text-white">
+                      {type}
+                    </option>
+                  ))}
+                </select>
+
+                {errors.category && (
+                  <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.category}</p>
+                )}
+              </div>
+              
               <div>
                 <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Password<span className="text-red-500 ml-1">*</span>

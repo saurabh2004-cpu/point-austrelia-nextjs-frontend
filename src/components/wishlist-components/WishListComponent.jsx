@@ -10,6 +10,8 @@ import useCartStore from '@/zustand/cartPopup';
 import { Navbar } from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { withAuth } from '@/components/withAuth';
+import { useProductFiltersStore } from '@/zustand/productsFiltrs';
+import ProductPopup from '../product-details-components/Popup';
 
 const ProductCard = ({
     item,
@@ -25,7 +27,11 @@ const ProductCard = ({
     customerGroupsDiscounts,
     itemBasedDiscounts,
     cartItems,
-    onShowWarning
+    onShowWarning,
+    onProductClick,
+    onQuickViewClick,
+    hoveredImage,
+    setHoveredImage
 }) => {
     // Determine if it's a product or product group
     const isProductGroup = !!item.productGroup;
@@ -341,17 +347,56 @@ const ProductCard = ({
         }
     };
 
+    // Handle product name click
+    const handleProductNameClick = () => {
+        onProductClick(getProductName(), productId, isProductGroup);
+    };
+
+    // Handle quick view click
+    const handleQuickViewButtonClick = (e) => {
+        e.stopPropagation();
+        onQuickViewClick(item);
+    };
+
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2 font-spartan mx-auto xl:h-full xl:w-[552px]">
             <div className="flex flex-col sm:flex-row h-full">
-                {/* Product Image */}
+                {/* Product Image with Quick View */}
                 <div className="flex-shrink-0 mr-4">
-                    <div className="rounded-lg flex items-center justify-center align-middle relative cursor-pointer">
+                    <div
+                        className="rounded-lg flex items-center justify-center align-middle relative cursor-pointer group"
+                        onMouseEnter={() => setHoveredImage(productId)}
+                        onMouseLeave={() => setHoveredImage(null)}
+                    >
+                        {/* Quick View Overlay */}
+                        <div className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                            <button
+                                onClick={handleQuickViewButtonClick}
+                                className="bg-gray-300 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                            >
+                                {/* <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg> */}
+                                Quick View
+                            </button>
+                        </div>
+
                         <img
                             src={getImageUrl()}
                             alt={getProductName()}
-                            className="object-contain h-[200px] w-[200px]"
-                            key={productId}
+                            className="object-contain h-[200px] w-[200px] cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                            onClick={handleProductNameClick}
                             onError={(e) => {
                                 e.target.src = '/product-listing-images/product-1.avif';
                             }}
@@ -366,7 +411,11 @@ const ProductCard = ({
 
                 {/* Product Details */}
                 <div className="flex flex-col min-w-0 lg:max-w-[350px] mx-auto xl:mx-0">
-                    <h3 className="text-[15px] font-semibold line-clamp-2">
+                    {/* Product Name - Clickable */}
+                    <h3
+                        className="text-[15px] font-semibold line-clamp-2 cursor-pointer hover:text-[#E9098D]"
+                        onClick={handleProductNameClick}
+                    >
                         {getProductName()}
                     </h3>
 
@@ -575,6 +624,7 @@ const WishListComponent = () => {
     const [loadingProducts, setLoadingProducts] = useState({});
     const [cartItems, setCartItems] = useState([]);
     const [warnings, setWarnings] = useState([]);
+    const [hoveredImage, setHoveredImage] = useState(null);
 
     // State to track quantities and selected units for each product
     const [productQuantities, setProductQuantities] = useState({});
@@ -586,7 +636,28 @@ const WishListComponent = () => {
     const [customerGroupsDiscounts, setCustomerGroupsDiscounts] = useState([]);
     const [itemBasedDiscounts, setItemBasedDiscounts] = useState([]);
 
+    // Product popup states
+    const [showProductPopup, setShowProductPopup] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedProductGroup, setSelectedProductGroup] = useState(null);
+
+
     const router = useRouter();
+
+    
+
+    // Product filters store
+    const {
+        categoryId,
+        subCategoryId,
+        subCategoryTwoId,
+        brandId,
+        categorySlug,
+        subCategorySlug,
+        subCategoryTwoSlug,
+        brandSlug,
+        setFilters,
+    } = useProductFiltersStore();
 
     // Add warning to the warnings list
     const addWarning = (productId, type, productName, requestedQty = null, availableQty = null) => {
@@ -613,6 +684,39 @@ const WishListComponent = () => {
     // Clear all warnings
     const clearAllWarnings = () => {
         setWarnings([]);
+    };
+
+    // Handle product click - navigate to product detail page
+    const handleProductClick = (itemName, itemId, isProductGroup = false) => {
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: subCategorySlug || null,
+            subCategoryTwoSlug: subCategoryTwoSlug || null,
+            brandSlug: brandSlug || null,
+            brandId: brandId || null,
+            categoryId: categoryId || null,
+            subCategoryId: subCategoryId || null,
+            subCategoryTwoId: subCategoryTwoId || null,
+            productID: isProductGroup ? null : itemId,
+            productGroupId: isProductGroup ? itemId : null
+        });
+        const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
+        router.push(`/${itemSlug}`);
+    };
+
+    // Handle quick view click - show product popup
+    const handleQuickViewClick = (item) => {
+        const isProductGroupItem = !!item.productGroup;
+
+        if (isProductGroupItem) {
+            setSelectedProductGroup(item.productGroup);
+            setSelectedProduct(null);
+        } else {
+            setSelectedProduct(item.product);
+            setSelectedProductGroup(null);
+        }
+
+        setShowProductPopup(true);
     };
 
     // Fetch discount data
@@ -1161,6 +1265,10 @@ const WishListComponent = () => {
                                             itemBasedDiscounts={itemBasedDiscounts}
                                             cartItems={cartItems}
                                             onShowWarning={addWarning}
+                                            onProductClick={handleProductClick}
+                                            onQuickViewClick={handleQuickViewClick}
+                                            hoveredImage={hoveredImage}
+                                            setHoveredImage={setHoveredImage}
                                         />
                                     ))}
                                 </div>
@@ -1184,6 +1292,10 @@ const WishListComponent = () => {
                                                 itemBasedDiscounts={itemBasedDiscounts}
                                                 cartItems={cartItems}
                                                 onShowWarning={addWarning}
+                                                onProductClick={handleProductClick}
+                                                onQuickViewClick={handleQuickViewClick}
+                                                hoveredImage={hoveredImage}
+                                                setHoveredImage={setHoveredImage}
                                             />
                                         </div>
                                     ))}
@@ -1193,6 +1305,32 @@ const WishListComponent = () => {
                     )}
                 </div>
             </div>
+
+            {/* Product Popup */}
+            <ProductPopup
+                isOpen={showProductPopup}
+                onClose={() => {
+                    setShowProductPopup(false);
+                    setSelectedProduct(null);
+                    setSelectedProductGroup(null);
+                }}
+                productId={selectedProduct?._id}
+                productGroupId={selectedProductGroup?._id}
+                categoryId={categoryId}
+                subCategoryId={subCategoryId}
+                subCategoryTwoId={subCategoryTwoId}
+                brandId={brandId}
+                categorySlug={categorySlug}
+                subCategorySlug={subCategorySlug}
+                subCategoryTwoSlug={subCategoryTwoSlug}
+                brandSlug={brandSlug}
+                setFilters={setFilters}
+                clearFilters={() => { }} 
+                wishListItems={wishListItems} 
+                setWishlistItems={setWishlistItems} 
+                customerGroupsDiscounts={customerGroupsDiscounts} 
+                itemBasedDiscounts={itemBasedDiscounts} 
+            />
         </>
     );
 };

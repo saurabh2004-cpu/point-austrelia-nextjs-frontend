@@ -1247,9 +1247,9 @@ const ProductListing = () => {
                                 e.stopPropagation();
                                 handleProductImageClick(item, isProductGroup);
                             }}
-                            className="bg-gray-300 text-black px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                            className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
                         >
-                            <svg
+                            {/* <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 width="16"
                                 height="16"
@@ -1262,7 +1262,7 @@ const ProductListing = () => {
                             >
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                                 <circle cx="12" cy="12" r="3" />
-                            </svg>
+                            </svg> */}
                             Quick View
                         </button>
                     </div>
@@ -1280,11 +1280,11 @@ const ProductListing = () => {
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[40px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
+                        className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
                     >
                         {(() => {
                             const name = isProductGroup ? item.name : item.ProductName;
-                            return name.length > 40 ? name.slice(0, 40) + "..." : name;
+                            return name.length > 42 ? name.slice(0, 42) + "..." : name;
                         })()}
 
                     </h3>
@@ -1907,12 +1907,13 @@ const ProductListing = () => {
 
                         {/* // Sidebar Filter */}
 
-                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto hide-scrollbar px-2">
-                            <h1 className="hidden lg:block px-2 text-lg font-bold">
-                                {(() => {
+                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto min-w-[280px] hide-scrollbar px-2">
+                            <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
+                                {/* {(() => {
                                     const title = getPageTitle();
                                     return title?.length > 18 ? title.slice(0, 15) + '...' : title;
-                                })()}
+                                })()} */}
+                                {getPageTitle()}
                             </h1>
 
                             {/* Categories Section */}
@@ -1984,7 +1985,7 @@ const ProductListing = () => {
                                                                             e.stopPropagation();
                                                                             handleSubCategoryClick(subCategory.slug, subCategory._id);
                                                                         }}
-                                                                        className="text-base  max-w-[160px] cursor-pointer"
+                                                                        className="text-[17px]  max-w-[180px] cursor-pointer"
                                                                     >
                                                                         {subCategory.name}
                                                                     </span>
@@ -2023,7 +2024,7 @@ const ProductListing = () => {
                                                                                 }}
                                                                                 className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
                                                                             >
-                                                                                <span className=" max-w-[140px] block">{subCategoryTwo.name}</span>
+                                                                                <span className="text-[17px] max-w-[160px] block">{subCategoryTwo.name}</span>
                                                                             </div>
                                                                         ))}
                                                                     </div>

@@ -42,6 +42,7 @@ export default function ProductPopup({
     const [stockError, setStockError] = useState(null)
     const [loadingCart, setLoadingCart] = useState(false)
     const [loadingWishlist, setLoadingWishlist] = useState(false)
+   
 
     // State to track if we're showing a product or product group
     const [itemType, setItemType] = useState(null) // 'product' or 'productGroup'

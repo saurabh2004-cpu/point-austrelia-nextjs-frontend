@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useState } from 'react';
 import { X, Minus, Plus, Check, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
@@ -429,7 +430,39 @@ const ShoppingCartPopup = () => {
     router.push(`/${itemSlug}`);
     setIsOpen(false);
   }
+
+  const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
+    if (!item) return 0;
+
+
+    // If compare price exists and is higher than current price, show compare price as original
+    if (item.discountType === "Compare Price" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+      const currentPrice = isProductGroup ? (item.amount || 0) : (item.amount || 0);
+      if (item.discountPercentages > currentPrice) {
+        return item.discountPercentages;
+      }
+    } else if (item.discountType === "Item Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+      return item.product.eachPrice;
+    } else if (item.discountType === "Pricing Group Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+      const currentPrice = item.product.eachPrice;
+      const discountPercentages = parseFloat(item.discountPercentages);
+
+      if (discountPercentages < 0) {
+        return currentPrice;
+      } else if (discountPercentages > 0) {
+        return null;
+      }
+
+      return currentPrice;
+    }
+
+    // Otherwise, show the actual original price
+    return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+  };
+
   if (!isOpen) return null;
+
+
 
   return (
     <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none font-spartan">
@@ -564,7 +597,15 @@ const ShoppingCartPopup = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="text-[#2D2C70] font-semibold text-[18px]">${item?.amount?.toFixed(2)}</span>
+
+                          <div className='flex items-center space-x-2'>
+                            <span className="text-[#2D2C70] font-semibold text-[18px]">${item?.amount?.toFixed(2)}</span>
+                            {getOriginalPriceForDisplay(item, isProductGroup) &&
+                              <span className="text-sm text-gray-500 line-through">
+                                ${parseFloat(getOriginalPriceForDisplay(item, isProductGroup)).toFixed(2)}
+                              </span>}
+                          </div>
+
                           <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded ${outOfStock ? 'bg-red-100 text-red-600' : 'bg-[#E7FAEF] text-black'}`}>
                             <Check className="w-3 h-3 mr-1" />
                             {outOfStock ? 'OUT OF STOCK' : 'IN STOCK'}

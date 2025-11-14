@@ -6,18 +6,45 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-import useNavStateStore from "@/zustand/navigations"
-import ShoppingCartPopup from "./CartPopup"
 import { usePathname, useRouter } from "next/navigation"
 import useUserStore from "@/zustand/user"
 import axiosInstance from "@/axios/axiosInstance"
 import useCartStore from "@/zustand/cartPopup"
 import useWishlistStore from "@/zustand/wishList"
-import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
-import { path } from "framer-motion/m"
-import { set } from "nprogress"
+import ShoppingCartPopup from "./CartPopup"
+
+// Global Loader Component
+const GlobalLoader = () => {
+  return (
+    <div className="fixed inset-0 bg-white/11  z-[9999]  flex items-center justify-center">
+      <div className="w-[150px] h-[60px] relative z-10 flex justify-center items-center">
+        {/* Circles */}
+        <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-[15%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease]"></div>
+        <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-[45%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease] [animation-delay:0.2s]"></div>
+        <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-auto right-[15%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease] [animation-delay:0.3s]"></div>
+        
+        {/* Shadows */}
+        <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-[15%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease]"></div>
+        <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-[45%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease] [animation-delay:0.2s]"></div>
+        <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-auto right-[15%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease] [animation-delay:0.3s]"></div>
+      </div>
+      
+      <style jsx>{`
+        @keyframes circleBounce {
+          0% { top: 20px; }
+          100% { top: 0px; }
+        }
+        
+        @keyframes shadowScale {
+          0% { transform: scaleX(1.5); }
+          100% { transform: scaleX(0.8); opacity: 0.7; }
+        }
+      `}</style>
+    </div>
+  );
+};
 
 const debounce = (func, wait) => {
   let timeout;
@@ -56,6 +83,7 @@ export function Navbar() {
   const [hoveredCategory, setHoveredCategory] = useState(null)
   const [hoveredSubcategory, setHoveredSubcategory] = useState(null)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
   const currentUser = useUserStore((state) => state.user);
   const pathname = usePathname()
@@ -71,22 +99,23 @@ export function Navbar() {
   const [subCategoriesTwoBySubCategory, setSubCategoriesTwoBySubCategory] = useState({})
   const [loading, setLoading] = useState(true)
   const [loadingCategories, setLoadingCategories] = useState({})
-  const setFilters = useProductFiltersStore((state) => state.setFilters)
-  const [brandId, setBrandId] = useState(null)
-  const [brandSlug, setBrandSlug] = useState(null)
   const [showCompanyDropDown, setShowCompanyDropDown] = useState(false)
 
   const [mobileActiveBrand, setMobileActiveBrand] = useState(null)
   const [mobileActiveCategory, setMobileActiveCategory] = useState(null)
   const [mobileActiveSubcategory, setMobileActiveSubcategory] = useState(null)
 
-  const setCurrentIndex = useNavStateStore((state) => state.setCurrentIndex)
   const setUser = useUserStore((state) => state.setUser);
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
   const desktopSearchRef = useClickOutside(() => setIsDesktopSearchOpen(false));
   const { showCartPopup, setShowCartPopup, toggleCartPopup } = useCartPopupStateStore();
   const isCheckoutPage = pathname === '/checkout' || pathname === '/cart';
   const [searchQuery, setSearchQuery] = useState("")
+
+  // Hide loader when pathname changes
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -113,12 +142,14 @@ export function Navbar() {
 
   const userDropdownRef = useClickOutside(() => setShowUserDropdown(false));
   const mobileMenuRef = useClickOutside(() => setIsMenuOpen(false));
+  const companyDropdownRef = useClickOutside(() => setShowCompanyDropDown(false));
 
   const handleFastNavigation = useCallback((path) => {
+    setIsNavigating(true);
     setIsMenuOpen(false);
     setActiveDropdown(null);
     router.push(path);
-  }, [router, setShowCartPopup]);
+  }, [router]);
 
   const handleUserDropdownToggle = useCallback(() => {
     setShowUserDropdown(prev => !prev);
@@ -144,7 +175,7 @@ export function Navbar() {
   const handleSearch = useCallback((e) => {
     if (e.key === 'Enter' || e.type === 'click') {
       if (searchQuery.trim()) {
-        handleFastNavigation(`/search?q=${encodeURIComponent(searchQuery.trim().trim().split(' ').join('-'))}`);
+        handleFastNavigation(`/search?q=${encodeURIComponent(searchQuery.trim().split(' ').join('-'))}`);
         setIsSearchOpen(false);
       }
     }
@@ -291,7 +322,6 @@ export function Navbar() {
 
   const handleNavigation = useCallback((item) => {
     if (!item.hasDropdown) {
-      setCurrentIndex(item.index)
       handleFastNavigation(item.link);
     } else {
       if (item.label === "COMPANY" || item.label === "CONTACT US") {
@@ -303,27 +333,23 @@ export function Navbar() {
         }
       }
     }
-  }, [currentUser, handleFastNavigation, setCurrentIndex]);
-
-  const companyDropdownRef = useClickOutside(() => setShowCompanyDropDown(false));
+  }, [currentUser, handleFastNavigation]);
 
   const handleCategoryClick = useCallback((link) => {
-    setIsMenuOpen(false)
     handleFastNavigation(link);
-  }, [brandId, brandSlug, setShowCartPopup, handleFastNavigation]);
+    setIsMenuOpen(false)
+  }, [handleFastNavigation]);
 
   const handleBrandHover = useCallback((brandId, index, brandSlug) => {
     if (currentUser) {
       setActiveDropdown(index)
       fetchCategoriesForBrand(brandId)
-      setBrandId(brandId)
-      setBrandSlug(brandSlug)
     }
     if (!currentUser) {
       handleFastNavigation(`/brand/${brandSlug}`);
       return;
     }
-  }, [currentUser, fetchCategoriesForBrand]);
+  }, [currentUser, fetchCategoriesForBrand, handleFastNavigation]);
 
   const handleCategoryHover = useCallback((categoryId) => {
     fetchSubCategoriesForCategory(categoryId)
@@ -347,8 +373,6 @@ export function Navbar() {
       setMobileActiveCategory(null);
       setMobileActiveSubcategory(null);
       fetchCategoriesForBrand(brandId);
-      setBrandId(brandId);
-      setBrandSlug(brandSlug);
     }
   }, [currentUser, mobileActiveBrand, fetchCategoriesForBrand, handleFastNavigation]);
 
@@ -428,6 +452,8 @@ export function Navbar() {
 
   return (
     <>
+      {isNavigating && <GlobalLoader />}
+      
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -576,9 +602,7 @@ export function Navbar() {
                   <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
                   <button
-
                     onClick={() => {
-                      // For brands when logged out, navigate directly to brand page 
                       if (item.brandId && !currentUser) {
                         handleFastNavigation(`/brand/${item.brandSlug}`);
                       } else {
@@ -739,7 +763,6 @@ export function Navbar() {
                               {category.hasChild && (<ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />)}
                             </Link>
 
-                            {/* SUB CATEGORIES - Only show when hovering the main category */}
                             {category.hasChild && hoveredCategory === `${colIdx}-${catIdx}` && (
                               <div className="absolute left-2/3 top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md" onMouseEnter={() => setHoveredCategory(`${colIdx}-${catIdx}`)} onMouseLeave={() => setHoveredSubcategory(null)}>
                                 <div className="p-3 space-y-1">
@@ -755,7 +778,6 @@ export function Navbar() {
                                         {subcat.hasChild && (<ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />)}
                                       </Link>
 
-                                      {/* SUB CATEGORY TWO - Only show when hovering the specific subcategory */}
                                       {subcat.hasChild && subCategoriesTwoBySubCategory[subcat.id]?.length > 0 && hoveredSubcategory === subcat.id && (
                                         <div className="absolute left-full top-0 ml-2 w-64 bg-white border border-gray-200 shadow-xl z-50 rounded-md" onMouseEnter={() => setHoveredSubcategory(subcat.id)}>
                                           <div className="p-3 space-y-1">

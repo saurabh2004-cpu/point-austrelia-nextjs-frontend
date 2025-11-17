@@ -372,7 +372,7 @@ const ProductCard = ({
                         <div className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                             <button
                                 onClick={handleQuickViewButtonClick}
-                                className="bg-gray-300 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm hover:bg-[#46BCF9] transition-colors cursor-pointer"
+                                className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
                             >
                                 {/* <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -461,7 +461,7 @@ const ProductCard = ({
                                         className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
                                                    appearance-none ${!isAvailable ? 'bg-gray-100' : ''} cursor-pointer`}
-                                        disabled={isLoading || !isAvailable}
+                                        disabled={isLoading }
                                     >
                                         {productData.typesOfPacks && productData.typesOfPacks.length > 0 ? (
                                             productData.typesOfPacks.map((pack) => (
@@ -499,7 +499,7 @@ const ProductCard = ({
                                 <button
                                     onClick={() => handleQuantityUpdate(productId, (productQuantities[productId] || 1) - 1)}
                                     className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50 cursor-pointer"
-                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1 || !isAvailable}
+                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1 }
                                 >
                                     <Minus className="w-3 h-3 text-white" />
                                 </button>
@@ -669,7 +669,7 @@ const WishListComponent = () => {
             if (type === 'out_of_stock') {
                 message = `${productName} is currently out of stock and cannot be added to cart.`;
             } else if (type === 'exceeds_stock') {
-                message = `${productName} requested quantity (${requestedQty}) exceeds available stock (${availableQty}). Please reduce quantity.`;
+                message = `${productName} requested quantity (${requestedQty}) exceeds available stock . Please reduce quantity.`;
             }
 
             return [...filtered, { productId, type, productName, message, requestedQty, availableQty }];
@@ -1216,7 +1216,7 @@ const WishListComponent = () => {
                                             </p>
                                             {warning.type === 'exceeds_stock' && (
                                                 <p className="text-xs text-orange-600 mt-1">
-                                                    Current selection: {warning.requestedQty} units | Available: {warning.availableQty} units
+                                                    Current selection: {warning.requestedQty} units 
                                                 </p>
                                             )}
                                         </div>

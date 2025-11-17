@@ -992,8 +992,8 @@ export default function SignUpComponent() {
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all duration-200 font-[600] 
               "
-              whileHover={{ scale: isLoading ? 1 : 1.02 }}
-              whileTap={{ scale: isLoading ? 1 : 0.98 }}
+              whilehover={{ scale: isLoading ? 1 : 1.02 }}
+              whiletap={{ scale: isLoading ? 1 : 0.98 }}
             >
               {isLoading ? (
                 <div className="flex items-center">

@@ -358,7 +358,7 @@ import { withAuth } from '@/components/withAuth'
                 disabled:opacity-50 disabled:cursor-not-allowed
                 transition-all duration-200 text-[1rem] font-[600]
               "
-              whileHover={{ scale: isLoading ? 1 : 1.02 }}
+              whilehover={{ scale: isLoading ? 1 : 1.02 }}
               whileTap={{ scale: isLoading ? 1 : 0.98 }}
             >
               {isLoading ? (

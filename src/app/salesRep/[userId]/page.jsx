@@ -1,6 +1,7 @@
 'use client';
 
 import axiosInstance from '@/axios/axiosInstance';
+import { withAuth } from '@/components/withAuth';
 import useUserStore from '@/zustand/user';
 import { useParams, useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
@@ -40,4 +41,4 @@ const Page = () => {
   );
 };
 
-export default withAuth(Page);
+export default withAuth (Page);

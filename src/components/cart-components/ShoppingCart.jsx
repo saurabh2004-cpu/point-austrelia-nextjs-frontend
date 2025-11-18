@@ -834,17 +834,7 @@ const ShoppingCart = () => {
             </div>
 
             {/* Header */}
-            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 mackbook-cart-heading mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
-                <style>
-                    {`
-                        @media screen and (min-width: 1700px) and (max-width: 1720px) and (min-height: 1100px) and (max-height: 1120px) {
-                        .mackbook-cart-heading {
-                            left: 200px !important;
-                            position: relative;
-                        }
-                        }
-                    `}
-                </style>
+            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 2xl:left-[4.5%] mackbook-cart-heading mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
                     <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity} Items)</span>

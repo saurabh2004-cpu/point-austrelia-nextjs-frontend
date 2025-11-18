@@ -15,6 +15,7 @@ import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
 import ShoppingCartPopup from "./CartPopup"
 import { path } from "framer-motion/m"
+import { useProductFiltersStore } from "@/zustand/productsFiltrs"
 
 // Global Loader Component
 const GlobalLoader = () => {
@@ -113,6 +114,21 @@ export function Navbar() {
   const isCheckoutPage = pathname === '/checkout';
   const isCartPage = pathname === '/cart'
   const [searchQuery, setSearchQuery] = useState("")
+
+  const {
+    categoryId,
+    subCategoryId,
+    subCategoryTwoId,
+    brandId,
+    categorySlug,
+    subCategorySlug,
+    subCategoryTwoSlug,
+    brandSlug,
+    setFilters,
+    clearFilters,
+    productID,
+    productGroupId
+  } = useProductFiltersStore()
 
   // Hide loader when pathname changes
   useEffect(() => {
@@ -343,6 +359,11 @@ export function Navbar() {
   }, [currentUser, handleFastNavigation]);
 
   const handleCategoryClick = useCallback((link) => {
+    setFilters({
+      productID: null,
+      productGroupId: null
+    });
+
     handleFastNavigation(link);
     setIsMenuOpen(false)
   }, [handleFastNavigation]);
@@ -521,12 +542,7 @@ export function Navbar() {
                 <Link
                   href="/"
                   prefetch={true}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (pathname !== '/') {
-                      handleFastNavigation('/');
-                    }
-                  }}>
+                >
                   <Image src="/logo/point-austrelia-logo.png" alt="Logo" width={219} height={100} className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer" priority />
                 </Link>
               </div>
@@ -543,12 +559,12 @@ export function Navbar() {
                       </svg>
                       <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">{currentWishlistItems || 0}</span>
                     </Link>
-                    <Link href="/cart" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/cart'); setIsMenuOpen(false); }} className="relative bg-white group p-1 hover:cursor-pointer">
+                    <button className="relative bg-white group p-1 hover:cursor-pointer">
                       <svg width="18" height="17" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                         <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                       </svg>
                       <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">{currentCartItems || 0}</Badge>
-                    </Link>
+                    </button>
                   </div>
                 )}
 
@@ -586,8 +602,8 @@ export function Navbar() {
                     </>
                   )}
 
-                  {!isCheckoutPage && !isCartPage && <button className="relative bg-white group" onClick={handleCartPopupToggle}>
-                    <svg width="20" height="19" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
+                  {!isCheckoutPage && !isCartPage && currentUser && <button className="relative bg-white group" onClick={handleCartPopupToggle}>
+                    <svg width="20" height="19" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200 cursor-pointer">
                       <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                     </svg>
                     <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentCartItems > 999 ? '999+' : currentCartItems || 0}</span>

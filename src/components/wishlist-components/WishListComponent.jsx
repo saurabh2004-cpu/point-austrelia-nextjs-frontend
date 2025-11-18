@@ -557,7 +557,6 @@ const ProductCard = ({
                     {/* Stock Information */}
                     {!isOutOfStock && (
                         <div className="text-xs text-gray-600 mt-1">
-                            Available: {stockLevel} units
                             {exceedsStock && (
                                 <span className="text-orange-600 ml-2">
                                     (Requested: {totalQuantity} units)
@@ -613,7 +612,7 @@ const ProductCard = ({
                             ) : (
                                 <>
                                     <svg
-                                        className="w-5 h-5 transition-colors duration-300"
+                                        className="w-4 h-4 transition-colors duration-300"
                                         viewBox="0 0 21 21"
                                         fill="currentColor"
                                         xmlns="http://www.w3.org/2000/svg"

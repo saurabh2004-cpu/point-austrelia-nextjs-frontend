@@ -123,7 +123,7 @@
   }
 }
 
-.body{
+.body {
   overflow-x: hidden;
   overflow-y: hidden;
 }
@@ -131,6 +131,7 @@
 .font-Spartan {
   font-family: var(--font-spartan), sans-serif;
 }
+
 .font-spartan {
   font-family: var(--font-spartan), sans-serif;
 }
@@ -170,4 +171,18 @@ a:active {
 /* Fast transitions */
 .fast-transition {
   transition: all 0.1s ease-in-out;
+}
+
+
+/* //cart page  */
+@media screen and (min-width: 1700px) and (max-width: 1720px) and (min-height: 1100px) and (max-height: 1120px) {
+  .mackbook-cart-heading {
+    /* Your CSS here */
+    position: relative;
+    left: 74px;
+  }
+
+  .mackbook-wishlist-button {
+    
+  }
 }

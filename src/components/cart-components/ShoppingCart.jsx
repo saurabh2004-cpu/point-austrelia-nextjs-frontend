@@ -825,7 +825,7 @@ const ShoppingCart = () => {
             {/* <Navbar /> */}
             <div className="bg-white  justify-items-center pt-6 font-spartan">
                 <div className="md:max-w-[80%] mx-auto px-2  lg:px-6 xl:px-8 ">
-                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
+                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full" >
                         <span>Home</span>
                         <span className="mx-1 sm:mx-2">/</span>
                         <span className=" text-black ">Shopping Cart</span>
@@ -834,7 +834,7 @@ const ShoppingCart = () => {
             </div>
 
             {/* Header */}
-            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
+            <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 mackbook-cart-heading mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
                 <h1 className="text-xl font-semibold text-gray-900 ">
                     Shopping Cart
                     <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity} Items)</span>

@@ -248,7 +248,7 @@ const ProductListing = () => {
     const calculateDiscountedPrice = (item, isProductGroup = false) => {
         if (!item) return 0;
 
-       
+
 
         const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
 
@@ -283,12 +283,12 @@ const ProductListing = () => {
                 discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
-            
+
             if (groupDiscountDoc) {
                 const customerDiscount = groupDiscountDoc.customers.find(
                     customer => customer.user.customerId === currentUser.customerId
                 );
-                
+
                 if (customerDiscount) {
                     const percentage = parseFloat(customerDiscount.percentage);
                     // Handle both positive and negative percentages
@@ -1308,7 +1308,7 @@ const ProductListing = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU:
+                            SKU :{" "}
                             {isProductGroup
                                 ? item.sku.length > 8
                                     ? `${item.sku.slice(0, 8)}...`

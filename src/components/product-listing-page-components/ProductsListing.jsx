@@ -167,7 +167,6 @@ const ProductListing = () => {
             let descriptionColor = '#000000';
 
             const path = pathname.split('/');
-            console.log("paths", path.join('/').slice(1));
 
             let brandSlug = path[1] || null;
             let categorySlug = null;
@@ -227,7 +226,7 @@ const ProductListing = () => {
     // Call this function whenever category/subcategory changes
     useEffect(() => {
         fetchCurrentCategoryDescription();
-    }, [categoryId, subCategoryId, subCategoryTwoId, window.location.path, pathname]);
+    }, [categoryId, subCategoryId, subCategoryTwoId, pathname]);
 
     // Check if item is in wishlist (for both products and product groups)
     const isItemInWishlist = (itemId, isProductGroup = false) => {
@@ -249,13 +248,12 @@ const ProductListing = () => {
     const calculateDiscountedPrice = (item, isProductGroup = false) => {
         if (!item) return 0;
 
+       
+
         const originalPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
 
         // NEW LOGIC: If item has comparePrice, use original price as selling price
-        // and comparePrice becomes the "original" price to show discount
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            // Now we return the original price as selling price
-            // comparePrice will be used to calculate discount percentage for display
             return originalPrice;
         }
 
@@ -285,11 +283,12 @@ const ProductListing = () => {
                 discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
             );
 
+            
             if (groupDiscountDoc) {
                 const customerDiscount = groupDiscountDoc.customers.find(
                     customer => customer.user.customerId === currentUser.customerId
                 );
-
+                
                 if (customerDiscount) {
                     const percentage = parseFloat(customerDiscount.percentage);
                     // Handle both positive and negative percentages
@@ -382,7 +381,7 @@ const ProductListing = () => {
 
         // If compare price exists and is higher than current price, show compare price as original
         if (item.comparePrice !== null && item.comparePrice !== undefined && item.comparePrice !== 0) {
-            const currentPrice = isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+            const currentPrice = isProductGroup ? (item.eachPrice || 0) : (item?.eachPrice || 0);
             if (item.comparePrice > currentPrice) {
                 return item.comparePrice;
             }
@@ -474,12 +473,18 @@ const ProductListing = () => {
         // For product groups, calculate stock level based on products in the group
         let stockLevel;
         if (isProductGroup) {
-            // Use the minimum stock level among products in the group, or a default value
-            stockLevel = item.products && item.products.length > 0
-                ? Math.min(...item.products.map(p => p.stockLevel || 0))
-                : 0;
+            // Use the minimum stock level among products in the group
+            if (item.products && item.products.length > 0) {
+                stockLevel = Math.min(...item.products.map(p => {
+                    // Handle both populated and unpopulated product data
+                    const product = p.product || p;
+                    return product.stockLevel || 0;
+                }));
+            } else {
+                stockLevel = 0;
+            }
         } else {
-            stockLevel = item.stockLevel;
+            stockLevel = item.stockLevel || 0;
         }
 
         const totalRequestedQuantity = calculateTotalQuantity(itemId, isProductGroup, packId, unitsQty);
@@ -494,7 +499,7 @@ const ProductListing = () => {
         const isValid = newTotalQuantity <= stockLevel;
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock `,
+            message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -843,7 +848,7 @@ const ProductListing = () => {
             ]);
 
             console.log("products  response", productsResponse)
-            console.log("products groups response", productsResponse)
+            console.log("products groups response", productGroupsResponse.data)
 
             let productsData = [];
             let productGroupsData = [];
@@ -1171,15 +1176,26 @@ const ProductListing = () => {
         const cartItem = getCartItem(itemId, isProductGroup);
         const isInWishlist = isItemInWishlist(itemId, isProductGroup);
 
+        if (isProductGroup) {
+            console.log("product group in the render item card", item)
+        }
+
 
         // Calculate stock level for product groups
         let isOutOfStock;
         if (isProductGroup) {
-            isOutOfStock = item.products && item.products.length > 0
-                ? Math.min(...item.products.map(p => p.stockLevel || 0)) <= 0
-                : true;
+            if (item.products && item.products.length > 0) {
+                // Calculate minimum stock level across all products in the group
+                const minStockLevel = Math.min(...item.products.map(p => {
+                    const product = p.product || p;
+                    return product.stockLevel || 0;
+                }));
+                isOutOfStock = minStockLevel <= 0;
+            } else {
+                isOutOfStock = true;
+            }
         } else {
-            isOutOfStock = item.stockLevel <= 0;
+            isOutOfStock = (item.stockLevel || 0) <= 0;
         }
 
         const stockError = stockErrors[itemId];
@@ -1781,7 +1797,7 @@ const ProductListing = () => {
 
     // Handle subcategory two click
     const handleSubCategoryTwoClick = (subCategoryTwoSlug, subCategoryTwoId) => {
-        router.replace(`${subCategoryTwoSlug}`)
+        router.push(`${subCategoryTwoSlug}`)
         setFilters({
             categorySlug: categorySlug,
             subCategorySlug: subCategorySlug,
@@ -1938,7 +1954,7 @@ const ProductListing = () => {
                                                         e.stopPropagation();
                                                         handleMinCategoryClick(category.slug, category._id);
                                                     }}
-                                                    className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[180px]`}
+                                                    className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
                                                 >
                                                     {category.name}
                                                 </span>
@@ -1985,7 +2001,7 @@ const ProductListing = () => {
                                                                             e.stopPropagation();
                                                                             handleSubCategoryClick(subCategory.slug, subCategory._id);
                                                                         }}
-                                                                        className="text-[17px]  max-w-[180px] cursor-pointer"
+                                                                        className="text-[17px]  max-w-[215px] cursor-pointer"
                                                                     >
                                                                         {subCategory.name}
                                                                     </span>
@@ -2024,7 +2040,7 @@ const ProductListing = () => {
                                                                                 }}
                                                                                 className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
                                                                             >
-                                                                                <span className="text-[17px] max-w-[160px] block">{subCategoryTwo.name}</span>
+                                                                                <span className="text-[17px] max-w-[200px] block">{subCategoryTwo.name}</span>
                                                                             </div>
                                                                         ))}
                                                                     </div>
@@ -2067,10 +2083,8 @@ const ProductListing = () => {
         appearance-none w-full lg:w-[135px] cursor-pointer"
                                             >
                                                 <option value="12" className="text-sm font-medium">12 Per Page</option>
-                                                <option value="16" className="text-sm font-medium">16 Per Page</option>
-                                                <option value="20" className="text-sm font-medium">20 Per Page</option>
                                                 <option value="24" className="text-sm font-medium">24 Per Page</option>
-                                                <option value="38" className="text-sm font-medium">38 Per Page</option>
+                                                <option value="48" className="text-sm font-medium">48 Per Page</option>
                                             </select>
 
                                             <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center cursor-pointer">
@@ -2191,6 +2205,7 @@ const ProductListing = () => {
                     setWishlistItems={setWishlistItems}
                     customerGroupsDiscounts={customerGroupsDiscounts}
                     itemBasedDiscounts={itemBasedDiscounts}
+                    isProductGroup={selectedProductGroup !== null}
                 />
 
             </div>

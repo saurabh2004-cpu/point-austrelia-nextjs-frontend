@@ -176,8 +176,8 @@ function ProductDetail() {
         }
 
         // Add additional images from images array (sku_2, sku_3, etc.)
-        if (item.images && Array.isArray(item.images)) {
-          item.images.forEach(image => {
+        if (item.imageUrls && Array.isArray(item.imageUrls)) {
+          item.imageUrls.forEach(image => {
             if (image && image.trim() !== '') {
               allImages.push(image);
             }
@@ -252,31 +252,45 @@ function ProductDetail() {
     return itemType === 'product' ? (item.eachBarcodes || "N/A") : (item.eachBarcodes || "N/A");
   };
 
-  // Check if item is out of stock
+  // Check if item is out of stock - FIXED VERSION
   const isItemOutOfStock = () => {
     const item = getCurrentItem();
     if (!item) return true;
 
     if (itemType === 'product') {
-      return item.stockLevel <= 0;
+      return (item.stockLevel || 0) <= 0;
     } else if (itemType === 'productGroup') {
-      // For product groups, check if any product in the group is out of stock
-      return item.products && item.products.some(product => product.stockLevel <= 0);
+      // For product groups, check if ANY product in the group is out of stock
+      // Since product groups are bundles, if any component is out of stock, the bundle is unavailable
+      if (!item.products || !Array.isArray(item.products) || item.products.length === 0) {
+        return true;
+      }
+
+      // Return true if ANY product in the group is out of stock
+      return item.products.some(productItem => {
+        const product = productItem.product;
+        return (product?.stockLevel || 0) <= 0;
+      });
     }
     return true;
   };
 
-  // Get stock level for display
+  // Get stock level for display - FIXED VERSION
   const getStockLevel = () => {
     const item = getCurrentItem();
     if (!item) return 0;
 
     if (itemType === 'product') {
-      return item.stockLevel;
+      return item.stockLevel || 0;
     } else if (itemType === 'productGroup') {
-      // For product groups, return the minimum stock level among products
+      // For product groups, return the MINIMUM stock level among products
+      // This ensures we don't exceed the available stock of any component product
       if (item.products && item.products.length > 0) {
-        return Math.min(...item.products.map(p => p.stockLevel || 0));
+        const stockLevels = item.products.map(productItem => {
+          const product = productItem.product;
+          return product?.stockLevel || 0;
+        });
+        return Math.min(...stockLevels);
       }
       return 0;
     }
@@ -520,6 +534,57 @@ function ProductDetail() {
     } finally {
       setRelatedItemsLoading(false);
     }
+  };
+
+
+  // Separate function for product group images - FIXED VERSION
+  const getItemImagesForProductGroup = (item) => {
+    if (!item) return [];
+
+    console.log("Getting images for product group:", item.name);
+
+    const allImages = [];
+    const addedUrls = new Set(); // Track added URLs to avoid duplicates
+
+    // Check thumbnail first (this is the full URL from your cart data)
+    if (item.thumbnail && item.thumbnail.trim() !== '' && !addedUrls.has(item.thumbnail)) {
+      console.log("Adding thumbnail:", item.thumbnail);
+      allImages.push(item.thumbnail);
+      addedUrls.add(item.thumbnail);
+    }
+
+    // Then check images array (these are full URLs from your cart data)
+    if (item.images && Array.isArray(item.images)) {
+      item.images.forEach(image => {
+        if (image && image.trim() !== '' && !addedUrls.has(image)) {
+          console.log("Adding image from images array:", image);
+          allImages.push(image);
+          addedUrls.add(image);
+        }
+      });
+    }
+
+    // If no images found yet, check if we have individual product images
+    if (allImages.length === 0 && item.products && Array.isArray(item.products)) {
+      // Use images from the first product in the group
+      const firstProduct = item.products[0]?.product;
+      if (firstProduct && firstProduct.images) {
+        if (Array.isArray(firstProduct.images)) {
+          firstProduct.images.forEach(image => {
+            if (image && image.trim() !== '' && !addedUrls.has(image)) {
+              console.log("Adding image from first product:", image);
+              allImages.push(image);
+              addedUrls.add(image);
+            }
+          });
+        } else if (typeof firstProduct.images === 'string' && firstProduct.images.trim() !== '') {
+          allImages.push(firstProduct.images);
+        }
+      }
+    }
+
+    console.log("Final images for product group:", allImages);
+    return allImages;
   };
 
   // Check if related item is in wishlist
@@ -953,12 +1018,12 @@ function ProductDetail() {
     return packQuantity * quantity;
   };
 
-  // Check stock level
+  // Check stock level - FIXED VERSION
   const checkStock = (qty = quantity, unitId = selectedUnitId) => {
     const item = getCurrentItem();
     if (!item) return { isValid: true };
 
-    // For product groups, we don't have typesOfPacks, so use default pack quantity of 1
+    // For product groups, we use simple quantity (no pack multiplication)
     const packQuantity = itemType === 'productGroup' ? 1 :
       (item.typesOfPacks?.find(pack => pack._id === unitId) ?
         parseInt(item.typesOfPacks.find(pack => pack._id === unitId).quantity) : 1);
@@ -976,14 +1041,14 @@ function ProductDetail() {
     const isValid = newTotalQuantity <= stockLevel;
 
     if (!isValid) {
-      setStockError(`Exceeds available stock `);
+      setStockError(`Exceeds available stock. Available: ${stockLevel}`);
     } else {
       setStockError(null);
     }
 
     return {
       isValid,
-      message: isValid ? null : `Exceeds available stock `,
+      message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
       requestedQuantity: totalRequestedQuantity,
       currentStock: stockLevel
     };

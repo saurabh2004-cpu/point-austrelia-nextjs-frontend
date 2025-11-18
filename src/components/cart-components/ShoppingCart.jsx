@@ -126,9 +126,11 @@ const ShoppingCart = () => {
         if (item.product) {
             return item.product.stockLevel || 0;
         } else if (item.productGroup) {
-            // For product groups, use minimum stock of all products in the group
-            const minStock = Math.min(...(item.productGroup.products || []).map(p => p.stockLevel || 0));
-            return minStock;
+            // For product groups, sum the stock of all individual products in the group
+            const totalStock = (item.productGroup.products || []).reduce((sum, productItem) => {
+                return sum + (productItem.product?.stockLevel || 0);
+            }, 0);
+            return totalStock;
         }
         return 0;
     };
@@ -141,7 +143,6 @@ const ShoppingCart = () => {
     const outOfStockItems = cartItems.filter(item => isOutOfStock(item));
     const outOfStockCount = outOfStockItems.length;
 
-    // Get effective quantity = packQuantity * unitsQuantity
     const calculateDisplayTotalQuantity = (item) => {
         if (item.product) {
             const pack = item.product.typesOfPacks?.find(p => p._id === selectedPacks[item._id]);
@@ -149,9 +150,9 @@ const ShoppingCart = () => {
             const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
             return packQuantity * unitsQuantity;
         } else if (item.productGroup) {
-            // Product groups use simple quantity (no packs)
+            // For product groups, each unit represents one set of the bundle
             const unitsQuantity = localQuantities[item._id] || item.unitsQuantity;
-            return unitsQuantity;
+            return unitsQuantity; // This represents number of bundles
         }
         return 0;
     };
@@ -584,8 +585,8 @@ const ShoppingCart = () => {
     const calculateItemTotal = (item) => {
         const totalQuantity = calculateDisplayTotalQuantity(item);
         const itemSubtotal = (item.amount || 0) * totalQuantity;
-        const itemTax = calculateItemTax(item);
-        return itemSubtotal + itemTax;
+        // const itemTax = calculateItemTax(item);
+        return itemSubtotal
     };
 
     // Calculate brand-wise pricing in real-time
@@ -764,7 +765,7 @@ const ShoppingCart = () => {
         } else if (item.discountType === "Item Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
             return item.product.eachPrice;
         } else if (item.discountType === "Pricing Group Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
-            const currentPrice = item.product.eachPrice;
+            const currentPrice = item?.product?.eachPrice;
             const discountPercentages = parseFloat(item.discountPercentages);
 
             if (discountPercentages < 0) {
@@ -777,7 +778,7 @@ const ShoppingCart = () => {
         }
 
         // Otherwise, show the actual original price
-        return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+        return isProductGroup ? (item.eachPrice || '') : (item.eachPrice || '');
     };
 
     if (loading) {
@@ -1158,14 +1159,14 @@ const ShoppingCart = () => {
 
                                                                 {/* Amount with Tax */}
                                                                 <div className="space-y-1">
-
-                                                                    <div className="flex space-x-2 text-[13px] font-semibold  pt-1">
-                                                                        <span>Total:</span>
-                                                                        <span className="text-[#2D2C70] text-[15px]">
+                                                                    <div className="flex items-center align-middle gap-2 text-[13px] font-semibold pt-1">
+                                                                        <span>Subtotal :</span>
+                                                                        <span className="text-[#2D2C70] text-[15px] leading-none">
                                                                             ${calculateItemTotal(item).toFixed(2)}
                                                                         </span>
                                                                     </div>
                                                                 </div>
+
 
                                                                 {/* Action Buttons */}
                                                                 <div className="flex flex-col xl:flex-row space-y-2 xl:space-y-0 xl:flex-row text-[13px] font-medium items-center space-x-3 mt-4">
@@ -1500,9 +1501,9 @@ const ShoppingCart = () => {
                 subCategoryTwoSlug={subCategoryTwoSlug}
                 brandSlug={brandSlug}
                 setFilters={setFilters}
-                clearFilters={() => { }} 
-                wishListItems={wishListItems} 
-                setWishlistItems={setWishlistItems} 
+                clearFilters={() => { }}
+                wishListItems={wishListItems}
+                setWishlistItems={setWishlistItems}
                 customerGroupsDiscounts={[]} // You'll need to pass customerGroupsDiscounts if available
                 itemBasedDiscounts={[]} // You'll need to pass itemBasedDiscounts if available
             />

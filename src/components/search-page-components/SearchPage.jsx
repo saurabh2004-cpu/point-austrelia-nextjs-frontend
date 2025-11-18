@@ -153,19 +153,20 @@ const SearchPage = () => {
         }
 
         // Priority 3: Check for pricing group discount
+        // For both products and product groups, check the pricingGroup field directly
         if (item.pricingGroup) {
-            const itemPricingGroupId = typeof item.pricingGroup === 'object'
+            const pricingGroupToCheck = typeof item.pricingGroup === 'object'
                 ? item.pricingGroup._id
                 : item.pricingGroup;
 
             // Find matching pricing group discount for this customer
             const groupDiscountDoc = customerGroupsDiscounts.find(
-                discount => discount.pricingGroup && discount.pricingGroup._id === itemPricingGroupId
+                discount => discount.pricingGroup && discount.pricingGroup._id === pricingGroupToCheck
             );
 
             if (groupDiscountDoc) {
                 const customerDiscount = groupDiscountDoc.customers.find(
-                    customer => customer.user.customerId === currentUser.customerId
+                    customer => customer.user && customer.user.customerId === currentUser.customerId
                 );
 
                 if (customerDiscount) {

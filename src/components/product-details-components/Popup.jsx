@@ -42,7 +42,7 @@ export default function ProductPopup({
     const [stockError, setStockError] = useState(null)
     const [loadingCart, setLoadingCart] = useState(false)
     const [loadingWishlist, setLoadingWishlist] = useState(false)
-   
+
 
     // State to track if we're showing a product or product group
     const [itemType, setItemType] = useState(null) // 'product' or 'productGroup'
@@ -150,22 +150,22 @@ export default function ProductPopup({
             }
         }
 
-        // Add additional images from images array
-        if (item.images && Array.isArray(item.images)) {
-            item.images.forEach(image => {
-                if (image && image.trim() !== '' && !addedUrls.has(image)) {
-                    console.log("Adding additional image:", image);
-                    allImages.push(image);
-                    addedUrls.add(image);
-                }
-            });
-        }
+        // // Add additional images from images array
+        // if (item.imageUrls && Array.isArray(item.imageUrls)) {
+        //     item.images.forEach(image => {
+        //         if (image && image.trim() !== '' && !addedUrls.has(image)) {
+        //             console.log("Adding additional image:", image);
+        //             allImages.push(image);
+        //             addedUrls.add(image);
+        //         }
+        //     });
+        // }
 
         // Also check imageUrls if it exists
         if (item.imageUrls && Array.isArray(item.imageUrls)) {
             item.imageUrls.forEach(image => {
                 if (image && image.trim() !== '' && !addedUrls.has(image)) {
-                    console.log("Adding imageUrl:", image);
+                    // console.log("Adding imageUrl:", image);
                     allImages.push(image);
                     addedUrls.add(image);
                 }
@@ -182,10 +182,17 @@ export default function ProductPopup({
         if (!item) return true;
 
         if (itemType === 'product') {
-            return item.stockLevel <= 0;
+            return (item.stockLevel || 0) <= 0;
         } else if (itemType === 'productGroup') {
-            // For product groups, check if any product in the group is out of stock
-            return item.products && item.products.some(product => product.stockLevel <= 0);
+            // For product groups, check if ALL products in the group are out of stock
+            if (!item.products || !Array.isArray(item.products) || item.products.length === 0) {
+                return true;
+            }
+
+            return item.products.every(productItem => {
+                const product = productItem.product;
+                return (product?.stockLevel || 0) <= 0;
+            });
         }
         return true;
     };
@@ -206,11 +213,15 @@ export default function ProductPopup({
         if (!item) return 0;
 
         if (itemType === 'product') {
-            return item.stockLevel;
+            return item.stockLevel || 0;
         } else if (itemType === 'productGroup') {
             // For product groups, return the minimum stock level among products
             if (item.products && item.products.length > 0) {
-                return Math.min(...item.products.map(p => p.stockLevel || 0));
+                const stockLevels = item.products.map(productItem => {
+                    const product = productItem.product;
+                    return product?.stockLevel || 0;
+                });
+                return Math.min(...stockLevels);
             }
             return 0;
         }
@@ -454,14 +465,14 @@ export default function ProductPopup({
         const isValid = newTotalQuantity <= stockLevel;
 
         if (!isValid) {
-            setStockError(`Exceeds available stock `);
+            setStockError(`Exceeds available stock. Available: ${stockLevel}`);
         } else {
             setStockError(null);
         }
 
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock `,
+            message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -502,7 +513,7 @@ export default function ProductPopup({
             setLoading(true)
             const response = await axiosInstance(`product-group/get-product-group/${productGroupId}`)
 
-            console.log("response of product group", response.data.data.thumbnailUrl)
+            console.log("response of product group", response.data.data)
 
             if (response.data.statusCode === 200) {
                 const productGroupData = response.data.data
@@ -798,13 +809,36 @@ export default function ProductPopup({
         );
     };
 
+    const handleProductClick = (itemName, itemId, isProductGroup = false) => {
+        setFilters({
+            categorySlug: categorySlug,
+            subCategorySlug: subCategorySlug || null,
+            subCategoryTwoSlug: subCategoryTwoSlug || null,
+            brandSlug: brandSlug || null,
+            brandId: brandId || null,
+            categoryId: categoryId || null,
+            subCategoryId: subCategoryId || null,
+            subCategoryTwoId: subCategoryTwoId || null,
+            productID: isProductGroup ? null : itemId,
+            productGroupId: isProductGroup ? itemId : null
+        });
+
+        const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
+        router.push(`/${itemSlug}`);
+    }
+
     if (!isOpen) return null
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-[#000000]/10 bg-opacity-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-medium font-spartan">{getItemName()}</h2>
+                    <h2
+                        className="text-lg font-medium font-spartan cursor-pointer hover:text-[#E9098D] "
+                        onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
+                    >
+                        {getItemName()}
+                    </h2>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer">
                         <X className="w-5 h-5" />
                     </button>
@@ -887,6 +921,7 @@ export default function ProductPopup({
                                                 src={itemImages[selectedImage] || "/placeholder.svg"}
                                                 alt={getItemName()}
                                                 className="w-[200px] h-[200px] object-contain"
+                                                // onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
                                             />
                                         </div>
                                     </div>
@@ -895,7 +930,10 @@ export default function ProductPopup({
 
                             {/* Right side details */}
                             <div className="flex-1 space-y-3 font-spartan">
-                                <h1 className="text-[18px] font-semibold text-black uppercase">{getItemName()}</h1>
+                                <h1
+                                    className="text-[18px] font-semibold text-black uppercase cursor-pointer hover:text-[#E9098D]"
+                                    onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
+                                >{getItemName()}</h1>
                                 <div className="space-y-1 flex justify-between items-center">
                                     <p className="text-xs sm:text-sm text-gray-600 font-spartan">
                                         SKU: {getItemSku()}

@@ -9,7 +9,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        '3xl': '1750px',
+        '3xl': '1710px',
       },
     },
   },

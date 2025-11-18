@@ -165,32 +165,46 @@ const ShoppingCartPopup = () => {
   // Check if requested quantity exceeds stock level
   const exceedsStockLevel = (item) => {
     const totalQuantity = calculateDisplayTotalQuantity(item);
-
-    if (item.product) {
-      // For individual products
-      return totalQuantity > item.product.stockLevel;
-    } else if (item.productGroup) {
-      // For product groups, check minimum stock of all products in the group
-      const minStock = Math.min(...item.productGroup.products.map(p => p.stockLevel || 0));
-      return totalQuantity > minStock;
-    }
-
-    return false;
+    const stockLevel = getStockLevel(item);
+    return totalQuantity > stockLevel;
   };
 
-  // Get stock level for display
   const getStockLevel = (item) => {
     if (item.product) {
-      return item.product.stockLevel;
+      return item.product.stockLevel || 0;
     } else if (item.productGroup) {
-      return Math.min(...item.productGroup.products.map(p => p.stockLevel || 0));
+      // For product groups, return the minimum stock level among products
+      if (item.productGroup.products && Array.isArray(item.productGroup.products)) {
+        const stockLevels = item.productGroup.products.map(productItem => {
+          // Now productItem.product contains the full product object with stockLevel
+          const product = productItem.product;
+          return product?.stockLevel || 0;
+        });
+        return Math.min(...stockLevels);
+      }
+      return 0;
     }
     return 0;
   };
 
-  // Check if item is out of stock
   const isOutOfStock = (item) => {
-    return getStockLevel(item) <= 0;
+    if (item.product) {
+      // For individual products
+      return (item.product.stockLevel || 0) <= 0;
+    } else if (item.productGroup) {
+      // For product groups, check if ALL products in the group are out of stock
+      if (!item.productGroup.products || !Array.isArray(item.productGroup.products)) {
+        return true;
+      }
+
+      // Check if all products in the group are out of stock
+      return item.productGroup.products.every(productItem => {
+        // Now productItem.product contains the full product object with stockLevel
+        const product = productItem.product;
+        return (product?.stockLevel || 0) <= 0;
+      });
+    }
+    return true;
   };
 
   const updateCartItem = async (item) => {
@@ -434,30 +448,71 @@ const ShoppingCartPopup = () => {
   const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
     if (!item) return 0;
 
+    // Determine if it's a product group
+    const isProductGroupItem = isProductGroup || !!item.productGroup;
 
-    // If compare price exists and is higher than current price, show compare price as original
-    if (item.discountType === "Compare Price" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
-      const currentPrice = isProductGroup ? (item.amount || 0) : (item.amount || 0);
-      if (item.discountPercentages > currentPrice) {
-        return item.discountPercentages;
-      }
-    } else if (item.discountType === "Item Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
-      return item.product.eachPrice;
-    } else if (item.discountType === "Pricing Group Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
-      const currentPrice = item.product.eachPrice;
-      const discountPercentages = parseFloat(item.discountPercentages);
-
-      if (discountPercentages < 0) {
-        return currentPrice;
-      } else if (discountPercentages > 0) {
-        return null;
+    // For product groups, use productGroup data
+    if (isProductGroupItem) {
+      // Check if there's a compare price discount
+      if (item.discountType === "Compare Price" && item.discountPercentages) {
+        const comparePrice = parseFloat(item.discountPercentages);
+        const currentPrice = item.amount || 0;
+        if (comparePrice > currentPrice) {
+          return comparePrice;
+        }
       }
 
-      return currentPrice;
+      // Check for item discount
+      if (item.discountType === "Item Discount" && item.discountPercentages) {
+        return item.product.eachPrice || item.amount || 0;
+      }
+
+      // Check for pricing group discount
+      if (item.discountType === "Pricing Group Discount" && item.discountPercentages) {
+        const discountPercentages = parseFloat(item.discountPercentages);
+        if (discountPercentages < 0) {
+          // Negative discount means price decrease, show original price
+          return item.product.eachPrice || item.amount || 0;
+
+        } else if (discountPercentages > 0) {
+          // Positive discount means price increase, no original price to show
+          return null;
+        }
+      }
+      
     }
 
-    // Otherwise, show the actual original price
-    return isProductGroup ? (item.eachPrice || 0) : (item.eachPrice || 0);
+    // For individual products
+    if (item.product) {
+      // Check if there's a compare price discount
+      if (item.discountType === "Compare Price" && item.discountPercentages) {
+        const comparePrice = parseFloat(item.discountPercentages);
+        const currentPrice = item.amount || 0;
+        if (comparePrice > currentPrice) {
+          return comparePrice;
+        }
+      }
+      // Check for item discount
+      if (item.discountType === "Item Discount" && item.discountPercentages) {
+        return item.product.eachPrice || item.amount || 0;
+      }
+
+      // Check for pricing group discount
+      if (item.discountType === "Pricing Group Discount" && item.discountPercentages) {
+        const discountPercentages = parseFloat(item.discountPercentages);
+        if (discountPercentages < 0) {
+          // Negative discount means price decrease, show original price
+          return item.product.eachPrice || item.amount || 0;
+
+        } else if (discountPercentages > 0) {
+          // Positive discount means price increase, no original price to show
+          return null;
+        }
+      }
+    }
+
+    // Default fallback
+    return item.amount || 0;
   };
 
   if (!isOpen) return null;

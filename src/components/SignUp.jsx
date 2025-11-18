@@ -89,27 +89,37 @@ export default function SignUpComponent() {
     return phone;
   };
 
-  // Function to validate Australian phone number
+  // Function to validate Australian phone number - MUST start with 4
   const isValidAustralianPhoneNumber = (phone) => {
     const cleaned = phone.replace(/[^\d\+]/g, '');
 
-    // Australian phone number patterns:
-    // - Domestic mobile: 04XXXXXXXX (10 digits)
-    // - Domestic landline: 0XXXXXXXXX (10 digits starting with 02, 03, 07, 08)
-    // - International mobile: 614XXXXXXXX (11 digits)
-    // - International landline: 61XXXXXXXXX (11 digits)
-    // - With +61 prefix: +61 4XXXXXXXX or +61 XXXXXXXXX
-
+    // Australian phone number patterns - MUST start with 4 for mobile
     const patterns = [
-      /^\+61\s?[4]\d{8}$/,          // +61 4XX XXX XXX
-      /^\+61\s?[2378]\d{8}$/,       // +61 X XXXX XXXX (landlines)
-      /^04\d{8}$/,                  // 04XX XXX XXX
-      /^0[2378]\d{8}$/,             // 0X XXXX XXXX (landlines)
-      /^61[4]\d{8}$/,               // 614XX XXX XXX
-      /^61[2378]\d{8}$/,            // 61X XXXX XXXX (landlines)
+      /^\+61\s?[4]\d{8}$/,          // +61 4XX XXX XXX (Mobile)
+      /^04\d{8}$/,                  // 04XX XXX XXX (Mobile)
+      /^61[4]\d{8}$/,               // 614XX XXX XXX (Mobile)
     ];
 
     return patterns.some(pattern => pattern.test(cleaned));
+  };
+
+  // Real-time validation for phone number starting with 4
+  const validatePhoneInRealTime = (phone) => {
+    const cleaned = phone.replace(/[^\d\+]/g, '');
+    
+    // Check if it starts with +61 4 or 04 or 614
+    const isValidFormat = /^(\+61\s?4|04|614)/.test(cleaned);
+    
+    if (!isValidFormat && cleaned.length > 3) {
+      return 'Australian mobile numbers must start with 4';
+    }
+    
+    // Check full validation for complete numbers
+    if (cleaned.replace(/[^\d]/g, '').length >= 10 && !isValidAustralianPhoneNumber(phone)) {
+      return 'Please enter a valid Australian mobile number';
+    }
+    
+    return '';
   };
 
   const handleInputChange = (e) => {
@@ -127,7 +137,7 @@ export default function SignUpComponent() {
     }
   }
 
-  // Handle phone number input with real-time formatting
+  // Handle phone number input with real-time formatting and validation
   const handlePhoneChange = (e, fieldName) => {
     let input = e.target.value;
 
@@ -145,27 +155,16 @@ export default function SignUpComponent() {
       numbers = numbers.substring(0, 9);
     }
 
-    // Auto-format as user types
+    // Auto-format as user types - ONLY mobile format (starts with 4)
     let formatted = prefix;
     if (numbers.length > 0) {
-      if (numbers.startsWith('4')) {
-        // Mobile format: +61 4XX XXX XXX
-        if (numbers.length <= 3) {
-          formatted += numbers;
-        } else if (numbers.length <= 6) {
-          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3)}`;
-        } else {
-          formatted += `${numbers.substring(0, 3)} ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
-        }
+      // Force mobile format: +61 4XX XXX XXX
+      if (numbers.length <= 3) {
+        formatted += numbers;
+      } else if (numbers.length <= 6) {
+        formatted += `${numbers.substring(0, 3)} ${numbers.substring(3)}`;
       } else {
-        // Landline format: +61 X XXXX XXXX
-        if (numbers.length <= 1) {
-          formatted += numbers;
-        } else if (numbers.length <= 5) {
-          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1)}`;
-        } else {
-          formatted += `${numbers.substring(0, 1)} ${numbers.substring(1, 5)} ${numbers.substring(5)}`;
-        }
+        formatted += `${numbers.substring(0, 3)} ${numbers.substring(3, 6)} ${numbers.substring(6)}`;
       }
     }
 
@@ -174,16 +173,21 @@ export default function SignUpComponent() {
       [fieldName]: formatted
     }));
 
-    // Clear error when user starts typing again
-    if (errors[fieldName] && numbers.length > 0) {
-      // Validate in real-time and remove error if valid
-      const testPhone = prefix + numbers;
-      if (isValidAustralianPhoneNumber(testPhone)) {
-        setErrors(prev => ({
-          ...prev,
-          [fieldName]: ''
-        }));
-      }
+    // Real-time validation - show warning if doesn't start with 4
+    const testPhone = prefix + numbers;
+    const validationError = validatePhoneInRealTime(testPhone);
+    
+    if (validationError) {
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: validationError
+      }));
+    } else if (errors[fieldName] && numbers.length > 0) {
+      // Clear error if valid
+      setErrors(prev => ({
+        ...prev,
+        [fieldName]: ''
+      }));
     }
   };
 
@@ -215,9 +219,10 @@ export default function SignUpComponent() {
       }));
     } else if (input && !isValidAustralianPhoneNumber(input)) {
       // Set error for invalid number
+      const validationError = validatePhoneInRealTime(input);
       setErrors(prev => ({
         ...prev,
-        [fieldName]: 'Please enter a valid Australian phone number'
+        [fieldName]: validationError || 'Please enter a valid Australian mobile number '
       }));
     }
   };
@@ -296,12 +301,12 @@ export default function SignUpComponent() {
       newErrors.customerEmail = 'Please enter a valid email address'
     }
 
-    // Validate phone numbers
+    // Validate phone numbers - MUST start with 4
     if (formData.CustomerPhoneNo && !isValidAustralianPhoneNumber(formData.CustomerPhoneNo)) {
-      newErrors.CustomerPhoneNo = 'Please enter a valid Australian phone number'
+      newErrors.CustomerPhoneNo = 'Please enter a valid Australian mobile number starting with 4'
     }
     if (formData.contactPhone && !isValidAustralianPhoneNumber(formData.contactPhone)) {
-      newErrors.contactPhone = 'Please enter a valid Australian phone number'
+      newErrors.contactPhone = 'Please enter a valid Australian mobile number starting with 4'
     }
 
     setErrors(newErrors)
@@ -603,10 +608,7 @@ export default function SignUpComponent() {
                   />
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {formData.CustomerPhoneNo.startsWith('+61 4') ?
-                    'Mobile format: +61 4XX XXX XXX' :
-                    'Landline format: +61 X XXXX XXXX'
-                  }
+                  Mobile format: +61 4XX XXX XXX
                 </div>
                 {errors.CustomerPhoneNo && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.CustomerPhoneNo}</p>
@@ -641,10 +643,7 @@ export default function SignUpComponent() {
                   />
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  {formData.contactPhone.startsWith('+61 4') ?
-                    'Mobile format: +61 4XX XXX XXX' :
-                    'Landline format: +61 X XXXX XXXX'
-                  }
+                  Mobile format: +61 4XX XXX XXX
                 </div>
                 {errors.contactPhone && (
                   <p className="mt-1 text-xs sm:text-sm text-red-600">{errors.contactPhone}</p>

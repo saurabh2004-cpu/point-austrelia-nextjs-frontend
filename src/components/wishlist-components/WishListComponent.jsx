@@ -31,7 +31,8 @@ const ProductCard = ({
     onProductClick,
     onQuickViewClick,
     hoveredImage,
-    setHoveredImage
+    setHoveredImage,
+    onRemoveWarning
 }) => {
     // Determine if it's a product or product group
     const isProductGroup = !!item.productGroup;
@@ -214,13 +215,31 @@ const ProductCard = ({
         return productData.sku;
     };
 
-    // Get stock level - for product groups, check the minimum stock among all products
+    // ✅ CORRECTED: Get stock level - for product groups, check the minimum stock among all products
     const getStockLevel = () => {
         if (isProductGroup) {
-            if (!productData.products || productData.products.length === 0) return 0;
-            return Math.min(...productData.products.map(p => p.stockLevel || 0));
+            console.log("product group data in get stock level ", productData);
+
+            if (!productData.products || productData.products.length === 0) {
+                console.log("No products found in product group");
+                return 0;
+            }
+
+            // CORRECTED: Access stockLevel from the nested product object
+            const stockLevels = productData.products.map(p => {
+                // Each item in products array has a nested 'product' object with stockLevel
+                const stock = p.product?.stockLevel || 0;
+                console.log(`Product ${p.product?.ProductName} stock:`, stock);
+                return stock;
+            });
+
+            const minStock = Math.min(...stockLevels);
+            console.log("Minimum stock level in product group:", minStock);
+            return minStock;
         } else {
-            return productData.stockLevel || 0;
+            const stock = productData.stockLevel || 0;
+            console.log("Individual product stock level:", stock);
+            return stock;
         }
     };
 
@@ -322,19 +341,23 @@ const ProductCard = ({
 
     const hasModifications = isCartItemModified();
 
-    // Handle quantity updates with stock validation
+    // Handle quantity updates with automatic warning clearance
     const handleQuantityUpdate = (productId, newQuantity) => {
         const finalQuantity = Math.max(1, newQuantity);
         onUpdateQuantity(productId, finalQuantity);
 
         // Check if this update causes stock issues
         const updatedTotalQuantity = isProductGroup ? finalQuantity : finalQuantity * getPackQuantity(selectedUnits[productId]);
+
         if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
             onShowWarning(productId, 'exceeds_stock', getProductName(), updatedTotalQuantity, stockLevel);
+        } else if (stockLevel <= 0) {
+            onShowWarning(productId, 'out_of_stock', getProductName());
+        } else {
+            onRemoveWarning(productId);
         }
     };
 
-    // Handle unit changes with stock validation
     const handleUnitUpdate = (productId, unitId) => {
         onUpdateUnit(productId, unitId);
 
@@ -344,6 +367,10 @@ const ProductCard = ({
 
         if (updatedTotalQuantity > stockLevel && stockLevel > 0) {
             onShowWarning(productId, 'exceeds_stock', getProductName(), updatedTotalQuantity, stockLevel);
+        } else if (stockLevel <= 0) {
+            onShowWarning(productId, 'out_of_stock', getProductName());
+        } else {
+            onRemoveWarning(productId);
         }
     };
 
@@ -374,20 +401,6 @@ const ProductCard = ({
                                 onClick={handleQuickViewButtonClick}
                                 className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
                             >
-                                {/* <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                >
-                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg> */}
                                 Quick View
                             </button>
                         </div>
@@ -449,10 +462,10 @@ const ProductCard = ({
                         )}
                     </div>
 
-                    <div className='flex items-center justify-between'>
+                    <div className='flex items-center align-middle justify-between'>
                         {/* Pack Type Selector - Only for individual products */}
                         {!isProductGroup && (
-                            <div className="mb-3 space-x-12 align-center items-center font-spartan">
+                            <div className="mb-2 space-x-12 align-center items-center font-spartan">
                                 <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                                 <div className="relative w-full">
                                     <select
@@ -461,7 +474,7 @@ const ProductCard = ({
                                         className={`w-full border border-gray-200 rounded-md pl-2 pr-8 py-1 text-sm 
                                                    focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
                                                    appearance-none ${!isAvailable ? 'bg-gray-100' : ''} cursor-pointer`}
-                                        disabled={isLoading }
+                                        disabled={isLoading}
                                     >
                                         {productData.typesOfPacks && productData.typesOfPacks.length > 0 ? (
                                             productData.typesOfPacks.map((pack) => (
@@ -493,13 +506,13 @@ const ProductCard = ({
                             </div>
                         )}
 
-                        <div className="flex items-start space-x-2 space-y-2 flex-col justify-between">
+                        <div className="flex items-start space-x-2  flex-col justify-between">
                             <span className="text-[13px] font-medium cursor-pointer">Quantity</span>
                             <div className="flex items-center rounded-lg">
                                 <button
                                     onClick={() => handleQuantityUpdate(productId, (productQuantities[productId] || 1) - 1)}
                                     className="p-1 bg-black rounded-md px-2 py-[5px] transition-colors disabled:opacity-50 cursor-pointer"
-                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1 }
+                                    disabled={isLoading || (productQuantities[productId] || 1) <= 1}
                                 >
                                     <Minus className="w-3 h-3 text-white" />
                                 </button>
@@ -534,14 +547,26 @@ const ProductCard = ({
                         </div>
                     </div>
 
-                    <div className='text-[16px] font-semibold gap-2 flex'>
+                    <div className="flex items-center gap-2 text-[16px] font-semibold">
                         <span>Amount:</span>
                         <span className="text-[#2D2C70] text-[18px]">
                             ${calculateAmount(productData, productId)}
                         </span>
                     </div>
 
-                    <div className="flex text-[13px] font-semibold justify-between items-center gap-3 sm:gap-4 md:gap-6">
+                    {/* Stock Information */}
+                    {!isOutOfStock && (
+                        <div className="text-xs text-gray-600 mt-1">
+                            Available: {stockLevel} units
+                            {exceedsStock && (
+                                <span className="text-orange-600 ml-2">
+                                    (Requested: {totalQuantity} units)
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex text-[13px] font-semibold justify-between items-center gap-3 sm:gap-4 md:gap-6 mt-2">
                         {/* ✅ UPDATE BUTTON - Fixed height */}
                         <button
                             onClick={() => onUpdateCart(productId, isProductGroup)}
@@ -641,10 +666,63 @@ const WishListComponent = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedProductGroup, setSelectedProductGroup] = useState(null);
 
-
     const router = useRouter();
 
-    
+    // ✅ CORRECTED: Auto-remove warnings when quantities are within stock limits
+    useEffect(() => {
+        const updatedWarnings = warnings.filter(warning => {
+            const item = wishListItems.find(item =>
+                (item.product && item.product._id === warning.productId) ||
+                (item.productGroup && item.productGroup._id === warning.productId)
+            );
+
+            if (!item) return false; // Remove warning if item no longer exists
+
+            const isProductGroup = !!item.productGroup;
+            const productData = isProductGroup ? item.productGroup : item.product;
+            const productId = isProductGroup ? item.productGroup._id : item.product._id;
+
+            // Get current quantity
+            const unitsQuantity = productQuantities[productId] || 1;
+            let totalQuantity = unitsQuantity;
+
+            if (!isProductGroup) {
+                const selectedUnitId = selectedUnits[productId];
+                const packQuantity = getPackQuantity(productId, selectedUnitId);
+                totalQuantity = packQuantity * unitsQuantity;
+            }
+
+            // ✅ CORRECTED: Get stock level correctly for product groups
+            let stockLevel = 0;
+            if (isProductGroup) {
+                if (productData.products && productData.products.length > 0) {
+                    // CORRECTED: Access stockLevel from nested product objects
+                    stockLevel = Math.min(...productData.products.map(p => p.product?.stockLevel || 0));
+                }
+            } else {
+                stockLevel = productData.stockLevel || 0;
+            }
+
+            console.log(`Warning check for ${productId}:`, {
+                isProductGroup,
+                stockLevel,
+                totalQuantity,
+                unitsQuantity,
+                hasStock: stockLevel > 0,
+                withinStock: totalQuantity <= stockLevel
+            });
+
+            // Check if current selection is now valid
+            const isNowValid = stockLevel > 0 && totalQuantity <= stockLevel;
+
+            // Keep warning only if still invalid
+            return !isNowValid;
+        });
+
+        if (updatedWarnings.length !== warnings.length) {
+            setWarnings(updatedWarnings);
+        }
+    }, [productQuantities, selectedUnits, wishListItems, warnings]);
 
     // Product filters store
     const {
@@ -755,6 +833,8 @@ const WishListComponent = () => {
 
             setLoading(true);
             const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`);
+
+            console.log("get wishlistby csutometr id ", response);
 
             if (response.data.statusCode === 200) {
                 const items = response.data.data || [];
@@ -886,10 +966,23 @@ const WishListComponent = () => {
 
             const totalQuantity = isProductGroup ? unitsQuantity : packQuantity * unitsQuantity;
 
-            // Check stock level before adding to cart
-            const stockLevel = isProductGroup
-                ? Math.min(...productData.products.map(p => p.stockLevel || 0))
-                : productData.stockLevel || 0;
+            // ✅ CORRECTED: Check stock level before adding to cart
+            let stockLevel = 0;
+            if (isProductGroup) {
+                if (productData.products && productData.products.length > 0) {
+                    // CORRECTED: Access stockLevel from nested product objects
+                    stockLevel = Math.min(...productData.products.map(p => p.product?.stockLevel || 0));
+                }
+            } else {
+                stockLevel = productData.stockLevel || 0;
+            }
+
+            console.log(`Stock check for ${getProductName(productData)}:`, {
+                stockLevel,
+                totalQuantity,
+                isProductGroup,
+                productStocks: isProductGroup ? productData.products.map(p => p.product?.stockLevel) : productData.stockLevel
+            });
 
             if (stockLevel <= 0) {
                 addWarning(productId, 'out_of_stock', getProductName(productData));
@@ -961,7 +1054,7 @@ const WishListComponent = () => {
 
             // ✅ CORRECTED: Use the discounted price for amount calculation
             const discountedPrice = calculateDiscountedPrice(productData);
-            const totalAmount = (discountedPrice * totalQuantity).toFixed(2);
+            const totalAmount = discountedPrice.toFixed(2); 
 
             // ✅ CORRECTED: Determine discount type and percentage with proper sign handling
             let discountType = "";
@@ -1216,7 +1309,7 @@ const WishListComponent = () => {
                                             </p>
                                             {warning.type === 'exceeds_stock' && (
                                                 <p className="text-xs text-orange-600 mt-1">
-                                                    Current selection: {warning.requestedQty} units 
+                                                    Current selection: {warning.requestedQty} units
                                                 </p>
                                             )}
                                         </div>
@@ -1269,6 +1362,7 @@ const WishListComponent = () => {
                                             onQuickViewClick={handleQuickViewClick}
                                             hoveredImage={hoveredImage}
                                             setHoveredImage={setHoveredImage}
+                                            onRemoveWarning={removeWarning}
                                         />
                                     ))}
                                 </div>
@@ -1296,6 +1390,7 @@ const WishListComponent = () => {
                                                 onQuickViewClick={handleQuickViewClick}
                                                 hoveredImage={hoveredImage}
                                                 setHoveredImage={setHoveredImage}
+                                                onRemoveWarning={removeWarning}
                                             />
                                         </div>
                                     ))}
@@ -1325,11 +1420,11 @@ const WishListComponent = () => {
                 subCategoryTwoSlug={subCategoryTwoSlug}
                 brandSlug={brandSlug}
                 setFilters={setFilters}
-                clearFilters={() => { }} 
-                wishListItems={wishListItems} 
-                setWishlistItems={setWishlistItems} 
-                customerGroupsDiscounts={customerGroupsDiscounts} 
-                itemBasedDiscounts={itemBasedDiscounts} 
+                clearFilters={() => { }}
+                wishListItems={wishListItems}
+                setWishlistItems={setWishlistItems}
+                customerGroupsDiscounts={customerGroupsDiscounts}
+                itemBasedDiscounts={itemBasedDiscounts}
             />
         </>
     );

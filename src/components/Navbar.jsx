@@ -14,6 +14,7 @@ import useWishlistStore from "@/zustand/wishList"
 import { useCartPopupStateStore } from "@/zustand/cartPopupState"
 import Link from "next/link"
 import ShoppingCartPopup from "./CartPopup"
+import { path } from "framer-motion/m"
 
 // Global Loader Component
 const GlobalLoader = () => {
@@ -24,13 +25,13 @@ const GlobalLoader = () => {
         <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-[15%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease]"></div>
         <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-[45%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease] [animation-delay:0.2s]"></div>
         <div className="w-3 h-3 absolute rounded-full bg-[#2d2c70] left-auto right-[15%] origin-center animate-[circleBounce_0.5s_alternate_infinite_ease] [animation-delay:0.3s]"></div>
-        
+
         {/* Shadows */}
         <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-[15%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease]"></div>
         <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-[45%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease] [animation-delay:0.2s]"></div>
         <div className="w-5 h-1 absolute rounded-full bg-[#2d2c70]/90 top-[62px] origin-center left-auto right-[15%] z-[-1] blur-sm animate-[shadowScale_0.5s_alternate_infinite_ease] [animation-delay:0.3s]"></div>
       </div>
-      
+
       <style jsx>{`
         @keyframes circleBounce {
           0% { top: 20px; }
@@ -109,7 +110,8 @@ export function Navbar() {
   const [isDesktopSearchOpen, setIsDesktopSearchOpen] = useState(false)
   const desktopSearchRef = useClickOutside(() => setIsDesktopSearchOpen(false));
   const { showCartPopup, setShowCartPopup, toggleCartPopup } = useCartPopupStateStore();
-  const isCheckoutPage = pathname === '/checkout' || pathname === '/cart';
+  const isCheckoutPage = pathname === '/checkout';
+  const isCartPage = pathname === '/cart'
   const [searchQuery, setSearchQuery] = useState("")
 
   // Hide loader when pathname changes
@@ -145,6 +147,11 @@ export function Navbar() {
   const companyDropdownRef = useClickOutside(() => setShowCompanyDropDown(false));
 
   const handleFastNavigation = useCallback((path) => {
+
+    if (pathname === path) {
+      return;
+    }
+
     setIsNavigating(true);
     setIsMenuOpen(false);
     setActiveDropdown(null);
@@ -413,9 +420,13 @@ export function Navbar() {
       } catch (error) {
         console.error('Error during logout API call:', error);
       }
+
       handleFastNavigation('/');
+
     } catch (error) {
       console.error('Error during logout:', error);
+    } finally {
+      setIsNavigating(false);
     }
   }, [handleFastNavigation, setCartItems, setWishlistItems]);
 
@@ -453,7 +464,7 @@ export function Navbar() {
   return (
     <>
       {isNavigating && <GlobalLoader />}
-      
+
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -468,10 +479,22 @@ export function Navbar() {
                 <div className="hidden lg:flex text-[1rem] font-[600] text-[#2d2c70] items-center ml-20 space-x-1 text-sm">
                   <div className="group flex gap-1 items-center cursor-pointer">
                     <User fill="currentColor" className="w-4 h-4 mb-0 mx-2 text-[#2d2c70] transition-colors duration-200 group-hover:text-[#E9098D]" />
-                    <Link href="/login" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/login'); }} className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">LOGIN</Link>
+                    <Link
+                      href="/login"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (pathname !== '/login') handleFastNavigation('/login');
+                      }} className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">LOGIN</Link>
                   </div>
                   <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
-                  <Link href="/sign-up" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/sign-up'); }} className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">SIGN UP</Link>
+                  <Link
+                    href="/sign-up"
+                    prefetch={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (pathname !== '/sign-up') handleFastNavigation('/sign-up');
+                    }} className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">SIGN UP</Link>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2 text-[1rem] font-medium ml-20 relative">
@@ -495,7 +518,15 @@ export function Navbar() {
               )}
 
               <div className="flex items-center justify-center flex-1 lg:absolute lg:left-1/2 lg:transform lg:-translate-x-1/2">
-                <Link href="/" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/'); }}>
+                <Link
+                  href="/"
+                  prefetch={true}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (pathname !== '/') {
+                      handleFastNavigation('/');
+                    }
+                  }}>
                   <Image src="/logo/point-austrelia-logo.png" alt="Logo" width={219} height={100} className="h-12 md:h-16 lg:h-20 w-auto cursor-pointer" priority />
                 </Link>
               </div>
@@ -539,21 +570,28 @@ export function Navbar() {
 
                   {currentUser && !isCheckoutPage && (
                     <>
-                      <Link href={'/wishlist'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/wishlist'); }} className="relative bg-white group">
+                      <Link
+                        href={'/wishlist'}
+                        prefetch={true}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (pathname !== '/wishlist') handleFastNavigation('/wishlist');
+                          setIsMenuOpen(false);
+                        }} className="relative bg-white group">
                         <svg width="21" height="20" viewBox="0 0 21 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                           <path d="M14.8633 0.526367C17.9009 0.526367 20.3633 3.02637 20.3633 6.52637C20.3633 13.5264 12.8633 17.5264 10.3633 19.0264C7.86328 17.5264 0.363281 13.5264 0.363281 6.52637C0.363281 3.02637 2.86328 0.526367 5.86328 0.526367C7.72325 0.526367 9.36328 1.52637 10.3633 2.52637C11.3633 1.52637 13.0033 0.526367 14.8633 0.526367ZM11.2972 16.1302C12.1788 15.5749 12.9733 15.0219 13.7182 14.4293C16.697 12.0594 18.3633 9.46987 18.3633 6.52637C18.3633 4.16713 16.8263 2.52637 14.8633 2.52637C13.7874 2.52637 12.6226 3.09548 11.7775 3.94058L10.3633 5.3548L8.94908 3.94058C8.10396 3.09548 6.93918 2.52637 5.86328 2.52637C3.92234 2.52637 2.36328 4.18287 2.36328 6.52637C2.36328 9.46987 4.02955 12.0594 7.00842 14.4293C7.75328 15.0219 8.54778 15.5749 9.42938 16.1302C9.72788 16.3183 10.0244 16.4993 10.3633 16.7016C10.7022 16.4993 10.9987 16.3183 11.2972 16.1302Z" />
                         </svg>
                         <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentWishlistItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentWishlistItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentWishlistItems > 999 ? '999+' : currentWishlistItems || 0}</span>
                       </Link>
-
-                      <button className="relative bg-white group" onClick={handleCartPopupToggle}>
-                        <svg width="20" height="19" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
-                          <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
-                        </svg>
-                        <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentCartItems > 999 ? '999+' : currentCartItems || 0}</span>
-                      </button>
                     </>
                   )}
+
+                  {!isCheckoutPage && !isCartPage && <button className="relative bg-white group" onClick={handleCartPopupToggle}>
+                    <svg width="20" height="19" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
+                      <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
+                    </svg>
+                    <span className={`absolute -top-2 -right-3 flex items-center justify-center rounded-full text-white text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200 ${(currentCartItems || 0) > 99 ? 'min-w-6 h-6 px-1 -right-4' : 'min-w-5 h-5 px-1 -right-3'} ${(currentCartItems || 0) > 999 ? 'min-w-7 h-6 px-1 -right-4 text-[10px]' : ''}`}>{currentCartItems > 999 ? '999+' : currentCartItems || 0}</span>
+                  </button>}
                 </div>
               </div>
             </div>
@@ -599,7 +637,15 @@ export function Navbar() {
                 }
               }}>
                 {!item.hasDropdown ? (
-                  <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
+                  <Link
+                    href={item.link || '/'}
+                    prefetch={true}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (pathname !== (item.link || '/')) {
+                        handleFastNavigation(item.link || '/');
+                      }
+                    }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
                   <button
                     onClick={() => {

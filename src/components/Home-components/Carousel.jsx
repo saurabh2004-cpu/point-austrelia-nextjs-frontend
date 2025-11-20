@@ -65,19 +65,18 @@ const Carousel = () => {
         const { desktopImages, mobileImages } = res.data.data;
 
         // Transform desktop images to match the expected format
-        const formattedDesktopImages = desktopImages.map((url, index) => ({
+        const formattedDesktopImages = desktopImages.map((item, index) => ({
           id: index + 1,
-          src: url,
+          src: item.image,
           alt: `Carousel Image ${index + 1}`,
         }));
 
         // Transform mobile images to match the expected format
-        const formattedMobileImages = mobileImages.map((url, index) => ({
+        const formattedMobileImages = mobileImages.map((item, index) => ({
           id: index + 1,
-          src: url,
+          src: item.image,
           alt: `Carousel Image ${index + 1}`,
         }));
-
         setDesktopCarouselImages(formattedDesktopImages);
         setMobileCarouselImages(formattedMobileImages);
 
@@ -141,8 +140,8 @@ const Carousel = () => {
 
   if (currentCarouselImages.length === 0) {
     return (
-      <div className="w-full max-w-8xl mx-auto p-3 sm:p-4 md:py-4 xl:pb-12">
-        <div className="relative w-full overflow-hidden rounded-lg carousel-container bg-gray-200 animate-pulse" />
+      <div className="w-full max-w-8xl mx-auto p-3 sm:p-4 md:py-4 xl:pb-12 ">
+        <div className="relative w-full overflow-hidden rounded-lg carousel-container  animate-pulse" />
         <style jsx>{`
           .carousel-container {
             height: 12rem;
@@ -183,7 +182,7 @@ const Carousel = () => {
   }
 
   return (
-    <div className="w-full mx-auto py-3 sm:py-4 md:py-4 xl:pb-12">
+    <div className="w-full mx-auto py-3 sm:py-4 md:py-4 xl:pb-12 overflow-x-hidden">
       <div
         className="relative w-full overflow-hidden rounded-lg carousel-container"
         onMouseEnter={handleMouseEnter}

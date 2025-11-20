@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { withAuth } from '@/components/withAuth';
 import { useProductFiltersStore } from '@/zustand/productsFiltrs';
 import ProductPopup from '../product-details-components/Popup';
+import { useCartPopupStateStore } from '@/zustand/cartPopupState';
 
 const ProductCard = ({
     item,
@@ -40,6 +41,8 @@ const ProductCard = ({
     const productId = isProductGroup ? item.productGroup._id : item.product._id;
 
     const isLoading = loadingProducts[productId];
+
+
 
     // ✅ Check if product/group is already in cart
     const isItemInCart = cartItems?.some(cartItem =>
@@ -664,8 +667,36 @@ const WishListComponent = () => {
     const [showProductPopup, setShowProductPopup] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedProductGroup, setSelectedProductGroup] = useState(null);
+     const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
 
     const router = useRouter();
+
+    // Handle outside click for cart popup
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const cartPopup = document.querySelector('[data-cart-popup]');
+            const navbarCartButton = document.querySelector('[data-navbar-cart-button]');
+
+            if (
+                showCartPopup &&
+                cartPopup &&
+                !cartPopup.contains(event.target) &&
+                (!navbarCartButton || !navbarCartButton.contains(event.target))
+            ) {
+                setShowCartPopup(false);
+            }
+        };
+
+        if (showCartPopup) {
+            document.addEventListener("mousedown", handleClickOutside);
+            document.addEventListener("touchstart", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("touchstart", handleClickOutside);
+        };
+    }, [showCartPopup, setShowCartPopup]);
 
     // ✅ CORRECTED: Auto-remove warnings when quantities are within stock limits
     useEffect(() => {
@@ -991,7 +1022,7 @@ const WishListComponent = () => {
 
             if (totalQuantity > stockLevel) {
                 addWarning(productId, 'exceeds_stock', getProductName(productData), totalQuantity, stockLevel);
-                setError(`Requested quantity (${totalQuantity}) exceeds available stock (${stockLevel})`);
+                setError(`Requested quantity (${totalQuantity}) exceeds available stock `);
                 return;
             }
 
@@ -1053,7 +1084,7 @@ const WishListComponent = () => {
 
             // ✅ CORRECTED: Use the discounted price for amount calculation
             const discountedPrice = calculateDiscountedPrice(productData);
-            const totalAmount = discountedPrice.toFixed(2); 
+            const totalAmount = discountedPrice.toFixed(2);
 
             // ✅ CORRECTED: Determine discount type and percentage with proper sign handling
             let discountType = "";

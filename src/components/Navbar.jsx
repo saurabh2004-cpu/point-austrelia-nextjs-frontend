@@ -224,10 +224,21 @@ export function Navbar() {
       try {
         setLoadingCategories(prev => ({ ...prev, [brandId]: true }))
         const res = await axiosInstance.get(`category/get-categories-by-brand-id/${brandId}`)
+
+        console.log("get categories by brand id ", res)
+
         if (res.data.statusCode === 200) {
+          // ✅ ADDED: Sort categories by sequence
+          const sortedCategories = res.data.data.sort((a, b) => {
+            // Handle null/undefined sequences by putting them at the end
+            const aSeq = a.sequence !== null && a.sequence !== undefined ? a.sequence : Number.MAX_SAFE_INTEGER;
+            const bSeq = b.sequence !== null && b.sequence !== undefined ? b.sequence : Number.MAX_SAFE_INTEGER;
+            return aSeq - bSeq;
+          });
+
           setCategoriesByBrand(prev => ({
             ...prev,
-            [brandId]: res.data.data
+            [brandId]: sortedCategories
           }))
         }
       } catch (error) {
@@ -484,9 +495,9 @@ export function Navbar() {
 
   return (
     <>
-      {isNavigating && <GlobalLoader />}
 
-      <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70]">
+
+      <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70] ">
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between min-h-[60px] md:h-18">
@@ -625,13 +636,13 @@ export function Navbar() {
           </div>
         )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 lg:py-2 relative ">
           {/* Desktop Navigation */}
           <div
             onMouseLeave={() => {
               setActiveDropdown(null)
             }}
-            className="hidden lg:flex items-center justify-center space-x-[36px] h-14">
+            className="hidden lg:flex items-center justify-center space-x-[36px] h-14 ">
             {navigationItems.map((item) => (
               <div key={item.index} className="relative h-full flex items-center px-2" onMouseEnter={() => {
                 if (item.hasDropdown && currentUser) {
@@ -658,9 +669,7 @@ export function Navbar() {
                     prefetch={true}
                     onClick={(e) => {
                       e.preventDefault();
-                      if (pathname !== (item.link || '/')) {
-                        handleFastNavigation(item.link || '/');
-                      }
+                      handleFastNavigation(item.link || '/');
                     }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
                   <button
@@ -806,7 +815,7 @@ export function Navbar() {
 
         {/* Desktop Full-Width Dropdown */}
         {activeDropdown !== null && currentUser && (
-          <div data-brand-dropdown className="hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50" onMouseEnter={() => setActiveDropdown(activeDropdown)} onMouseLeave={() => { setActiveDropdown(null); setHoveredCategory(null); setHoveredSubcategory(null); }}>
+          <div data-brand-dropdown className="hidden overflow-x-hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50" onMouseEnter={() => setActiveDropdown(activeDropdown)} onMouseLeave={() => { setActiveDropdown(null); setHoveredCategory(null); setHoveredSubcategory(null); }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               {navigationItems.find(item => item.index === activeDropdown)?.categories && (
                 <div className="grid grid-cols-5 gap-6">

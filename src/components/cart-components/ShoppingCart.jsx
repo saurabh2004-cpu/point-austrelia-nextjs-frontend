@@ -692,6 +692,7 @@ const ShoppingCart = () => {
             if (wishlistResponse.data.statusCode === 200) {
                 // Remove from cart after successfully adding to wishlist
                 // handleRemoveItemClick(item);
+                setWishlistItemsCount(wishlistResponse.data.data.wishlistItems?.length || 0);
                 setError(null);
             } else {
                 setError(wishlistResponse.data.message || "Failed to move to wishlist");
@@ -1025,7 +1026,7 @@ const ShoppingCart = () => {
 
                                                                 {/* SKU and Stock */}
                                                                 <div className='flex align-center justify-between pr-12 items-center '>
-                                                                    <p className="text-[13px] text-[400] ">SKU: {getItemSku(item)}</p>
+                                                                    <p className="text-[13px] text-[400] ">{`SKU : ${getItemSku(item)}`}</p>
                                                                     <div className={`flex items-center w-[125px] text-[10px] font-semibold p-2 text-[14px] rounded ${outOfStock
                                                                         ? 'bg-red-100 text-red-600'
                                                                         : 'bg-[#E7FAEF] text-black'
@@ -1044,7 +1045,7 @@ const ShoppingCart = () => {
                                                                     <div className="flex items-center space-x-2 mt-2 mb-2 bg-orange-100 border border-orange-300 rounded-md p-2">
                                                                         <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
                                                                         <p className="text-xs text-orange-700">
-                                                                            Requested quantity ({totalQuantity}) exceeds available stock ({stockLevel}). Please reduce quantity.
+                                                                            Requested quantity ({totalQuantity}) exceeds available stock . Please reduce quantity.
                                                                         </p>
                                                                     </div>
                                                                 )}

@@ -78,6 +78,54 @@ const ProductListing = () => {
     const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
 
 
+    useEffect(() => {
+        const detectBrandSlugAndUpdateFilters = async () => {
+            if (typeof window === 'undefined') return;
+
+            const path = window.location.pathname;
+            const pathParts = path.split('/').filter(part => part.trim() !== '');
+            const possibleBrandSlug = pathParts[0];
+
+            if (possibleBrandSlug) {
+                try {
+                    // Fetch all brands to validate
+                    const res = await axiosInstance.get('brand/get-brands-list');
+
+                    if (res.data.statusCode === 200) {
+                        const brands = res.data.data;
+
+                        // Check if the first path part matches any brand slug
+                        const matchingBrand = brands.find(
+                            brand => brand.slug === possibleBrandSlug ||
+                                brand.slug?.toLowerCase() === possibleBrandSlug?.toLowerCase()
+                        );
+
+                        if (matchingBrand) {
+                            // Valid brand slug found - set productID to null
+                            setFilters({
+                                categorySlug: categorySlug,
+                                subCategorySlug: subCategorySlug || null,
+                                subCategoryTwoSlug: subCategoryTwoSlug || null,
+                                brandSlug: possibleBrandSlug,
+                                brandId: matchingBrand._id || null,
+                                categoryId: categoryId || null,
+                                subCategoryId: subCategoryId || null,
+                                subCategoryTwoId: subCategoryTwoId || null,
+                                productID: null,  // ✅ Always set to null for brand pages
+                                productGroupId: null
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error validating brand slug:', error);
+                }
+            }
+        };
+
+        detectBrandSlugAndUpdateFilters();
+    }, [window.location.pathname]);
+
+
 
     // Global click outside handler for cart popup
     useEffect(() => {
@@ -155,6 +203,8 @@ const ProductListing = () => {
         productGroupId
     } = useProductFiltersStore()
     const pathname = usePathname();
+
+    console.log("product id in product listing page ", productID)
 
     // Categories state for sidebar
     const [categories, setCategories] = useState([])
@@ -499,7 +549,7 @@ const ProductListing = () => {
         const isValid = newTotalQuantity <= stockLevel;
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
+            message: isValid ? null : `Exceeds available stock`,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -516,7 +566,7 @@ const ProductListing = () => {
             subCategoryId: subCategoryId || null,
             subCategoryTwoId: subCategoryTwoId || null,
             productID: isProductGroup ? null : itemId,
-            productGroupId: isProductGroup ? itemId : null
+            productGroupId: isProductGroup ? itemId : null,
         });
 
         const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();

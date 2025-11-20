@@ -465,14 +465,14 @@ export default function ProductPopup({
         const isValid = newTotalQuantity <= stockLevel;
 
         if (!isValid) {
-            setStockError(`Exceeds available stock. Available: ${stockLevel}`);
+            setStockError(`Exceeds available stock. Available `);
         } else {
             setStockError(null);
         }
 
         return {
             isValid,
-            message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
+            message: isValid ? null : `Exceeds available stock. Available`,
             requestedQuantity: totalRequestedQuantity,
             currentStock: stockLevel
         };
@@ -820,7 +820,7 @@ export default function ProductPopup({
             subCategoryId: subCategoryId || null,
             subCategoryTwoId: subCategoryTwoId || null,
             productID: isProductGroup ? null : itemId,
-            productGroupId: isProductGroup ? itemId : null
+            productGroupId: isProductGroup ? itemId : null,
         });
 
         const itemSlug = itemName.replace(/\s+/g, '-').toLowerCase();
@@ -867,6 +867,7 @@ export default function ProductPopup({
                                                         src={image || "/placeholder.svg"}
                                                         alt={`Thumbnail ${index + 1}`}
                                                         className="h-[50px] w-[50px] object-contain rounded-md"
+
                                                     />
                                                 </button>
                                             ))}
@@ -921,7 +922,7 @@ export default function ProductPopup({
                                                 src={itemImages[selectedImage] || "/placeholder.svg"}
                                                 alt={getItemName()}
                                                 className="w-[200px] h-[200px] object-contain"
-                                                // onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
+                                                onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
                                             />
                                         </div>
                                     </div>

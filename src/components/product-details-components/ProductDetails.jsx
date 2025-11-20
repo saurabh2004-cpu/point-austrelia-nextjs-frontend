@@ -39,7 +39,9 @@ function ProductDetail() {
     setFilters,
     clearFilters,
     productID,
-    productGroupId
+    productGroupId,
+    productName,
+    productGroupName
   } = useProductFiltersStore();
 
 
@@ -97,12 +99,12 @@ function ProductDetail() {
   useEffect(() => {
     if (productID) {
       setItemType('product');
-      fetchProductById();
+      fetchProductByName();
     } else if (productGroupId) {
       setItemType('productGroup');
-      fetchProductGroupById();
+      fetchProductGroupByName();
     }
-  }, [productID, productGroupId]);
+  }, [productID, productGroupId, window.location.pathname]);
 
   useEffect(() => {
     if (currentUser && currentUser._id) {
@@ -110,44 +112,45 @@ function ProductDetail() {
     }
   }, [currentUser, currentCartItems]);
 
-  window.addEventListener("popstate", function (event) {
-    setFilters({
-      categoryId,
-      subCategoryId,
-      subCategoryTwoId,
-      brandId,
-      categorySlug,
-      subCategorySlug,
-      subCategoryTwoSlug,
-      brandSlug,
-      productID: null,
-      productGroupId: null
-    });
-  });
+  // window.addEventListener("popstate", function (event) {
+  //   setFilters({
+  //     categoryId,
+  //     subCategoryId,
+  //     subCategoryTwoId,
+  //     brandId,
+  //     categorySlug,
+  //     subCategorySlug,
+  //     subCategoryTwoSlug,
+  //     brandSlug,
+  //     productID: productID || null,
+  //     productGroupId: productGroupId || null
+  //   });
+  // });
 
   // Handle browser back button
-  useEffect(() => {
-    const handlePopState = () => {
-      setFilters({
-        categoryId,
-        subCategoryId,
-        subCategoryTwoId,
-        brandId,
-        categorySlug,
-        subCategorySlug,
-        subCategoryTwoSlug,
-        brandSlug,
-        productID: null,
-        productGroupId: null
-      });
-    };
+  // useEffect(() => {
+  //   const handlePopState = () => {
+  //     setFilters({
+  //       categoryId,
+  //       subCategoryId,
+  //       subCategoryTwoId,
+  //       brandId,
+  //       categorySlug,
+  //       subCategorySlug,
+  //       subCategoryTwoSlug,
+  //       brandSlug,
+  //       productID: null,
+  //       productGroupId: null
+  //     });
+  //   };
 
-    window.addEventListener('popstate', handlePopState);
+  //   window.addEventListener('popstate', handlePopState);
 
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [categoryId, subCategoryId, subCategoryTwoId, brandId, categorySlug, subCategorySlug, subCategoryTwoSlug, brandSlug, setFilters]);
+  //   return () => {
+  //     window.removeEventListener('popstate', handlePopState);
+  //   };
+  // }, [categoryId, subCategoryId, subCategoryTwoId, brandId, categorySlug, subCategorySlug, subCategoryTwoSlug, brandSlug, setFilters]);
+
 
 
   // FIXED: Handle image structure properly for both products and product groups
@@ -1041,14 +1044,14 @@ function ProductDetail() {
     const isValid = newTotalQuantity <= stockLevel;
 
     if (!isValid) {
-      setStockError(`Exceeds available stock. Available: ${stockLevel}`);
+      setStockError(`Exceeds available stock. Available `);
     } else {
       setStockError(null);
     }
 
     return {
       isValid,
-      message: isValid ? null : `Exceeds available stock. Available: ${stockLevel}`,
+      message: isValid ? null : `Exceeds available stock. Available`,
       requestedQuantity: totalRequestedQuantity,
       currentStock: stockLevel
     };
@@ -1343,10 +1346,16 @@ function ProductDetail() {
   };
 
   // Fetch product by ID
-  const fetchProductById = async () => {
+  const fetchProductByName = async () => {
+
+    const path = window.location.pathname;
+    console.log("product name", path.slice(1));
+
     try {
       setLoading(true);
-      const response = await axiosInstance(`products/get-product/${productID}`);
+      const response = await axiosInstance.post(`products/get-product-by-name`, {
+        name: path.slice(1)
+      });
 
       // console.log("response product details", response);
 
@@ -1370,10 +1379,14 @@ function ProductDetail() {
   };
 
   // Fetch product group by ID
-  const fetchProductGroupById = async () => {
+  const fetchProductGroupByName = async () => {
+    const path = window.location.pathname;
+
     try {
       setLoading(true);
-      const response = await axiosInstance(`product-group/get-product-group/${productGroupId}`);
+      const response = await axiosInstance.post(`product-group/get-product-group-by-name`, {
+        name: path.slice(1)
+      });
 
       console.log("response product group details", response);
 
@@ -1381,7 +1394,6 @@ function ProductDetail() {
         const productGroupData = response.data.data;
         setProductGroup(productGroupData);
 
-        // Product groups don't have typesOfPacks, so no need to set selectedUnitId
       } else {
         setError(response.data.message || "Failed to fetch product group");
       }

@@ -66,7 +66,7 @@ const BrandCards = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="w-full xl:max-w-5xl mx-auto p-4 sm:p-5 md:p-6 xl:py-6">
+      <div className="w-full xl:max-w-5xl mx-auto p-4 sm:p-5 md:p-6 xl:py-6 overflow-x-hidden">
         <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 justify-items-center">
           {[...Array(3)].map((_, index) => (
             <div

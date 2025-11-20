@@ -1,3 +1,4 @@
+import { p } from 'framer-motion/m'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -11,7 +12,7 @@ export const useProductFiltersStore = create(
       brandId: null,
       productID: null,
       productGroupId: null,
-
+     
       // Slug states for URL
       categorySlug: null,
       subCategorySlug: null,
@@ -31,6 +32,7 @@ export const useProductFiltersStore = create(
           subCategoryTwoSlug: filters.subCategoryTwoSlug || null,
           productID: filters.productID || null,
           productGroupId: filters.productGroupId || null,
+          
         }),
 
       // Clear all filters

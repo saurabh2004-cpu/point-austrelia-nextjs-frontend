@@ -1109,6 +1109,8 @@ const CheckoutComponent = () => {
                 try {
                     const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
 
+                    console.log("eway result", response)
+
                     if (response.data.statusCode === 200) {
                         setAccessTokenProcessed(true);
                         setCardData(response.data.data);

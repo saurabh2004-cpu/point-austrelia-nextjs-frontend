@@ -84,7 +84,7 @@ const CheckoutFormUI = ({ selectedBillingAddress, selectedShippingAddress, submi
                 email: currentUser.customerEmail,
             });
 
-            console.log("response", response);
+            // console.log("session created response", response);
 
             if (response.data.statusCode === 200) {
                 window.location.href = response.data.data.SharedPaymentUrl;

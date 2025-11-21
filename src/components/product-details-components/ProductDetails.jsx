@@ -25,6 +25,12 @@ function ProductDetail() {
   const [selectedUnitId, setSelectedUnitId] = useState("")
   const [zoomStyle, setZoomStyle] = useState({})
   const [isZooming, setIsZooming] = useState(false)
+  const [commerceCategories, setCommerceCategories] = useState({
+    brandId: "",
+    categoryId: "",
+    subCategoryId: "",
+    subCategoryTwoId: ""
+  })
   const router = useRouter()
 
   const {
@@ -471,11 +477,11 @@ function ProductDetail() {
         sortOrder: "desc"
       };
 
-      // Use current filters to get related items
-      if (brandId) queryParams.brandId = brandId;
-      if (categoryId) queryParams.categoryId = categoryId;
-      if (subCategoryId) queryParams.subCategoryId = subCategoryId;
-      if (subCategoryTwoId) queryParams.subCategoryTwoId = subCategoryTwoId;
+      if (commerceCategories.subCategoryTwoId) queryParams.subCategoryTwoId = commerceCategories.subCategoryTwoId;
+      else if (commerceCategories.subCategoryId) queryParams.subCategoryId = commerceCategories.subCategoryId;
+      else if (commerceCategories.categoryId) queryParams.categoryId = commerceCategories.categoryId;
+      else if (commerceCategories.brandId) queryParams.brandId = commerceCategories.brandId;
+      
 
       // console.log("Fetching related items with params:", queryParams);
 
@@ -1357,11 +1363,17 @@ function ProductDetail() {
         name: path.slice(1)
       });
 
-      // console.log("response product details", response);
+      console.log("response product details", response.data.data);
 
       if (response.data.statusCode === 200) {
         const productData = response.data.data;
         setProduct(productData);
+        setCommerceCategories({
+          brandId: productData.commerceCategoriesOne._id || null,
+          categoryId: productData.commerceCategoriesTwo._id || null,
+          subCategoryId: productData.commerceCategoriesThree._id || null,
+          subCategoryTwoId: productData.commerceCategoriesFour._id || null
+        });
 
         // Set default selected unit to the first available pack type
         if (productData.typesOfPacks && productData.typesOfPacks.length > 0) {

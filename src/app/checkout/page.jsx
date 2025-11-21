@@ -981,8 +981,8 @@ const CheckoutComponent = () => {
                     router.push(`/thank-you/${docNumber}`);
                 }, 0);
 
-                axiosInstance.delete(`cart/clear-cart/${currentUser._id}`)
-                    .catch(err => console.error('Error clearing cart:', err));
+                // axiosInstance.delete(`cart/clear-cart/${currentUser._id}`)
+                //     .catch(err => console.error('Error clearing cart:', err));
 
             } else {
                 setError(response.data.message || 'Failed to process order.');

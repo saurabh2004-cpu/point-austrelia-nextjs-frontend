@@ -1013,7 +1013,17 @@ const ProductListing = () => {
             console.log("get categories by brand slug ", res)
 
             if (res.data.statusCode === 200) {
-                setCategories(res.data.data || []);
+                const categories = res.data.data || [];
+
+                // ✅ Client-side sorting to match navbar behavior
+                const sortedCategories = categories.sort((a, b) => {
+                    // Handle null/undefined sequences by putting them at the end
+                    const aSeq = a.sequence !== null && a.sequence !== undefined ? a.sequence : Number.MAX_SAFE_INTEGER;
+                    const bSeq = b.sequence !== null && b.sequence !== undefined ? b.sequence : Number.MAX_SAFE_INTEGER;
+                    return aSeq - bSeq;
+                });
+
+                setCategories(sortedCategories);
             }
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -1358,7 +1368,7 @@ const ProductListing = () => {
                     {/* SKU */}
                     <div className="space-y-1 flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
-                            SKU :{" "}
+                            SKU:{" "}
                             {isProductGroup
                                 ? item.sku.length > 8
                                     ? `${item.sku.slice(0, 8)}...`

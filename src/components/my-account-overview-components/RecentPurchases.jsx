@@ -5,17 +5,26 @@ import { useEffect, useState } from 'react'
 
 export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   const [orders, setOrders] = useState([])
-  const [pagination, setPagination] = useState({
+  const [ordersPagination, setOrdersPagination] = useState({
     currentPage: 1,
     totalPages: 0,
     totalOrders: 0,
     hasNext: false,
     hasPrev: false,
-    limit: 5
+    limit: 10 // Changed from 5 to 10
+  })
+  const [productsPagination, setProductsPagination] = useState({
+    currentPage: 1,
+    totalPages: 0,
+    totalProducts: 0,
+    hasNext: false,
+    hasPrev: false,
+    limit: 10
   })
   const [loading, setLoading] = useState(false)
   const [showProducts, setShowProducts] = useState(false)
   const [products, setProducts] = useState([])
+  const [currentDocumentNumber, setCurrentDocumentNumber] = useState('')
 
   // Parse the sortBy prop to get sort field and order
   const getSortParams = () => {
@@ -38,7 +47,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       // Build query parameters
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '5',
+        limit: '10', // Changed from 5 to 10
         sortBy: sortField,
         sortOrder: sortOrder
       });
@@ -57,13 +66,13 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       if (response.data.statusCode === 200) {
         console.log("customers recent purchases data", response.data.data);
         setOrders(response.data.data.orders || [])
-        setPagination(response.data.data.pagination || {
+        setOrdersPagination(response.data.data.pagination || {
           currentPage: 1,
           totalPages: 0,
           totalOrders: 0,
           hasNext: false,
           hasPrev: false,
-          limit: 5
+          limit: 10
         })
       }
     } catch (error) {
@@ -74,26 +83,47 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   }
 
   const handleNextPage = () => {
-    if (pagination.hasNext) {
-      fetchRecentPurchases(pagination.currentPage + 1)
+    if (showProducts) {
+      if (productsPagination.hasNext) {
+        fetchProductsOfOrder(currentDocumentNumber, productsPagination.currentPage + 1)
+      }
+    } else {
+      if (ordersPagination.hasNext) {
+        fetchRecentPurchases(ordersPagination.currentPage + 1)
+      }
     }
   }
 
   const handlePrevPage = () => {
-    if (pagination.hasPrev) {
-      fetchRecentPurchases(pagination.currentPage - 1)
+    if (showProducts) {
+      if (productsPagination.hasPrev) {
+        fetchProductsOfOrder(currentDocumentNumber, productsPagination.currentPage - 1)
+      }
+    } else {
+      if (ordersPagination.hasPrev) {
+        fetchRecentPurchases(ordersPagination.currentPage - 1)
+      }
     }
   }
 
-  const fetchProductsOfOrder = async (documentNumber) => {
+  const fetchProductsOfOrder = async (documentNumber, page = 1) => {
     setShowProducts(true)
+    setCurrentDocumentNumber(documentNumber)
     try {
       setLoading(true)
-      const response = await axiosInstance.get(`sales-order/get-products-by-sales-document-number/${documentNumber}`)
+      const response = await axiosInstance.get(`sales-order/get-products-by-sales-document-number/${documentNumber}?page=${page}&limit=10`)
 
       if (response.data.statusCode === 200) {
         console.log("products of order", response.data.data);
-        setProducts(response.data.data || [])
+        setProducts(response.data.data.products || [])
+        setProductsPagination(response.data.data.pagination || {
+          currentPage: 1,
+          totalPages: 0,
+          totalProducts: 0,
+          hasNext: false,
+          hasPrev: false,
+          limit: 10
+        })
       }
     } catch (error) {
       console.error('Error fetching products of order:', error)
@@ -102,29 +132,54 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
     }
   }
 
+  const handleBackToOrders = () => {
+    setShowProducts(false)
+    setProducts([])
+    setCurrentDocumentNumber('')
+    setProductsPagination({
+      currentPage: 1,
+      totalPages: 0,
+      totalProducts: 0,
+      hasNext: false,
+      hasPrev: false,
+      limit: 10
+    })
+  }
+
   // Fetch data when component mounts or filters/sort change
   useEffect(() => {
-    fetchRecentPurchases(1)
-  }, [timeLapse, sortBy])
+    if (!showProducts) {
+      fetchRecentPurchases(1)
+    }
+  }, [timeLapse, sortBy, showProducts])
 
   // Show filter info if time filters are applied
   const hasTimeFilter = timeLapse?.from || timeLapse?.to;
 
-  if (loading && orders.length === 0) {
+  // Use the appropriate pagination based on view
+  const currentPagination = showProducts ? productsPagination : ordersPagination;
+  const currentItems = showProducts ? products : orders;
+
+  if (loading && currentItems.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
-        <p className="text-[#46BCF9] text-[18px] font-spartan font-medium">Loading purchases...</p>
+        <p className="text-[#46BCF9] text-[18px] font-spartan font-medium">Loading {showProducts ? 'products' : 'purchases'}...</p>
       </div>
     )
   }
 
-  if (orders.length === 0 && !loading) {
+  if (currentItems.length === 0 && !loading) {
     return (
       <div className="text-center py-8">
         <p className="text-[#E9098D] text-[24px] font-spartan font-medium mb-4">
-          {hasTimeFilter ? 'No purchases found for the selected timeframe' : 'You don\'t have any purchase in your account'}
+          {showProducts
+            ? 'No products found for this order'
+            : hasTimeFilter
+              ? 'No purchases found for the selected timeframe'
+              : 'You don\'t have any purchase in your account'
+          }
         </p>
-        {hasTimeFilter && (
+        {hasTimeFilter && !showProducts && (
           <button
             onClick={() => window.location.reload()}
             className="text-[#2D2C70] hover:text-[#46BCF9] text-lg font-medium underline"
@@ -132,26 +187,35 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             View all purchases
           </button>
         )}
+        {showProducts && (
+          <button
+            onClick={handleBackToOrders}
+            className="text-[#2D2C70] hover:text-[#46BCF9] text-lg font-medium underline"
+          >
+            Back to orders
+          </button>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="w-full h-full bg-white font-spartan pl-4">
+    <div className="w-full h-full bg-white font-spartan ">
       {/* Filter, Sort and Pagination Info */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pr-4 gap-4">
         <div className="flex flex-col">
-          {!showProducts && <div className="text-sm text-gray-600">
-            Showing {(pagination.currentPage - 1) * pagination.limit + 1} to{' '}
-            {Math.min(pagination.currentPage * pagination.limit, pagination.totalOrders)} of{' '}
-            {pagination.totalOrders} orders
-          </div>}
+          <div className="text-sm text-gray-600">
+            {showProducts
+              ? `Showing ${(productsPagination.currentPage - 1) * productsPagination.limit + 1} to ${Math.min(productsPagination.currentPage * productsPagination.limit, productsPagination.totalProducts)} of ${productsPagination.totalProducts} products`
+              : `Showing ${(ordersPagination.currentPage - 1) * ordersPagination.limit + 1} to ${Math.min(ordersPagination.currentPage * ordersPagination.limit, ordersPagination.totalOrders)} of ${ordersPagination.totalOrders} orders`
+            }
+          </div>
           {showProducts &&
-            <button className="text-base text-black font-semibold cursor-pointer" onClick={() => setShowProducts(false)}>
+            <button className="text-base text-black font-semibold cursor-pointer" onClick={handleBackToOrders}>
               <ChevronLeft height={20} width={20} className="inline-block" />
               Orders List
             </button>}
-          {hasTimeFilter && (
+          {hasTimeFilter && !showProducts && (
             <div className="text-xs text-gray-500 mt-1">
               Filtered by:
               {timeLapse.from && ` From ${timeLapse.from}`}
@@ -164,8 +228,8 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
         <div className="flex items-center space-x-2">
           <button
             onClick={handlePrevPage}
-            disabled={!pagination.hasPrev || loading}
-            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!pagination.hasPrev || loading
+            disabled={!currentPagination.hasPrev || loading}
+            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!currentPagination.hasPrev || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
@@ -174,13 +238,13 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           </button>
 
           <span className="text-sm text-gray-600">
-            Page {pagination.currentPage} of {pagination.totalPages}
+            Page {currentPagination.currentPage} of {currentPagination.totalPages}
           </span>
 
           <button
             onClick={handleNextPage}
-            disabled={!pagination.hasNext || loading}
-            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!pagination.hasNext || loading
+            disabled={!currentPagination.hasNext || loading}
+            className={`px-3 py-1 text-sm rounded border cursor-pointer ${!currentPagination.hasNext || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
@@ -221,7 +285,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             <tbody>
               {!showProducts && orders.map((order, index) => (
                 <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
+                  <td className="py-4 px-4 border-r">{(ordersPagination.currentPage - 1) * ordersPagination.limit + index + 1}</td>
                   <td
                     className="py-4 px-4 border-r hover:text-[#E9098D] cursor-pointer"
                     onClick={() => fetchProductsOfOrder(order.documentNumber)}
@@ -258,10 +322,10 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
 
               {showProducts && products.map((product, index) => (
                 <tr key={product.sku} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                  <td className="py-4 px-4 border-r">{index + 1}</td>
+                  <td className="py-4 px-4 border-r">{(productsPagination.currentPage - 1) * productsPagination.limit + index + 1}</td>
                   <td className="py-4 px-4 border-r flex justify-center">
-                    <img 
-                      src={product.imageUrl} 
+                    <img
+                      src={product.imageUrl}
                       alt={product.productName}
                       className="h-20 w-20 object-cover rounded-md"
                       onError={handleImageError}
@@ -277,11 +341,14 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4 border-r max-w-lg">
-                    <div className='flex justify-start'>
-                      <p className="font-medium truncate flex justify-start">{product.productName}</p>
+                  <td className="py-4 px-4 border-r max-w-xs">
+                    <div className='flex justify-start w-full'>
+                      <p className="font-medium text-left break-words whitespace-normal">
+                        {product.productName}
+                      </p>
                     </div>
                   </td>
+
                   <td className="py-4 px-4 border-r">
                     <div className='flex justify-start'>
                       <p className="font-medium truncate flex justify-start">${product.amount?.toFixed(2) || '0.00'}</p>
@@ -301,115 +368,88 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
         </div>
       </div>
 
-      {/* Tablet View for Orders */}
-      <div className="hidden md:block lg:hidden overflow-x-auto">
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full border-collapse min-w-[600px] text-sm md:text-base">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="py-3 px-3 text-left font-semibold">#</th>
-                <th className="py-3 px-3 text-left font-semibold">Product</th>
-                <th className="py-3 px-3 text-left font-semibold">Pack Qty</th>
-                <th className="py-3 px-3 text-left font-semibold">Unit Qty</th>
-                <th className="py-3 px-3 text-left font-semibold">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order, index) => (
-                <tr key={index} className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
-                  <td className="py-3 px-3 border-r">{(pagination.currentPage - 1) * pagination.limit + index + 1}</td>
-                  <td className="py-3 px-3 border-r flex items-center space-x-3">
-                    <img
-                      src={order.imageUrl}
-                      alt={order.productName}
-                      className="w-10 h-10 rounded-md object-cover"
-                      onError={handleImageError}
-                    />
-                    <div className="min-w-0">
-                      <span className="font-medium block truncate">{order.productName}</span>
-                      <span className="text-xs text-gray-500 block">SKU: {order.itemSku}</span>
-                      {order.isProductGroup && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-1 rounded">Group</span>
-                      )}
-                      <span className="text-xs text-gray-500 block">Date: {order.date}</span>
-                      <span className="text-xs text-gray-500 block">Order: {order.documentNumber}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-3 border-r">{order.packQuantity}</td>
-                  <td className="py-3 px-3 border-r">{order.unitsQuantity}</td>
-                  <td className="py-3 px-3 text-[#46BCF9] font-medium">${order.finalAmount?.toFixed(2) || order.amount?.toFixed(2) || '0.00'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
       {/* Mobile Card View */}
       <div className="block md:hidden px-2 sm:px-4 py-4 space-y-3 sm:space-y-4">
-        {orders.map((order, index) => (
+        {currentItems.map((item, index) => (
           <div
             key={index}
             className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-              {/* Image */}
-              <img
-                src={order.imageUrl}
-                alt={order.productName}
-                className="h-20 w-20 rounded-lg flex-shrink-0 object-cover"
-                onError={handleImageError}
-              />
-
-              {/* Details */}
-              <div className="flex-1 min-w-0 w-full">
-                {/* Title + Badge */}
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm sm:text-base font-medium text-gray-900">
-                      {order.productName}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-xs text-gray-500">SKU: {order.itemSku}</p>
-                      {order.isProductGroup && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                          Group
-                        </span>
-                      )}
+            {showProducts ? (
+              // Product Card
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                <img
+                  src={item.imageUrl}
+                  alt={item.productName}
+                  className="h-20 w-20 rounded-lg flex-shrink-0 object-cover"
+                  onError={handleImageError}
+                />
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-base font-medium text-gray-900">
+                        {item.productName}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500">SKU: {item.itemSku}</p>
+                        {item.isProductGroup && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                            Group
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500">Order: {order.documentNumber}</p>
-                    <p className="text-xs text-gray-500">Date: {order.date}</p>
+                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                      #{(productsPagination.currentPage - 1) * productsPagination.limit + index + 1}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                    #{(pagination.currentPage - 1) * pagination.limit + index + 1}
-                  </span>
-                </div>
-
-                {/* Pack & Unit */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm mt-3">
-                  <div className='flex flex-col'>
-                    <p className="text-gray-500 text-xs sm:text-sm">Pack Quantity</p>
-                    <p className="font-medium text-sm sm:text-base">
-                      {order.packQuantity}
-                    </p>
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm mt-3">
+                    <div className='flex flex-col'>
+                      <p className="text-gray-500 text-xs sm:text-sm">Pack Type</p>
+                      <p className="font-medium text-sm sm:text-base">{item.packType}</p>
+                    </div>
+                    <div className='flex flex-col'>
+                      <p className="text-gray-500 text-xs sm:text-sm">Units</p>
+                      <p className="font-medium text-sm sm:text-base">{item.unitsQuantity}</p>
+                    </div>
                   </div>
-                  <div className='flex flex-col'>
-                    <p className="text-gray-500 text-xs sm:text-sm">Unit Quantity</p>
-                    <p className="font-medium text-sm sm:text-base">
-                      {order.unitsQuantity}
-                    </p>
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Amount:</span>
+                    <span className="text-base sm:text-lg font-bold text-[#46BCF9]">
+                      ${item.amount?.toFixed(2) || '0.00'}
+                    </span>
                   </div>
-                </div>
-
-                {/* Total Row */}
-                <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Total:</span>
-                  <span className="text-base sm:text-lg font-bold text-[#46BCF9]">
-                    ${order.finalAmount?.toFixed(2) || order.amount?.toFixed(2) || '0.00'}
-                  </span>
                 </div>
               </div>
-            </div>
+            ) : (
+              // Order Card
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0 w-full">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="text-sm sm:text-base font-medium text-gray-900 hover:text-[#E9098D] cursor-pointer"
+                        onClick={() => fetchProductsOfOrder(item.documentNumber)}
+                      >
+                        {item.documentNumber}
+                      </h3>
+                      <p className="text-xs text-gray-500">Date: {item.date}</p>
+                      <p className="text-xs text-gray-500">Customer: {item.customerName}</p>
+                      <p className="text-xs text-gray-500">Channel: {item.salesChannel}</p>
+                    </div>
+                    <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
+                      #{(ordersPagination.currentPage - 1) * ordersPagination.limit + index + 1}
+                    </span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Total:</span>
+                    <span className="text-base sm:text-lg font-bold text-[#46BCF9]">
+                      ${item.amount?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -417,8 +457,8 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       {/* Bottom Pagination */}
       <div className="flex justify-between items-center mt-4 pr-4">
         <div className="text-sm text-gray-600">
-          Page {pagination.currentPage} of {pagination.totalPages}
-          {hasTimeFilter && (
+          Page {currentPagination.currentPage} of {currentPagination.totalPages}
+          {hasTimeFilter && !showProducts && (
             <span className="text-xs text-gray-500 ml-2">
               (Filtered results)
             </span>
@@ -427,8 +467,8 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
         <div className="flex items-center space-x-2">
           <button
             onClick={handlePrevPage}
-            disabled={!pagination.hasPrev || loading}
-            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!pagination.hasPrev || loading
+            disabled={!currentPagination.hasPrev || loading}
+            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!currentPagination.hasPrev || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 '
               }`}
@@ -437,8 +477,8 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
           </button>
           <button
             onClick={handleNextPage}
-            disabled={!pagination.hasNext || loading}
-            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!pagination.hasNext || loading
+            disabled={!currentPagination.hasNext || loading}
+            className={`px-4 py-2 text-sm rounded border cursor-pointer ${!currentPagination.hasNext || loading
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}

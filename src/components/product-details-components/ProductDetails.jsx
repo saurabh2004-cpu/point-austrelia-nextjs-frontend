@@ -466,24 +466,36 @@ function ProductDetail() {
     return currentPrice;
   };
 
-  // Fetch related items based on current filters
   const fetchRelatedItems = async () => {
     try {
       setRelatedItemsLoading(true);
 
       const queryParams = {
-        limit: 4,
+        limit: 8, // Fetch more items to account for filtering out current item
         sortBy: "createdAt",
         sortOrder: "desc"
       };
 
-      if (commerceCategories.subCategoryTwoId) queryParams.subCategoryTwoId = commerceCategories.subCategoryTwoId;
-      else if (commerceCategories.subCategoryId) queryParams.subCategoryId = commerceCategories.subCategoryId;
-      else if (commerceCategories.categoryId) queryParams.categoryId = commerceCategories.categoryId;
-      else if (commerceCategories.brandId) queryParams.brandId = commerceCategories.brandId;
-      
+      // ✅ STRICT PRIORITY: Only use one filter at a time
+      if (commerceCategories.subCategoryTwoId) {
+        queryParams.subCategoryTwoId = commerceCategories.subCategoryTwoId;
+        console.log("Fetching related items by subCategoryTwoId:", commerceCategories.subCategoryTwoId);
+      } else if (commerceCategories.subCategoryId) {
+        queryParams.subCategoryId = commerceCategories.subCategoryId;
+        console.log("Fetching related items by subCategoryId:", commerceCategories.subCategoryId);
+      } else if (commerceCategories.categoryId) {
+        queryParams.categoryId = commerceCategories.categoryId;
+        console.log("Fetching related items by categoryId:", commerceCategories.categoryId);
+      } else if (commerceCategories.brandId) {
+        queryParams.brandId = commerceCategories.brandId;
+        console.log("Fetching related items by brandId:", commerceCategories.brandId);
+      } else {
+        console.log("No category filters available for related items");
+        setRelatedItems([]);
+        return;
+      }
 
-      // console.log("Fetching related items with params:", queryParams);
+      console.log("Fetching related items with params:", queryParams);
 
       // Fetch both products and product groups
       const [productsResponse, productGroupsResponse] = await Promise.all([
@@ -491,8 +503,8 @@ function ProductDetail() {
         axiosInstance.get('product-group/get-product-groups-by-filters', { params: queryParams })
       ]);
 
-      console.log("products groups response", productGroupsResponse)
-      console.log("products response", productsResponse)
+      console.log("Products response count:", productsResponse.data.data?.products?.length || 0);
+      console.log("Product groups response count:", productGroupsResponse.data.data?.productGroups?.length || 0);
 
       let productsData = [];
       let productGroupsData = [];
@@ -505,25 +517,40 @@ function ProductDetail() {
         productGroupsData = productGroupsResponse.data.data.productGroups || [];
       }
 
-      // Combine and filter out current item
+      // Combine items
       let combinedItems = [
         ...productsData.map(item => ({ ...item, type: 'product' })),
         ...productGroupsData.map(item => ({ ...item, type: 'productGroup' }))
       ];
 
-      // Filter out current item
+      console.log("Total items before filtering:", combinedItems.length);
+
+      // ✅ IMPROVED FILTERING: Filter out current item more efficiently
+      const currentItemId = itemType === 'product' ? productID : productGroupId;
+
       combinedItems = combinedItems.filter(item => {
-        if (itemType === 'product') {
-          return item.type === 'productGroup' || item._id !== productID;
-        } else {
-          return item.type === 'product' || item._id !== productGroupId;
+        // If it's the same type and same ID, filter it out
+        if (itemType === 'product' && item.type === 'product') {
+          return item._id !== currentItemId;
+        } else if (itemType === 'productGroup' && item.type === 'productGroup') {
+          return item._id !== currentItemId;
         }
+        // Keep items of different types
+        return true;
       });
 
-      // Take only first 4 items
+      console.log("Total items after filtering:", combinedItems.length);
+
+      // ✅ ENSURES WE ALWAYS HAVE 4 ITEMS: Take exactly 4 items
+      // If we have less than 4 after filtering, we might need to fetch more
+      // But for now, just take what we have up to 4
       combinedItems = combinedItems.slice(0, 4);
 
-      console.log("combined items ", combinedItems)
+      console.log("Final combined related items:", combinedItems.length, combinedItems.map(item => ({
+        name: item.type === 'product' ? item.ProductName : item.name,
+        type: item.type,
+        id: item._id
+      })));
 
       setRelatedItems(combinedItems);
 
@@ -538,12 +565,27 @@ function ProductDetail() {
       });
       setRelatedItemsQuantities(initialQuantities);
       setRelatedItemsSelectedUnits(initialUnits);
+
     } catch (error) {
       console.error('Error fetching related items:', error);
+      setRelatedItems([]); // Set empty array on error
     } finally {
       setRelatedItemsLoading(false);
     }
   };
+
+
+  useEffect(() => {
+    // Check if we have any commerce categories and a product/product group loaded
+    const hasCommerceCategories = commerceCategories.brandId || commerceCategories.categoryId ||
+      commerceCategories.subCategoryId || commerceCategories.subCategoryTwoId;
+    const hasItem = productID || productGroupId;
+
+    if (hasCommerceCategories && hasItem) {
+      console.log("Commerce categories changed, fetching related items:", commerceCategories);
+      fetchRelatedItems();
+    }
+  }, [commerceCategories, productID, productGroupId]);
 
 
   // Separate function for product group images - FIXED VERSION
@@ -1369,10 +1411,10 @@ function ProductDetail() {
         const productData = response.data.data;
         setProduct(productData);
         setCommerceCategories({
-          brandId: productData.commerceCategoriesOne._id || null,
-          categoryId: productData.commerceCategoriesTwo._id || null,
-          subCategoryId: productData.commerceCategoriesThree._id || null,
-          subCategoryTwoId: productData.commerceCategoriesFour._id || null
+          brandId: productData?.commerceCategoriesOne?._id || null,
+          categoryId: productData?.commerceCategoriesTwo?._id || null,
+          subCategoryId: productData?.commerceCategoriesThree?._id || null,
+          subCategoryTwoId: productData?.commerceCategoriesFour?._id || null
         });
 
         // Set default selected unit to the first available pack type

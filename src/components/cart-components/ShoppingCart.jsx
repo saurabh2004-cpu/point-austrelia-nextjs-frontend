@@ -56,6 +56,8 @@ const ShoppingCart = () => {
     const setWishlistItemsCount = useWishlistStore((state) => state.setCurrentWishlistItems);
 
 
+    const [outOfStockItems, setOutOfStockItems] = useState([]);
+
     // Pagination state
     const [pagination, setPagination] = useState({
         currentPage: 1,
@@ -140,8 +142,8 @@ const ShoppingCart = () => {
     };
 
     // Calculate out of stock items
-    const outOfStockItems = cartItems.filter(item => isOutOfStock(item));
-    const outOfStockCount = outOfStockItems.length;
+    // const outOfStockItems = cartItems.filter(item => isOutOfStock(item));
+
 
     const calculateDisplayTotalQuantity = (item) => {
         if (item.product) {
@@ -200,7 +202,14 @@ const ShoppingCart = () => {
             console.log("customer cart cart ", response.data.data)
 
             if (response.data.statusCode === 200) {
-                const { items, pagination: paginationData, totals: totalsData, brandWiseTotals } = response.data.data;
+                const {
+                    items,
+                    pagination: paginationData,
+                    totals: totalsData,
+                    brandWiseTotals,
+                    outOfStockItems // NEW: Get outOfStockItems from response
+                } = response.data.data;
+
                 setTotals(totalsData || {
                     subtotal: 0,
                     tax: 0,
@@ -210,12 +219,11 @@ const ShoppingCart = () => {
                 });
 
                 setBrandWiseTotals(brandWiseTotals || {});
+                setOutOfStockItems(outOfStockItems || []); // NEW: Set out of stock items
 
                 if (isLoadMore) {
-                    // Append new items for infinite scroll
                     setCartItems(prev => [...prev, ...items]);
                 } else {
-                    // Replace items for initial load
                     setCartItems(items);
                 }
 
@@ -231,13 +239,11 @@ const ShoppingCart = () => {
                     quantities[item._id] = item.unitsQuantity;
 
                     if (item.product) {
-                        // Find the pack that matches the current packQuentity for products
                         const matchingPack = item.product.typesOfPacks?.find(
                             pack => parseInt(pack.quantity) === item.packQuentity
                         );
                         packs[item._id] = matchingPack?._id || item.product.typesOfPacks?.[0]?._id;
                     } else if (item.productGroup) {
-                        // Product groups don't have packs, set default
                         packs[item._id] = 'default';
                     }
                 });
@@ -256,12 +262,14 @@ const ShoppingCart = () => {
         }
     }
 
+    const outOfStockCount = outOfStockItems.length;
+
     // Load more items
     const loadMoreItems = useCallback(() => {
         if (pagination.hasNext && !loadingMore) {
             fetchCustomersCart(pagination.currentPage + 1, true);
         }
-    }, [pagination, loadingMore]);
+    }, [pagination, loadingMore,]);
 
     // Intersection Observer for infinite scroll
     useEffect(() => {
@@ -303,20 +311,11 @@ const ShoppingCart = () => {
         setRemovingOutOfStock(true);
 
         try {
-            // Prepare items to remove with proper type identification
-            const itemsToRemove = outOfStockItems.map(item => {
-                if (item.product) {
-                    return { productId: item.product._id };
-                } else if (item.productGroup) {
-                    return { productGroupId: item.productGroup._id };
-                }
-                return null;
-            }).filter(item => item !== null);
-
-            if (itemsToRemove.length === 0) {
-                setError('No valid items to remove');
-                return;
-            }
+            // Use the outOfStockItems from API response
+            const itemsToRemove = outOfStockItems.map(item => ({
+                productId: item.productId,
+                productGroupId: item.productGroupId
+            }));
 
             const response = await axiosInstance.put(
                 `cart/remove-multiple-from-cart/${currentUser._id}`,
@@ -326,9 +325,11 @@ const ShoppingCart = () => {
             console.log("remove multiple out of stock items", response);
 
             if (response.data.statusCode === 200) {
-                // Update local state
-                setCartItems(prev => prev.filter(item => !isOutOfStock(item)));
+                // Update local state by filtering out removed items
+                const removedItemIds = outOfStockItems.map(item => item.cartItemId);
+                setCartItems(prev => prev.filter(item => !removedItemIds.includes(item._id)));
                 setCartItemsCount(response.data.data.cartItems?.length || 0);
+                setOutOfStockItems([]); // Clear out of stock items
                 setError(null);
 
                 // Refresh totals
@@ -691,7 +692,7 @@ const ShoppingCart = () => {
 
             if (wishlistResponse.data.statusCode === 200) {
                 // Remove from cart after successfully adding to wishlist
-                // handleRemoveItemClick(item);
+                handleRemoveItemClick(item);
                 setWishlistItemsCount(wishlistResponse.data.data.wishlistItems?.length || 0);
                 setError(null);
             } else {
@@ -1026,7 +1027,7 @@ const ShoppingCart = () => {
 
                                                                 {/* SKU and Stock */}
                                                                 <div className='flex align-center justify-between pr-12 items-center '>
-                                                                    <p className="text-[13px] text-[400] ">{`SKU : ${getItemSku(item)}`}</p>
+                                                                    <p className="text-[13px] text-[400] ">{`SKU: ${getItemSku(item)}`}</p>
                                                                     <div className={`flex items-center w-[125px] text-[10px] font-semibold p-2 text-[14px] rounded ${outOfStock
                                                                         ? 'bg-red-100 text-red-600'
                                                                         : 'bg-[#E7FAEF] text-black'
@@ -1058,7 +1059,8 @@ const ShoppingCart = () => {
                                                                     {getOriginalPriceForDisplay(item, isProductGroup) &&
                                                                         <span className="text-sm text-gray-500 line-through">
                                                                             ${parseFloat(getOriginalPriceForDisplay(item, isProductGroup)).toFixed(2)}
-                                                                        </span>}
+                                                                        </span>
+                                                                    }
                                                                 </div>
 
 

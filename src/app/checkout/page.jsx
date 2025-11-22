@@ -10,12 +10,12 @@ import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
 import { withAuth } from '@/components/withAuth';
 
-// Out of Stock Warning Component
+// Updated OutOfStockWarning Component
 const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
     if (outOfStockItems.length === 0) return null;
 
     return (
-        <div className="mb-6 bg-red-50 border-2 border-red-400 rounded-lg p-4">
+        <div id="out-of-stock-warning" className="mb-6 bg-red-50 border-2 border-red-400 rounded-lg p-4">
             <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
@@ -28,37 +28,29 @@ const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
                     </p>
                     <div className="space-y-2">
                         {outOfStockItems.map((item) => (
-                            <div key={item._id} className="bg-white rounded-md p-3 border border-red-200">
+                            <div key={item.cartItemId} className="bg-white rounded-md p-3 border border-red-200">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-semibold text-sm text-gray-900">
-                                            {item.product ? item.product.ProductName : item.productGroup?.name}
+                                            {item.name}
                                         </p>
                                         <p className="text-xs text-gray-600 mt-1">
-                                            SKU: {item.product ? item.product.sku : item.productGroup?.sku}
-                                            {item.productGroup && (
-                                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                                    Product Group
-                                                </span>
-                                            )}
-                                        </p>
-                                        <p className="text-xs text-red-600 mt-1">
-                                            {item.product ? `Current Stock: ${item.product.stockLevel}` : 'One or more products in this group are out of stock'}
+                                            SKU: {item.sku}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => onRemoveItems([item._id])}
+                                    {/* <button
+                                        onClick={() => onRemoveItems([item.cartItemId])}
                                         className="bg-red-600 text-white px-3 py-1 rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
                                     >
                                         Remove
-                                    </button>
+                                    </button> */}
                                 </div>
                             </div>
                         ))}
                     </div>
-                    {outOfStockItems.length > 1 && (
+                    {outOfStockItems && (
                         <button
-                            onClick={() => onRemoveItems(outOfStockItems.map(item => item._id))}
+                            onClick={() => onRemoveItems(outOfStockItems.map(item => item.cartItemId))}
                             className="mt-3 w-full bg-red-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-red-700 transition-colors"
                         >
                             Remove All Out of Stock Items
@@ -600,7 +592,7 @@ const CheckoutComponent = () => {
                 return false;
             });
 
-            setOutOfStockItems(outOfStockCartItems);
+            // setOutOfStockItems(outOfStockCartItems);
             return outOfStockCartItems;
         } catch (error) {
             console.error('Error checking stock:', error);
@@ -624,22 +616,10 @@ const CheckoutComponent = () => {
     const handleRemoveOutOfStockItems = async (itemIds) => {
         try {
             // Prepare items to remove with proper type identification
-            const itemsToRemove = itemIds.map(itemId => {
-                const item = cartItems.find(item => item._id === itemId);
-                if (!item) return null;
-
-                if (item.product) {
-                    return { productId: item.product._id };
-                } else if (item.productGroup) {
-                    return { productGroupId: item.productGroup._id };
-                }
-                return null;
-            }).filter(item => item !== null);
-
-            if (itemsToRemove.length === 0) {
-                setError('No valid items to remove');
-                return;
-            }
+            const itemsToRemove = outOfStockItems.map(item => ({
+                productId: item.productId,
+                productGroupId: item.productGroupId
+            }));
 
             const response = await axiosInstance.put(`cart/remove-multiple-from-cart/${currentUser._id}`, {
                 itemsToRemove
@@ -650,7 +630,7 @@ const CheckoutComponent = () => {
 
                 // Update local state
                 setCartItems(prev => prev.filter(item => !itemIds.includes(item._id)));
-                setOutOfStockItems(prev => prev.filter(item => !itemIds.includes(item._id)));
+                setOutOfStockItems([]);
 
                 // If cart is now empty, redirect to cart page
                 if (response.data.data.cartItems.length === 0) {
@@ -1012,7 +992,7 @@ const CheckoutComponent = () => {
             console.log("customer cart in checkout page ", response.data.data);
 
             if (response.data.statusCode === 200) {
-                const { items, pagination: paginationData, totals: totalsData, brandWiseTotals } = response.data.data;
+                const { items, pagination: paginationData, totals: totalsData, brandWiseTotals, outOfStockItems } = response.data.data;
 
                 // Set totals from the first request
                 setTotals(totalsData || {
@@ -1025,12 +1005,11 @@ const CheckoutComponent = () => {
                 setTotalsLoading(false);
 
                 setBrandWiseTotals(brandWiseTotals || {});
+                setOutOfStockItems(outOfStockItems || []); // NEW: Set out of stock items from API
 
                 if (isLoadMore) {
-                    // Append new items for infinite scroll
                     setCartItems(prev => [...prev, ...items]);
                 } else {
-                    // Replace items for initial load
                     setCartItems(items);
                 }
 
@@ -1097,7 +1076,7 @@ const CheckoutComponent = () => {
         if (currentUser && currentUser._id) {
             fetchCustomersCart(1, false); // Initial load with page 1
         }
-    }, [currentUser]);
+    }, [currentUser, step]);
 
 
     useEffect(() => {
@@ -1156,6 +1135,34 @@ const CheckoutComponent = () => {
             }
         }
     }, [outOfStockItems.length]);
+
+
+    const getOriginalPriceForDisplay = (item, isProductGroup = false) => {
+        if (!item) return 0;
+        // If compare price exists and is higher than current price, show compare price as original
+        if (item.discountType === "Compare Price" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            const currentPrice = isProductGroup ? (item.amount || 0) : (item.amount || 0);
+            if (item.discountPercentages > currentPrice) {
+                return item.discountPercentages;
+            }
+        } else if (item.discountType === "Item Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            return item.product.eachPrice;
+        } else if (item.discountType === "Pricing Group Discount" && item.discountPercentages !== undefined && item.discountPercentages !== 0) {
+            const currentPrice = item?.product?.eachPrice;
+            const discountPercentages = parseFloat(item.discountPercentages);
+
+            if (discountPercentages < 0) {
+                return currentPrice;
+            } else if (discountPercentages > 0) {
+                return null;
+            }
+
+            return currentPrice;
+        }
+
+        // Otherwise, show the actual original price
+        return isProductGroup ? (item.eachPrice || '') : (item.eachPrice || '');
+    };
 
     if (isProcessingEway) {
         return (
@@ -1476,10 +1483,19 @@ const CheckoutComponent = () => {
                                                                 </span>
                                                             )}
                                                         </h3>
-                                                        <div className='flex w-full justify-between'>
-                                                            <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
-                                                                ${(item.amount.toFixed(2))}
-                                                            </p>
+                                                        <div className=' w-full justify-between'>
+                                                            <div className='flex items-center  space-x-4'>
+                                                                <p className="text-[18px] text-[#2D2C70] font-semibold mb-1">
+                                                                    ${(item.amount.toFixed(2))}
+                                                                </p>
+
+                                                                {getOriginalPriceForDisplay(item, isProductGroup) && (
+                                                                    <span className="text-sm text-gray-500 line-through">
+                                                                        ${parseFloat(getOriginalPriceForDisplay(item, isProductGroup)).toFixed(2)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
                                                             <div className={`flex items-center text-[12px] font-[600] py-1 px-2 w-[90px] mb-2 ${isOutOfStock
                                                                 ? 'bg-red-100 text-red-700'
                                                                 : 'bg-[#E7FAEF] text-black'
@@ -1498,7 +1514,7 @@ const CheckoutComponent = () => {
                                                             </div>
                                                         </div>
                                                         <div className='text-xs sm:text-sm lg:text-[14px] font-[400] space-y-1'>
-                                                            <p className="mb-1">SKU : {itemData.sku}</p>
+                                                            <p className="mb-1">SKU: {itemData.sku}</p>
                                                             <div className='flex w-full justify-between'>
                                                                 <p className="mb-1">Pack: {packName}</p>
                                                                 <div>Quantity {item.totalQuantity}</div>

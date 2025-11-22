@@ -68,6 +68,7 @@ const Carousel = () => {
         const formattedDesktopImages = desktopImages.map((item, index) => ({
           id: index + 1,
           src: item.image,
+          url: item.url || null,
           alt: `Carousel Image ${index + 1}`,
         }));
 
@@ -75,6 +76,7 @@ const Carousel = () => {
         const formattedMobileImages = mobileImages.map((item, index) => ({
           id: index + 1,
           src: item.image,
+          url: item.url || null,
           alt: `Carousel Image ${index + 1}`,
         }));
         setDesktopCarouselImages(formattedDesktopImages);
@@ -198,8 +200,11 @@ const Carousel = () => {
           {currentCarouselImages.map((image) => (
             <div
               key={image.id}
-              className="relative flex-shrink-0 h-full"
+              className="relative flex-shrink-0 h-full cursor-pointer"
               style={{ width: '100%', minWidth: '100%' }}
+              onClick={() => {
+                if (image.url) window.location.href = image.url;
+              }}
             >
               {/* Next/Image for better responsiveness */}
               <Image

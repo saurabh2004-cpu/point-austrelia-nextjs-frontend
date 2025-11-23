@@ -57,6 +57,7 @@ const ShoppingCart = () => {
 
 
     const [outOfStockItems, setOutOfStockItems] = useState([]);
+    const [exceedingStockLevelItems, setExceedingStockLevelItems] = useState([]);
 
     // Pagination state
     const [pagination, setPagination] = useState({
@@ -159,15 +160,15 @@ const ShoppingCart = () => {
         return 0;
     };
 
-    // Check if quantity exceeds stock level
-    const exceedsStockLevel = (item) => {
-        const totalQuantity = calculateDisplayTotalQuantity(item);
-        return totalQuantity > getStockLevel(item);
-    };
+    // // Check if quantity exceeds stock level
+    // const exceedsStockLevel = (item) => {
+    //     const totalQuantity = calculateDisplayTotalQuantity(item);
+    //     return totalQuantity > getStockLevel(item);
+    // };
 
-    // Get items that exceed stock level
-    const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
-    const exceedingStockCount = itemsExceedingStock.length;
+    // // Get items that exceed stock level
+    // const itemsExceedingStock = cartItems.filter(item => exceedsStockLevel(item));
+    const exceedingStockCount = exceedingStockLevelItems.length;
 
     const handleCheckoutclick = async () => {
         if (exceedingStockCount > 0 || outOfStockCount > 0) {
@@ -207,7 +208,8 @@ const ShoppingCart = () => {
                     pagination: paginationData,
                     totals: totalsData,
                     brandWiseTotals,
-                    outOfStockItems // NEW: Get outOfStockItems from response
+                    outOfStockItems,
+                    stockExceededItems// NEW: Get outOfStockItems from response
                 } = response.data.data;
 
                 setTotals(totalsData || {
@@ -219,7 +221,8 @@ const ShoppingCart = () => {
                 });
 
                 setBrandWiseTotals(brandWiseTotals || {});
-                setOutOfStockItems(outOfStockItems || []); // NEW: Set out of stock items
+                setOutOfStockItems(outOfStockItems || []);
+                setExceedingStockLevelItems(stockExceededItems || []);
 
                 if (isLoadMore) {
                     setCartItems(prev => [...prev, ...items]);
@@ -360,15 +363,17 @@ const ShoppingCart = () => {
         setRemovingExceedsStock(true);
 
         try {
-            // Prepare items to remove with proper type identification
-            const itemsToRemove = itemsExceedingStock.map(item => {
-                if (item.product) {
-                    return { productId: item.product._id };
-                } else if (item.productGroup) {
-                    return { productGroupId: item.productGroup._id };
-                }
-                return null;
-            }).filter(item => item !== null);
+            // Prepare items to remove using the cartItemId from exceedingStockLevelItems
+            const itemsToRemove = exceedingStockLevelItems.map(item => {
+                // Use the cartItemId directly from the API response
+                return {
+                    cartItemId: item.cartItemId,
+                    productId: item.productId || null,
+                    productGroupId: item.productGroupId || null
+                };
+            }).filter(item => item.cartItemId !== null);
+
+            console.log("Items to remove:", itemsToRemove);
 
             if (itemsToRemove.length === 0) {
                 setError('No valid items to remove');
@@ -383,9 +388,11 @@ const ShoppingCart = () => {
             console.log("remove multiple exceeds stock items", response);
 
             if (response.data.statusCode === 200) {
-                // Update local state
-                setCartItems(prev => prev.filter(item => !exceedsStockLevel(item)));
+                // Update local state by filtering out removed items
+                const removedItemIds = exceedingStockLevelItems.map(item => item.cartItemId);
+                setCartItems(prev => prev.filter(item => !removedItemIds.includes(item._id)));
                 setCartItemsCount(response.data.data.cartItems?.length || 0);
+                setExceedingStockLevelItems([]); // Clear the exceeds stock items array
                 setError(null);
 
                 // Refresh totals
@@ -950,7 +957,9 @@ const ShoppingCart = () => {
                                                 const itemTax = totals.tax / (totals.totalItems || 1); // Approximate tax per item
                                                 const itemTotal = itemSubtotal + itemTax;
                                                 const hasModifications = isItemModified(item);
-                                                const exceedsStock = exceedsStockLevel(item);
+                                                const exceedsStock = exceedingStockLevelItems.some(stockItem =>
+                                                    stockItem.cartItemId === item._id
+                                                );
                                                 const stockLevel = getStockLevel(item);
                                                 const isProductGroupItem = isProductGroup(item);
 

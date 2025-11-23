@@ -454,13 +454,13 @@ const ShoppingCartPopup = () => {
     // For product groups, use productGroup data
     if (isProductGroupItem) {
       // Check if there's a compare price discount
-      if (item.discountType === "Compare Price" && item.discountPercentages) {
-        const comparePrice = parseFloat(item.discountPercentages);
-        const currentPrice = item.amount || 0;
-        if (comparePrice > currentPrice) {
-          return comparePrice;
-        }
-      }
+      // if (item.discountType === "Compare Price" && item.discountPercentages) {
+      //   const comparePrice = parseFloat(item.discountPercentages);
+      //   const currentPrice = item.amount || 0;
+      //   if (comparePrice > currentPrice) {
+      //     return comparePrice;
+      //   }
+      // }
 
       // Check for item discount
       if (item.discountType === "Item Discount" && item.discountPercentages) {
@@ -485,13 +485,13 @@ const ShoppingCartPopup = () => {
     // For individual products
     if (item.product) {
       // Check if there's a compare price discount
-      if (item.discountType === "Compare Price" && item.discountPercentages) {
-        const comparePrice = parseFloat(item.discountPercentages);
-        const currentPrice = item.amount || 0;
-        if (comparePrice > currentPrice) {
-          return comparePrice;
-        }
-      }
+      // if (item.discountType === "Compare Price" && item.discountPercentages) {
+      //   const comparePrice = parseFloat(item.discountPercentages);
+      //   const currentPrice = item.amount || 0;
+      //   if (comparePrice > currentPrice) {
+      //     return comparePrice;
+      //   }
+      // }
       // Check for item discount
       if (item.discountType === "Item Discount" && item.discountPercentages) {
         return item.product.eachPrice || item.amount || 0;
@@ -512,7 +512,7 @@ const ShoppingCartPopup = () => {
     }
 
     // Default fallback
-    return item.amount || 0;
+    // return item.amount || 0;
   };
 
   if (!isOpen) return null;

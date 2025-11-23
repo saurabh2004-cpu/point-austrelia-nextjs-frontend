@@ -125,9 +125,19 @@ const OrderConfirmationUI = () => {
                     </div>
                     <div className="flex justify-between">
                         <span>Units Qty: {item.unitsQuantity}</span>
-                        {item.discountType && (
-                            <span>Discount: {item.discountType} ({item.discountPercentages}%)</span>
-                        )}
+                        {item.discountType &&
+                            item.discountType !== "Compare Price" &&
+                            !(item.discountType === "Pricing Group Discount" && item.discountPercentages > 0) && (
+                                <span>
+                                    Discount: {item.discountType}
+                                    {item.discountType === "Pricing Group Discount" && item.discountPercentages <= 0
+                                        ? ` (${Math.abs(item.discountPercentages)}%)`
+                                        : item.discountType !== "Pricing Group Discount"
+                                            ? ` (${item.discountPercentages}%)`
+                                            : ''
+                                    }
+                                </span>
+                            )}
                     </div>
                 </div>
             </div>

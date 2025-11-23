@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCartPopupStateStore } from '@/zustand/cartPopupState';
 import axiosInstance from '@/axios/axiosInstance';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Carousel = () => {
   const [desktopCarouselImages, setDesktopCarouselImages] = useState([]);
@@ -100,18 +101,25 @@ const Carousel = () => {
   // Get current carousel images based on screen size
   const currentCarouselImages = isMobile ? mobileCarouselImages : desktopCarouselImages;
 
+  // Navigation functions
+  const nextSlide = () => {
+    setCurrentIndex(currentIndex === currentCarouselImages.length - 1 ? 0 : currentIndex + 1);
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex(currentIndex === 0 ? currentCarouselImages.length - 1 : currentIndex - 1);
+  };
+
   // Auto-scroll effect
   useEffect(() => {
     if (!isAutoScrolling || currentCarouselImages.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) =>
-        prevIndex === currentCarouselImages.length - 1 ? 0 : prevIndex + 1
-      );
+      nextSlide();
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isAutoScrolling, currentCarouselImages.length]);
+  }, [isAutoScrolling, currentCarouselImages.length, currentIndex]);
 
   // Reset index when switching between mobile/desktop
   useEffect(() => {
@@ -218,6 +226,47 @@ const Carousel = () => {
             </div>
           ))}
         </div>
+
+        {/* Navigation Arrows - Only show if there are multiple images */}
+        {currentCarouselImages.length > 1 && (
+          <>
+            {/* Previous Button */}
+            <button
+              onClick={prevSlide}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={isMobile ? 20 : 24} />
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={nextSlide}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="Next image"
+            >
+              <ChevronRight size={isMobile ? 20 : 24} />
+            </button>
+          </>
+        )}
+
+        {/* Dots Indicator - Optional but helpful for users */}
+        {currentCarouselImages.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+            {currentCarouselImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === currentIndex 
+                    ? 'bg-white' 
+                    : 'bg-white/50 hover:bg-white/70'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Responsive height adjustments for tablets and desktop */}

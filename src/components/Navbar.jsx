@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
-import { Search, Menu, X, User, ChevronDown, ChevronRight } from "lucide-react"
+import { Search, Menu, X, User, ChevronDown, ChevronRight, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -64,12 +64,19 @@ const useClickOutside = (callback) => {
   const ref = useRef();
   useEffect(() => {
     const handleClick = (event) => {
+      // Check if the click is outside the ref element and not on the menu toggle button
       if (ref.current && !ref.current.contains(event.target)) {
-        callback();
+        // Check if the click is not on the menu toggle button
+        const menuButton = document.querySelector('[data-menu-button]');
+        if (!menuButton || !menuButton.contains(event.target)) {
+          callback();
+        }
       }
     };
+
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
+    
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
@@ -454,6 +461,7 @@ export function Navbar() {
       }
 
       handleFastNavigation('/');
+      setIsMenuOpen(false);
 
     } catch (error) {
       console.error('Error during logout:', error);
@@ -465,6 +473,7 @@ export function Navbar() {
   const handleMyAccount = useCallback(() => {
     setShowUserDropdown(false);
     handleFastNavigation('/my-account-review');
+    setIsMenuOpen(false);
   }, [handleFastNavigation]);
 
   useEffect(() => {
@@ -496,13 +505,18 @@ export function Navbar() {
   return (
     <>
 
-
       <nav className="w-full bg-white md:border-b md:border-b-1 border-[#2d2c70] ">
         <div className="border-b border-[#2d2c70] border-b-1 mt-2 py-2 md:py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between min-h-[60px] md:h-18">
               <div className="flex items-center lg:hidden">
-                <Button variant="ghost" size="sm" onClick={handleMobileMenuToggle} className="p-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleMobileMenuToggle} 
+                  className="p-2"
+                  data-menu-button="true"
+                >
                   {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </Button>
               </div>
@@ -570,12 +584,22 @@ export function Navbar() {
                       </svg>
                       <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">{currentWishlistItems || 0}</span>
                     </Link>
-                    <button className="relative bg-white group p-1 hover:cursor-pointer">
+                    {/* Fixed Mobile Cart Button - Redirects to Cart Page */}
+                    <Link 
+                      href="/cart" 
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/cart');
+                        setIsMenuOpen(false);
+                      }}
+                      className="relative bg-white group p-1 hover:cursor-pointer"
+                    >
                       <svg width="18" height="17" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                         <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                       </svg>
                       <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">{currentCartItems || 0}</Badge>
-                    </button>
+                    </Link>
                   </div>
                 )}
 
@@ -699,6 +723,70 @@ export function Navbar() {
           {/* Mobile Navigation Menu */}
           {isMenuOpen && (
             <div className="lg:hidden space-y-2 py-4" ref={mobileMenuRef}>
+              {/* Mobile Login/Signup Section */}
+              {!currentUser && (
+                <div className="border-b border-gray-200 pb-4 mb-4">
+                  <div className="flex flex-col space-y-3 px-3">
+                    <Link
+                      href="/login"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/login');
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
+                    >
+                      LOGIN
+                    </Link>
+                    <Link
+                      href="/sign-up"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/sign-up');
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full text-center py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
+                    >
+                      SIGN UP
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile User Info and Logout Section */}
+              {currentUser && (
+                <div className="border-b border-gray-200 pb-4 mb-4">
+                  <div className="flex flex-col space-y-3 px-3">
+                    <div className="flex items-center space-x-2 py-2">
+                      <User className="w-5 h-5 text-[#2d2c70]" />
+                      <span className="text-sm font-semibold text-[#2d2c70]">
+                        Welcome, {currentUser?.customerName || currentUser?.contactName}
+                      </span>
+                    </div>
+                    <Link
+                      href="/my-account-review"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleMyAccount();
+                      }}
+                      className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
+                    >
+                      My Account
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center space-x-2 py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {navigationItems.map((item) => (
                 <div key={item.index}>
                   {!item.hasDropdown ? (

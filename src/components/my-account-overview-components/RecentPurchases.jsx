@@ -211,7 +211,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
             }
           </div>
           {showProducts &&
-            <button className="text-base text-black font-semibold cursor-pointer" onClick={handleBackToOrders}>
+            <button className="text-base text-left text-black font-semibold cursor-pointer" onClick={handleBackToOrders}>
               <ChevronLeft height={20} width={20} className="inline-block" />
               Orders List
             </button>}
@@ -387,7 +387,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                 <div className="flex-1 min-w-0 w-full">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base font-medium text-gray-900">
+                      <h3 className="text-sm text-left sm:text-base font-medium text-gray-900">
                         {item.productName}
                       </h3>
                       <div className="flex items-center gap-2 mt-1">
@@ -403,17 +403,17 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                       #{(productsPagination.currentPage - 1) * productsPagination.limit + index + 1}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm mt-3">
-                    <div className='flex flex-col'>
-                      <p className="text-gray-500 text-xs sm:text-sm">Pack Type</p>
-                      <p className="font-medium text-sm sm:text-base">{item.packType}</p>
+                  <div className="flex items-center  justify-between gap-2 sm:gap-3 text-xs sm:text-sm mt-2">
+                    <div className='flex items-center space-x-2'>
+                      <p className="text-gray-500 text-left text-xs sm:text-sm">Pack Type: </p>
+                      <p className="font-medium text-left text-sm sm:text-base">{item.packType}</p>
                     </div>
-                    <div className='flex flex-col'>
-                      <p className="text-gray-500 text-xs sm:text-sm">Units</p>
+                    <div className='flex items-center space-x-2'>
+                      <p className="text-gray-500 text-xs sm:text-sm">Units: </p>
                       <p className="font-medium text-sm sm:text-base">{item.unitsQuantity}</p>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                  <div className=" mt-1 border-t border-gray-100 flex justify-between items-center">
                     <span className="text-sm font-medium text-gray-700">Amount:</span>
                     <span className="text-base sm:text-lg font-bold text-[#46BCF9]">
                       ${item.amount?.toFixed(2) || '0.00'}
@@ -423,19 +423,19 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
               </div>
             ) : (
               // Order Card
-              <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              <div className="flex items-start sm:items-start gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0 w-full">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex flex-col min-w-0">
                       <h3
-                        className="text-sm sm:text-base font-medium text-gray-900 hover:text-[#E9098D] cursor-pointer"
+                        className="text-sm text-left sm:text-base font-medium text-gray-900 hover:text-[#E9098D] cursor-pointer"
                         onClick={() => fetchProductsOfOrder(item.documentNumber)}
                       >
                         {item.documentNumber}
                       </h3>
-                      <p className="text-xs text-gray-500">Date: {item.date}</p>
-                      <p className="text-xs text-gray-500">Customer: {item.customerName}</p>
-                      <p className="text-xs text-gray-500">Channel: {item.salesChannel}</p>
+                      <p className="text-xs text-left  text-gray-500">Date: {item.date}</p>
+                      <p className="text-xs text-left text-gray-500">Customer: {item.customerName}</p>
+                      <p className="text-xs text-left text-gray-500">Channel: {item.salesChannel}</p>
                     </div>
                     <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
                       #{(ordersPagination.currentPage - 1) * ordersPagination.limit + index + 1}

@@ -867,12 +867,15 @@ const SearchPage = () => {
     const renderPaginationButtons = () => {
         const buttons = []
         const maxVisibleButtons = 5
+        // Reduce visible buttons on mobile
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+        const maxButtons = isMobile ? 3 : maxVisibleButtons
 
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2))
-        let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1)
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2))
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1)
 
-        if (endPage - startPage + 1 < maxVisibleButtons) {
-            startPage = Math.max(1, endPage - maxVisibleButtons + 1)
+        if (endPage - startPage + 1 < maxButtons) {
+            startPage = Math.max(1, endPage - maxButtons + 1)
         }
 
         // Previous button
@@ -881,29 +884,30 @@ const SearchPage = () => {
                 key="prev"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 rounded-lg border ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
+                className={`px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium transition-colors ${currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300'
+                        : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'
                     }`}
             >
-                Previous
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
             </button>
         )
 
-        // First page
-        if (startPage > 1) {
+        // First page (only show on desktop or if not in visible range)
+        if (startPage > 1 && !isMobile) {
             buttons.push(
                 <button
                     key={1}
                     onClick={() => handlePageChange(1)}
-                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50 cursor-pointer"
+                    className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors cursor-pointer text-sm"
                 >
                     1
                 </button>
             )
             if (startPage > 2) {
                 buttons.push(
-                    <span key="ellipsis1" className="px-2 py-2">
+                    <span key="ellipsis1" className="px-2 py-2 text-gray-500 font-medium hidden sm:inline">
                         ...
                     </span>
                 )
@@ -916,9 +920,9 @@ const SearchPage = () => {
                 <button
                     key={i}
                     onClick={() => handlePageChange(i)}
-                    className={`px-3 py-2 rounded-lg border ${currentPage === i
-                        ? 'bg-[#2D2C70] text-white'
-                        : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
+                    className={`px-2.5 sm:px-3 py-2 rounded-lg border font-medium transition-colors text-xs sm:text-sm ${currentPage === i
+                            ? 'bg-[#2D2C70] text-white border-[#2D2C70]'
+                            : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'
                         }`}
                 >
                     {i}
@@ -926,11 +930,11 @@ const SearchPage = () => {
             )
         }
 
-        // Last page
-        if (endPage < totalPages) {
+        // Last page (only show on desktop or if not in visible range)
+        if (endPage < totalPages && !isMobile) {
             if (endPage < totalPages - 1) {
                 buttons.push(
-                    <span key="ellipsis2" className="px-2 py-2">
+                    <span key="ellipsis2" className="px-2 py-2 text-gray-500 font-medium hidden sm:inline">
                         ...
                     </span>
                 )
@@ -939,7 +943,7 @@ const SearchPage = () => {
                 <button
                     key={totalPages}
                     onClick={() => handlePageChange(totalPages)}
-                    className="px-3 py-2 rounded-lg border bg-white text-black hover:bg-gray-50"
+                    className="px-3 py-2 rounded-lg border border-gray-300 bg-white text-black font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors cursor-pointer text-sm"
                 >
                     {totalPages}
                 </button>
@@ -952,9 +956,9 @@ const SearchPage = () => {
                 key="next"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 rounded-lg border ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-gray-50 cursor-pointer'
+                className={`px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium transition-colors ${currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300'
+                        : 'bg-white text-black border-gray-300 hover:bg-gray-50 hover:border-gray-400 cursor-pointer'
                     }`}
             >
                 Next
@@ -1107,13 +1111,13 @@ const SearchPage = () => {
                     <img
                         src={isProductGroup ? (item.thumbnail || "/placeholder.svg") : (item.images || "/placeholder.svg")}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="h-[180px] w-[180px] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                        className="h-[150px] w-[150px] lg:h-[180px] lg:w-[180px] object-contain cursor-pointer transition-transform duration-300 group-hover:scale-105"
                         onClick={() => handleProductImageClick(item, isProductGroup)}
                     />
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 min-w-[280px] lg:min-w-0 lg:max-w-[180px]">
+                <div className="text-start space-y-2 max-w-[10.875rem] lg:min-w-0 lg:max-w-[180px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
@@ -1214,7 +1218,7 @@ const SearchPage = () => {
                     {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
                         <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center lg:space-x-1">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
@@ -1579,7 +1583,7 @@ const SearchPage = () => {
                         {/* Items Grid */}
                         {!loading && allItems.length > 0 && (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
                                     {sortedItems.map((item) => renderItemCard(item))}
                                 </div>
 

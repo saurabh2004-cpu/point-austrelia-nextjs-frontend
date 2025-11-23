@@ -1352,11 +1352,11 @@ const ProductListing = () => {
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 mt-2 lg:max-w-[229px]">
+                <div className="text-start space-y-2 mt-2 max-w-[11.875rem] lg:max-w-[229px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
+                        className="text-sm sm:text-base hover:text-[#E9098D] h-[45px] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
                     >
                         {(() => {
                             const name = isProductGroup ? item.name : item.ProductName;
@@ -1366,7 +1366,7 @@ const ProductListing = () => {
                     </h3>
 
                     {/* SKU */}
-                    <div className="space-y-1 flex justify-between items-center">
+                    <div className="space-y-1 lg:flex justify-between items-center">
                         <p className="text-xs sm:text-sm text-gray-600 font-spartan">
                             SKU:{" "}
                             {isProductGroup
@@ -1380,7 +1380,7 @@ const ProductListing = () => {
 
 
                         {/* Stock Status */}
-                        <div className={`flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
+                        <div className={` lg:flex items-center space-x-2 px-2 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'}`}>
                             {/* {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>} */}
@@ -1465,10 +1465,9 @@ const ProductListing = () => {
                     )}
 
                     {/* Quantity Controls */}
-                    {/* Quantity Controls */}
                     <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
                         <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                        <div className="flex items-center space-x-4">
+                        <div className="flex items-center lg:space-x-4">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
@@ -1983,7 +1982,9 @@ const ProductListing = () => {
 
                         {/* // Sidebar Filter */}
 
-                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto min-w-[280px] hide-scrollbar px-2">
+
+                            {/* //created grid mobile view grid */}
+                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto min-w-[280px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
                             <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
                                 {/* {(() => {
                                     const title = getPageTitle();
@@ -2002,7 +2003,7 @@ const ProductListing = () => {
                                     return (
                                         <div
                                             key={category._id}
-                                            className="border-b border-dashed border-b-1 border-black"
+                                            className="lg:border-b lg:border-dashed lg:border-b-1 lg:border-black"
                                         >
                                             {/* Main Category */}
                                             <div
@@ -2138,16 +2139,16 @@ const ProductListing = () => {
                                                 value={perpageItems}
                                                 onChange={handleItemsPerPageChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-        text-sm text-black font-[400] font-spartan 
-        focus:outline-none focus:ring-2 focus:ring-blue-500 
-        appearance-none w-full lg:w-[135px] cursor-pointer"
-                                            >
+                                                text-sm text-black font-[400] font-spartan 
+                                                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                                appearance-none w-full lg:w-[135px] cursor-pointer"
+                                                                                    >
                                                 <option value="12" className="text-sm font-medium">12 Per Page</option>
                                                 <option value="24" className="text-sm font-medium">24 Per Page</option>
                                                 <option value="48" className="text-sm font-medium">48 Per Page</option>
                                             </select>
 
-                                            <div className="pointer-events-none absolute inset-y-0 right-6 flex items-center cursor-pointer">
+                                            <div className="pointer-events-none absolute inset-y-0 right-1 lg:right-6 flex items-center cursor-pointer">
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"
                                                     className="w-4 h-4"
@@ -2167,10 +2168,10 @@ const ProductListing = () => {
                                                 value={sortBy}
                                                 onChange={handleSortChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-        text-sm text-black font-[400] font-spartan 
-        focus:outline-none focus:ring-2 focus:ring-blue-500 
-        appearance-none w-full lg:w-[150px] cursor-pointer"
-                                            >
+                                                text-sm text-black font-[400] font-spartan 
+                                                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                                                appearance-none w-full lg:w-[150px] cursor-pointer"
+                                                                                    >
                                                 <option value="Price Low to High" className="text-sm font-medium">Price Low to High</option>
                                                 <option value="Price High to Low" className="text-sm font-medium">Price High to Low</option>
                                                 <option value="Newest" className="text-sm font-medium">Newest</option>
@@ -2214,7 +2215,7 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 

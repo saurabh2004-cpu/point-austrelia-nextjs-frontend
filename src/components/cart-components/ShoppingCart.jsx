@@ -840,7 +840,38 @@ const ShoppingCart = () => {
                         <span className=" text-black ">Shopping Cart</span>
                     </nav>
                 </div>
+
+                {/* here */}
             </div>
+
+            {/* Bottom Checkout Button */}
+            {cartItems.length > 0 && (
+                <div className="px-6 py-6 bg-white  lg:hidden sticky z-10 top-[0.1px] border-t border-gray-200">
+                    <button
+                        onClick={handleCheckoutclick}
+                        disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
+                        className={`w-full text-white py-3  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
+                            }`}
+                        title={
+                            exceedingStockCount > 0 || outOfStockCount > 0
+                                ? 'Please fix stock issues before checkout'
+                                : ''
+                        }
+                    >
+                        {exceedingStockCount > 0 || outOfStockCount > 0
+                            ? 'Fix Stock Issues'
+                            : navigationLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                    Processing...
+                                </>
+                            ) : 'Proceed to checkout'
+                        }
+                    </button>
+                </div>
+            )}
 
             {/* Header */}
             <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 2xl:left-[4.5%] mackbook-cart-heading mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
@@ -1255,7 +1286,7 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
-                                                className={`w-full text-white py-1 rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                className={`w-full text-white py-1  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 cursor-not-allowed'
                                                     : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
                                                     }`}

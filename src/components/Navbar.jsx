@@ -76,7 +76,7 @@ const useClickOutside = (callback) => {
 
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('touchstart', handleClick);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
@@ -121,6 +121,8 @@ export function Navbar() {
   const isCheckoutPage = pathname === '/checkout';
   const isCartPage = pathname === '/cart'
   const [searchQuery, setSearchQuery] = useState("")
+
+  const [mobileViewStack, setMobileViewStack] = useState([{ type: 'main', data: null }])
 
   const {
     categoryId,
@@ -510,10 +512,10 @@ export function Navbar() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between min-h-[60px] md:h-18">
               <div className="flex items-center lg:hidden">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleMobileMenuToggle} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMobileMenuToggle}
                   className="p-2"
                   data-menu-button="true"
                 >
@@ -585,8 +587,8 @@ export function Navbar() {
                       <span className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 flex items-center justify-center rounded-full text-white text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] transition-colors duration-200">{currentWishlistItems || 0}</span>
                     </Link>
                     {/* Fixed Mobile Cart Button - Redirects to Cart Page */}
-                    <Link 
-                      href="/cart" 
+                    <Link
+                      href="/cart"
                       prefetch={true}
                       onClick={(e) => {
                         e.preventDefault();
@@ -722,181 +724,341 @@ export function Navbar() {
 
           {/* Mobile Navigation Menu */}
           {isMenuOpen && (
-            <div className="lg:hidden space-y-2 py-4" ref={mobileMenuRef}>
-              {/* Mobile Login/Signup Section */}
-              {!currentUser && (
-                <div className="border-b border-gray-200 pb-4 mb-4">
-                  <div className="flex flex-col space-y-3 px-3">
-                    <Link
-                      href="/login"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/login');
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
-                    >
-                      LOGIN
-                    </Link>
-                    <Link
-                      href="/sign-up"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleFastNavigation('/sign-up');
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full text-center py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
-                    >
-                      SIGN UP
-                    </Link>
+            <div className="lg:hidden fixed inset-0 bg-white z-50 overflow-y-auto w-3/4" ref={mobileMenuRef}>
+              {/* Mobile Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                {mobileViewStack.length > 1 ? (
+                  <button
+                    onClick={() => {
+                      setMobileViewStack(prev => prev.slice(0, -1))
+                    }}
+                    className="flex items-center gap-2 text-[#2d2c70] hover:text-[#E9098D] transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="font-semibold">BACK</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center justify-center flex-1">
+                    <Image src="/logo/point-austrelia-logo.png" alt="Logo" width={150} height={60} className="h-12 w-auto" />
                   </div>
-                </div>
-              )}
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    setMobileViewStack([{ type: 'main', data: null }])
+                  }}
+                  className="p-2"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
 
-              {/* Mobile User Info and Logout Section */}
-              {currentUser && (
-                <div className="border-b border-gray-200 pb-4 mb-4">
-                  <div className="flex flex-col space-y-3 px-3">
-                    <div className="flex items-center space-x-2 py-2">
-                      <User className="w-5 h-5 text-[#2d2c70]" />
-                      <span className="text-sm font-semibold text-[#2d2c70]">
-                        Welcome, {currentUser?.customerName || currentUser?.contactName}
-                      </span>
-                    </div>
-                    <Link
-                      href="/my-account-review"
-                      prefetch={true}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleMyAccount();
-                      }}
-                      className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
-                    >
-                      My Account
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center justify-center space-x-2 py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+              {/* Mobile Content */}
+              <div className="px-4 py-2"> {/* Reduced py-4 to py-2 */}
+                {/* Current View Title */}
+                {mobileViewStack.length > 1 && (
+                  <h2 className="text-xl font-bold text-[#2d2c70] mb-3 pb-2 border-b border-gray-200"> {/* Reduced mb-4 to mb-3 */}
+                    {mobileViewStack[mobileViewStack.length - 1].title}
+                  </h2>
+                )}
 
-              {navigationItems.map((item) => (
-                <div key={item.index}>
-                  {!item.hasDropdown ? (
-                    <Link href={item.link || '/'} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(item.link || '/'); setIsMenuOpen(false); }} className="block w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100">{item.label}</Link>
-                  ) : (
-                    <>
-                      <button onClick={() => {
-                        if (item.label === "COMPANY") {
-                          if (!currentUser) {
-                            handleFastNavigation('/contact-us');
-                            setIsMenuOpen(false);
-                          } else {
-                            setActiveDropdown(activeDropdown === item.index ? null : item.index)
-                          }
-                        } else if (item.brandId) {
-                          handleMobileBrandClick(item.brandId, item.brandSlug, item.index);
-                        } else {
-                          handleNavigation(item)
-                        }
-                      }} className="flex items-center justify-between w-full text-left py-3 md:py-4 text-sm md:text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100">
-                        {item.label}
-                        {((item.hasDropdown && currentUser && item.label !== "COMPANY") || (item.label === "COMPANY" && currentUser)) && (
-                          <ChevronDown className={`w-4 h-4 transition-transform ${(activeDropdown === item.index || mobileActiveBrand === item.index) ? 'rotate-180' : ''}`} />
+                {/* Main Menu View */}
+                {mobileViewStack[mobileViewStack.length - 1].type === 'main' && (
+                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                    {/* Login/Signup Section */}
+                    {!currentUser && (
+                      <div className="border-b border-gray-200 pb-3 mb-3"> {/* Reduced pb-4 to pb-3, mb-4 to mb-3 */}
+                        <div className="flex flex-col space-y-2"> {/* Reduced space-y-3 to space-y-2 */}
+                          <Link
+                            href="/login"
+                            prefetch={true}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleFastNavigation('/login');
+                              setIsMenuOpen(false);
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
+                          >
+                            LOGIN
+                          </Link>
+                          <Link
+                            href="/sign-up"
+                            prefetch={true}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleFastNavigation('/sign-up');
+                              setIsMenuOpen(false);
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="w-full text-center py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
+                          >
+                            SIGN UP
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* User Info Section */}
+                    {currentUser && (
+                      <div className="border-b border-gray-200 pb-2 mb-3"> {/* Reduced pb-4 to pb-3, mb-4 to mb-3 */}
+                        <div className="flex flex-col space-y-1"> {/* Reduced space-y-3 to space-y-2 */}
+                          <div className="flex items-center space-x-2 py-2"> {/* Reduced py-2 to py-1 */}
+                            <User className="w-5 h-5 text-[#2d2c70]" />
+                            <span className="text-sm font-semibold text-[#2d2c70]">
+                              Welcome, {currentUser?.customerName || currentUser?.contactName}
+                            </span>
+                          </div>
+                          <Link
+                            href="/my-account-review"
+                            prefetch={true}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleMyAccount();
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
+                          >
+                            My Account
+                          </Link>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center justify-center space-x-2 py-2 text-sm font-semibold text-white bg-[#2d2c70] rounded-md hover:bg-[#E9098D] transition-colors duration-200"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Logout</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Navigation Items */}
+                    {navigationItems.map((item) => (
+                      <div key={item.index}>
+                        {!item.hasDropdown ? (
+                          <Link
+                            href={item.link || '/'}
+                            prefetch={true}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleFastNavigation(item.link || '/');
+                              setIsMenuOpen(false);
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="flex items-center justify-between w-full text-left py-2 text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                            // {/* Reduced py-4 to py-3 */}
+                          >
+                            {item.label}
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (item.label === "COMPANY") {
+                                if (!currentUser) {
+                                  handleFastNavigation('/contact-us');
+                                  setIsMenuOpen(false);
+                                  setMobileViewStack([{ type: 'main', data: null }]);
+                                } else {
+                                  setMobileViewStack([...mobileViewStack, {
+                                    type: 'company',
+                                    title: 'COMPANY',
+                                    data: null
+                                  }]);
+                                }
+                              } else if (item.brandId) {
+                                if (!currentUser) {
+                                  handleFastNavigation(`/brand/${item.brandSlug}`);
+                                  setIsMenuOpen(false);
+                                  setMobileViewStack([{ type: 'main', data: null }]);
+                                } else {
+                                  fetchCategoriesForBrand(item.brandId);
+                                  setMobileViewStack([...mobileViewStack, {
+                                    type: 'categories',
+                                    title: item.label,
+                                    brandId: item.brandId,
+                                    brandSlug: item.brandSlug,
+                                    data: item.categories || []
+                                  }]);
+                                }
+                              }
+                            }}
+                            className="flex items-center justify-between w-full text-left py-2 text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                            // {/* Reduced py-4 to py-3 */}
+                          >
+                            {item.label}
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
                         )}
-                      </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                      {item.label === "COMPANY" && activeDropdown === item.index && currentUser && (
-                        <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3">
-                          {brands.map((brand) => (
-                            <Link key={brand._id} href={`/brand/${brand.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation(`/brand/${brand.slug}`); setIsMenuOpen(false); }} className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200">{brand.name}</Link>
-                          ))}
-                          <Link href="/contact-us" prefetch={true} onClick={(e) => { e.preventDefault(); handleFastNavigation('/contact-us'); setIsMenuOpen(false); }} className="block w-full text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200 border-t border-gray-200 pt-2 mt-2">Contact Us</Link>
+                {/* Company View */}
+                {mobileViewStack[mobileViewStack.length - 1].type === 'company' && (
+                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                    {brands.map((brand) => (
+                      <Link
+                        key={brand._id}
+                        href={`/brand/${brand.slug}`}
+                        prefetch={true}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleFastNavigation(`/brand/${brand.slug}`);
+                          setIsMenuOpen(false);
+                          setMobileViewStack([{ type: 'main', data: null }]);
+                        }}
+                        className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                        // {/* Reduced py-4 to py-3 */}
+                      >
+                        {brand.name}
+                      </Link>
+                    ))}
+                    <Link
+                      href="/contact-us"
+                      prefetch={true}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleFastNavigation('/contact-us');
+                        setIsMenuOpen(false);
+                        setMobileViewStack([{ type: 'main', data: null }]);
+                      }}
+                      className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-t-2 border-gray-200 mt-2"
+                      // {/* Reduced py-4 to py-3 */}
+                    >
+                      Contact Us
+                    </Link>
+                  </div>
+                )}
+
+                {/* Categories View */}
+                {mobileViewStack[mobileViewStack.length - 1].type === 'categories' && (
+                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                    {(() => {
+                      const currentView = mobileViewStack[mobileViewStack.length - 1];
+                      const categories = categoriesByBrand[currentView.brandId] || [];
+
+                      if (loadingCategories[currentView.brandId]) {
+                        return <div className="py-3 text-center text-gray-500">Loading categories...</div>; {/* Reduced py-4 to py-3 */ }
+                      }
+
+                      if (categories.length === 0) {
+                        return <div className="py-3 text-center text-gray-500">No categories available</div>; {/* Reduced py-4 to py-3 */ }
+                      }
+
+                      return categories.map((category) => (
+                        <div key={category._id}>
+                          <button
+                            onClick={() => {
+                              if (category.hasChild) {
+                                fetchSubCategoriesForCategory(category._id);
+                                setMobileViewStack([...mobileViewStack, {
+                                  type: 'subcategories',
+                                  title: category.name,
+                                  categoryId: category._id,
+                                  categorySlug: category.slug,
+                                  brandSlug: currentView.brandSlug,
+                                  data: subCategoriesByCategory[category._id] || []
+                                }]);
+                              } else {
+                                handleCategoryClick(`/${category.slug}`);
+                                setIsMenuOpen(false);
+                                setMobileViewStack([{ type: 'main', data: null }]);
+                              }
+                            }}
+                            className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                            // {/* Reduced py-4 to py-3 */}
+                          >
+                            <span className={category.name === "NEW!" || category.name === "SALE" ? "text-[#E9098D] font-bold" : ""}>
+                              {category.name}
+                            </span>
+                            {category.hasChild && <ChevronRight className="w-5 h-5" />}
+                          </button>
                         </div>
-                      )}
+                      ));
+                    })()}
+                  </div>
+                )}
 
-                      {item.brandId && mobileActiveBrand === item.index && currentUser && (
-                        <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-200 pl-3 max-h-96 overflow-y-auto">
-                          {item.categories && item.categories.length > 0 ? (
-                            item.categories.map((category) => (
-                              <div key={category.id}>
-                                <div className="flex items-center justify-between">
-                                  <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => {
-                                    e.preventDefault();
-                                    handleCategoryClick(category.link);
-                                  }} className="flex-1 block text-left py-2 text-sm text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200">{category.label}</Link>
-                                  {category.hasChild && (
-                                    <button onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      if (mobileActiveCategory === category.id) {
-                                        setMobileActiveCategory(null);
-                                        setMobileActiveSubcategory(null);
-                                      } else {
-                                        setMobileActiveCategory(category.id);
-                                        setMobileActiveSubcategory(null);
-                                        fetchSubCategoriesForCategory(category.id);
-                                      }
-                                    }} className="p-2">
-                                      <ChevronRight className={`w-4 h-4 transition-transform ${mobileActiveCategory === category.id ? 'rotate-90' : ''}`} />
-                                    </button>
-                                  )}
-                                </div>
+                {/* Subcategories View */}
+                {mobileViewStack[mobileViewStack.length - 1].type === 'subcategories' && (
+                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                    {(() => {
+                      const currentView = mobileViewStack[mobileViewStack.length - 1];
+                      const subcategories = subCategoriesByCategory[currentView.categoryId] || [];
 
-                                {category.hasChild && mobileActiveCategory === category.id && category.subcategories && (
-                                  <div className="ml-4 mt-1 space-y-1 border-l-2 border-pink-200 pl-3">
-                                    {category.subcategories.map((subcat) => (
-                                      <div key={subcat.id}>
-                                        <div className="flex items-center justify-between">
-                                          <Link href={`/${subcat.slug}`} prefetch={true} onClick={(e) => {
-                                            e.preventDefault();
-                                            handleCategoryClick(subcat.link,);
-                                          }} className="flex-1 block text-left py-1.5 text-xs text-[#E9098D] hover:text-[#2d2c70] transition-colors duration-200">{subcat.label}</Link>
-                                          {subcat.hasChild && (
-                                            <button onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              if (mobileActiveSubcategory === subcat.id) {
-                                                setMobileActiveSubcategory(null);
-                                              } else {
-                                                setMobileActiveSubcategory(subcat.id);
-                                                fetchSubCategoriesTwoForSubCategory(subcat.id);
-                                              }
-                                            }} className="p-2">
-                                              <ChevronRight className={`w-3 h-3 transition-transform ${mobileActiveSubcategory === subcat.id ? 'rotate-90' : ''}`} />
-                                            </button>
-                                          )}
-                                        </div>
+                      if (subcategories.length === 0) {
+                        return <div className="py-3 text-center text-gray-500">No subcategories available</div>; {/* Reduced py-4 to py-3 */ }
+                      }
 
-                                        {subcat.hasChild && mobileActiveSubcategory === subcat.id && subcat.subcategoriesTwo && (
-                                          <div className="ml-4 mt-1 space-y-1 border-l-2 border-purple-200 pl-3">
-                                            {subcat.subcategoriesTwo.map((subcatTwo) => (
-                                              <Link key={subcatTwo.id} href={`/${subcatTwo.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(`/${subcatTwo.slug}`,); }} className="block text-left py-1.5 text-xs text-purple-600 hover:text-[#2d2c70] transition-colors duration-200">{subcatTwo.label}</Link>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))
-                          ) : (
-                            <div className="py-2 text-sm text-gray-500">{loadingCategories[item.brandId] ? 'Loading categories...' : 'No categories available'}</div>
-                          )}
+                      return subcategories.map((subcat) => (
+                        <div key={subcat._id}>
+                          <button
+                            onClick={() => {
+                              if (subcat.hasChild) {
+                                fetchSubCategoriesTwoForSubCategory(subcat._id);
+                                setMobileViewStack([...mobileViewStack, {
+                                  type: 'subcategoriesTwo',
+                                  title: subcat.name,
+                                  subcategoryId: subcat._id,
+                                  subcategorySlug: subcat.slug,
+                                  brandSlug: currentView.brandSlug,
+                                  data: subCategoriesTwoBySubCategory[subcat._id] || []
+                                }]);
+                              } else {
+                                handleCategoryClick(`/${subcat.slug}`);
+                                setIsMenuOpen(false);
+                                setMobileViewStack([{ type: 'main', data: null }]);
+                              }
+                            }}
+                            className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                            // {/* Reduced py-4 to py-3 */}
+                          >
+                            {subcat.name}
+                            {subcat.hasChild && <ChevronRight className="w-5 h-5" />}
+                          </button>
                         </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
+                      ));
+                    })()}
+                  </div>
+                )}
+
+                {/* Subcategories Two View */}
+                {mobileViewStack[mobileViewStack.length - 1].type === 'subcategoriesTwo' && (
+                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                    {(() => {
+                      const currentView = mobileViewStack[mobileViewStack.length - 1];
+                      const subcategoriesTwo = subCategoriesTwoBySubCategory[currentView.subcategoryId] || [];
+
+                      if (subcategoriesTwo.length === 0) {
+                        return <div className="py-3 text-center text-gray-500">No items available</div>; {/* Reduced py-4 to py-3 */ }
+                      }
+
+                      return subcategoriesTwo.map((subcatTwo) => (
+                        <Link
+                          key={subcatTwo._id}
+                          href={`/${subcatTwo.slug}`}
+                          prefetch={true}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleCategoryClick(`/${subcatTwo.slug}`);
+                            setIsMenuOpen(false);
+                            setMobileViewStack([{ type: 'main', data: null }]);
+                          }}
+                          className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
+                          // {/* Reduced py-4 to py-3 */}
+                        >
+                          {subcatTwo.name}
+                        </Link>
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

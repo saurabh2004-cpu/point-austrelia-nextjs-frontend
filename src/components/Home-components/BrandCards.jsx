@@ -109,7 +109,7 @@ const BrandCards = () => {
 
   // Brand grid
   return (
-    <div className="w-full xl:max-w-5xl mx-auto px-4 sm:px-5 md:p-6 xl:py-6">
+    <div className="w-full xl:max-w-5xl mx-auto px-4 sm:px-5 md:pt-6 xl:pt-6">
       <div
         className="
           grid 

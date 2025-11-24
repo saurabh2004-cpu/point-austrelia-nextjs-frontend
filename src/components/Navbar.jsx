@@ -428,6 +428,9 @@ export function Navbar() {
     try {
       if (!currentUser?._id) return;
       const response = await axiosInstance.get(`cart/get-cart-by-customer-id/${currentUser._id}`)
+
+      // console.log("customers cart in navbar", response)
+
       if (response.data.statusCode === 200) {
         const cartData = response.data.data.items;
         setCartItems(cartData.length);
@@ -850,7 +853,7 @@ export function Navbar() {
                               setMobileViewStack([{ type: 'main', data: null }]);
                             }}
                             className="flex items-center justify-between w-full text-left py-2 text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                            // {/* Reduced py-4 to py-3 */}
+                          // {/* Reduced py-4 to py-3 */}
                           >
                             {item.label}
                           </Link>
@@ -887,7 +890,7 @@ export function Navbar() {
                               }
                             }}
                             className="flex items-center justify-between w-full text-left py-2 text-base font-semibold text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                            // {/* Reduced py-4 to py-3 */}
+                          // {/* Reduced py-4 to py-3 */}
                           >
                             {item.label}
                             <ChevronRight className="w-5 h-5" />
@@ -913,7 +916,7 @@ export function Navbar() {
                           setMobileViewStack([{ type: 'main', data: null }]);
                         }}
                         className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                        // {/* Reduced py-4 to py-3 */}
+                      // {/* Reduced py-4 to py-3 */}
                       >
                         {brand.name}
                       </Link>
@@ -928,7 +931,7 @@ export function Navbar() {
                         setMobileViewStack([{ type: 'main', data: null }]);
                       }}
                       className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-t-2 border-gray-200 mt-2"
-                      // {/* Reduced py-4 to py-3 */}
+                    // {/* Reduced py-4 to py-3 */}
                     >
                       Contact Us
                     </Link>
@@ -971,7 +974,7 @@ export function Navbar() {
                               }
                             }}
                             className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                            // {/* Reduced py-4 to py-3 */}
+                          // {/* Reduced py-4 to py-3 */}
                           >
                             <span className={category.name === "NEW!" || category.name === "SALE" ? "text-[#E9098D] font-bold" : ""}>
                               {category.name}
@@ -1016,7 +1019,7 @@ export function Navbar() {
                               }
                             }}
                             className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                            // {/* Reduced py-4 to py-3 */}
+                          // {/* Reduced py-4 to py-3 */}
                           >
                             {subcat.name}
                             {subcat.hasChild && <ChevronRight className="w-5 h-5" />}
@@ -1050,7 +1053,7 @@ export function Navbar() {
                             setMobileViewStack([{ type: 'main', data: null }]);
                           }}
                           className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                          // {/* Reduced py-4 to py-3 */}
+                        // {/* Reduced py-4 to py-3 */}
                         >
                           {subcatTwo.name}
                         </Link>

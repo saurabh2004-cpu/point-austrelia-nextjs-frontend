@@ -192,7 +192,7 @@ const Carousel = () => {
   }
 
   return (
-    <div className="w-full mx-auto py-3 sm:py-4 md:py-4 xl:pb-12 overflow-x-hidden">
+    <div className="w-full mx-auto pb-3 sm:py-4 md:py-4 xl:pb-12 overflow-x-hidden">
       <div
         className="relative w-full overflow-hidden rounded-lg carousel-container"
         onMouseEnter={handleMouseEnter}

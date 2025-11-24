@@ -454,32 +454,36 @@ const ShoppingCartPopup = () => {
     // For product groups, use productGroup data
     if (isProductGroupItem) {
       // Check if there's a compare price discount
-      // if (item.discountType === "Compare Price" && item.discountPercentages) {
-      //   const comparePrice = parseFloat(item.discountPercentages);
-      //   const currentPrice = item.amount || 0;
-      //   if (comparePrice > currentPrice) {
-      //     return comparePrice;
-      //   }
-      // }
+      if (item.discountType === "Compare Price" && item.discountPercentages) {
+        const comparePrice = parseFloat(item.discountPercentages);
+        const currentPrice = item.amount || 0;
+        if (comparePrice > currentPrice) {
+          return comparePrice;
+        }
+      }
 
       // Check for item discount
       if (item.discountType === "Item Discount" && item.discountPercentages) {
-        return item.product.eachPrice || item.amount || 0;
+        return item.product?.eachPrice || item.amount || 0;
       }
 
       // Check for pricing group discount
       if (item.discountType === "Pricing Group Discount" && item.discountPercentages) {
+
+        console.log("isprodyuct group", isProductGroup)
+        console.log("product gropup in docc", item.productGroup)
+
         const discountPercentages = parseFloat(item.discountPercentages);
         if (discountPercentages < 0) {
           // Negative discount means price decrease, show original price
-          return item.product.eachPrice || item.amount || 0;
+          return item.product?.eachPrice || item.productGroup.eachPrice || 0;
 
         } else if (discountPercentages > 0) {
           // Positive discount means price increase, no original price to show
           return null;
         }
       }
-      
+
     }
 
     // For individual products
@@ -611,7 +615,7 @@ const ShoppingCartPopup = () => {
                           alt={getItemName(item)}
                           width={80}
                           height={80}
-                          className="object-contain rounded-lg"
+                          className="object-contain h-[120px] w-[120px] rounded-lg"
                           onError={(e) => {
                             e.target.src = '/product-listing-images/product-1.avif';
                           }}

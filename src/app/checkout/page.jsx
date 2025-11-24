@@ -1217,6 +1217,49 @@ const CheckoutComponent = () => {
                     onRemoveItems={handleRemoveOutOfStockItems}
                 />
 
+                {step < 3 ? (
+                    <div className='bg-white sticky top-0 lg:hidden  '>
+                        <button
+                            className={` w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${checkingStock || outOfStockItems.length > 0
+                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                : 'bg-[#2D2C70] text-white hover:bg-[#25245a] cursor-pointer'
+                                }`}
+                            onClick={() => checkStockAndProceed(step + 1)}
+                            disabled={checkingStock || outOfStockItems.length > 0}
+                        >
+                            {checkingStock ? 'Checking Stock...' : 'Continue'}
+                        </button>
+
+                        <div className="flex items-center space-x-3 mb-8">
+                            <button
+                                onClick={() => router.push('/products')}
+                                className="flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
+                            >
+                                <svg
+                                    className="w-5 h-5 transition-colors duration-300"
+                                    viewBox="0 0 21 21"
+                                    fill="CurrentColor"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path d="M2.14062 14V2H0.140625V0H3.14062C3.69291 0 4.14062 0.44772 4.14062 1V13H16.579L18.579 5H6.14062V3H19.8598C20.4121 3 20.8598 3.44772 20.8598 4C20.8598 4.08176 20.8498 4.16322 20.8299 4.24254L18.3299 14.2425C18.2187 14.6877 17.8187 15 17.3598 15H3.14062C2.58835 15 2.14062 14.5523 2.14062 14ZM4.14062 21C3.03606 21 2.14062 20.1046 2.14062 19C2.14062 17.8954 3.03606 17 4.14062 17C5.24519 17 6.14062 17.8954 6.14062 19C6.14062 20.1046 5.24519 21 4.14062 21ZM16.1406 21C15.036 21 14.1406 20.1046 14.1406 19C14.1406 17.8954 15.036 17 16.1406 17C17.2452 17 18.1406 17.8954 18.1406 19C18.1406 20.1046 17.2452 21 16.1406 21Z" />
+                                </svg>
+                                Continue Shopping
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        className={`lg:hidden  w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${loadingCheckOut || outOfStockItems.length > 0
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                            : 'bg-[#2D2C70] text-white hover:bg-[#25245a]'
+                            }`}
+                        onClick={handleCompleteCheckout}
+                        disabled={loadingCheckOut || outOfStockItems.length > 0}
+                    >
+                        {loadingCheckOut ? 'Completing Checkout...' : "Complete Checkout"}
+                    </button>
+                )}
+
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-0 lg:gap-2">
                     {/* STEP 1: Select Addresses */}
                     {step === 1 && (
@@ -1347,6 +1390,7 @@ const CheckoutComponent = () => {
                             submitForm={submitForm}
                             setSubmitForm={setSubmitForm}
                             cardDetails={cardData}
+                            latestSalesOrderDocumentNumber={latestSalesOrderDocumentNumber}
                         />
                     )}
 
@@ -1360,7 +1404,7 @@ const CheckoutComponent = () => {
                     )}
 
                     {/* Order Summary Sidebar */}
-                    <div className={`lg:col-span-1 ${step === 1 ? 'xl:mt-27' : 'xl:mt-18'}`}>
+                    <div className={`lg:col-span-1 lg:z-10 ${step === 1 ? 'xl:mt-27' : 'xl:mt-18'}`}>
                         <div className="bg-white rounded-lg sticky top-6">
                             <div className="md:p-0 xl:p-4">
 
@@ -1471,7 +1515,7 @@ const CheckoutComponent = () => {
                                                             alt={itemData.name || itemData.ProductName}
                                                             width={98}
                                                             height={98}
-                                                            className="object-contain"
+                                                            className="object-contain h-[110px] w-[110px]"
                                                         />
                                                     </div>
                                                     <div className="flex-1 min-w-0">

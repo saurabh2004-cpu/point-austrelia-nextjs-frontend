@@ -1946,7 +1946,7 @@ const ProductListing = () => {
                         </nav>
                     </div>
                     <div className="text-center">
-                        <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-2 tracking-widest">
+                        <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] lg:mt-6 font-bold font-spartan pb-2 tracking-widest">
                             {getPageTitle()}
                         </h1>
                         {currentCategoryDescription && (
@@ -1960,36 +1960,13 @@ const ProductListing = () => {
                     </div>
                 </div>
 
-                <div className="md:max-w-[80%] mx-auto px-2  py-3 sm:py-6">
+                <div className="md:max-w-[80%]  mx-auto px-2  py-3 sm:py-6">
                     <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
-                        {/* Mobile Filter Toggle Button */}
-                        {/* <div className="lg:hidden ">
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className="w-full bg-white p-3 rounded-lg border flex items-center justify-between text-black font-spartan"
-                            >
-                                <span className="text-sm font-[400]">Categories</span>
-                                <svg
-                                    className={`w-5 h-5 transition-transform ${showFilters ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                        </div> */}
-
                         {/* // Sidebar Filter */}
 
-
                             {/* //created grid mobile view grid */}
-                        <div className="space-y-2 max-h-64 lg:max-h-none overflow-y-auto min-w-[280px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
+                        <div className="space-y-2 max-h-64 lg:max-h-screen   overflow-y-auto min-w-[230px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
                             <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
-                                {/* {(() => {
-                                    const title = getPageTitle();
-                                    return title?.length > 18 ? title.slice(0, 15) + '...' : title;
-                                })()} */}
                                 {getPageTitle()}
                             </h1>
 
@@ -2215,7 +2192,7 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-9 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid  lg:max-h-screen lg:overflow-y-auto hide-scrollbar no-scrollbar grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-5 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 

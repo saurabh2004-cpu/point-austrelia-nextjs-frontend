@@ -392,4 +392,4 @@ import { withAuth } from '@/components/withAuth'
 }
 
 
-export default withAuth(ResetPasswordPage);
+export default ResetPasswordPage;

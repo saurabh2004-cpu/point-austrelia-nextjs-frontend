@@ -70,6 +70,7 @@ const ShoppingCart = () => {
     // Confirmation popup states
     const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
     const [showRemoveItemConfirm, setShowRemoveItemConfirm] = useState(false);
+    const [isMovingToWishlist, setIsMovingToWishlist] = useState(false);
     const [itemToRemove, setItemToRemove] = useState(null);
 
 
@@ -676,30 +677,42 @@ const ShoppingCart = () => {
     const handleCancelRemoveItem = () => {
         setShowRemoveItemConfirm(false);
         setItemToRemove(null);
+        setIsMovingToWishlist(false);
     };
 
-    // Move to wishlist
     const moveToWishlist = async (item) => {
         if (!currentUser || !currentUser._id) {
             setError("Please login to move items to wishlist");
             return;
         }
 
-        setUpdatingItems(prev => ({ ...prev, [item._id]: true }));
+        // Set moving state and show confirmation
+        setIsMovingToWishlist(true);
+        setItemToRemove(item);
+        setShowRemoveItemConfirm(true);
+    };
+
+    const confirmMoveToWishlist = async () => {
+        if (!currentUser || !currentUser._id || !itemToRemove) {
+            setError("Please login to move items to wishlist");
+            return;
+        }
+
+        setUpdatingItems(prev => ({ ...prev, [itemToRemove._id]: true }));
 
         try {
             // Add to wishlist
             const wishlistResponse = await axiosInstance.post('wishlist/add-to-wishlist', {
                 customerId: currentUser._id,
-                productId: item.product?._id || null,
-                productGroupId: item.productGroup?._id || null
+                productId: itemToRemove.product?._id || null,
+                productGroupId: itemToRemove.productGroup?._id || null
             });
 
             console.log("move to wishlist", wishlistResponse)
 
             if (wishlistResponse.data.statusCode === 200) {
                 // Remove from cart after successfully adding to wishlist
-                handleRemoveItemClick(item);
+                await removeCartItem(); // This will remove the item from cart
                 setWishlistItemsCount(wishlistResponse.data.data.wishlistItems?.length || 0);
                 setError(null);
             } else {
@@ -709,7 +722,10 @@ const ShoppingCart = () => {
             console.error('Error moving to wishlist:', error);
             setError('An error occurred while moving to wishlist');
         } finally {
-            setUpdatingItems(prev => ({ ...prev, [item._id]: false }));
+            setUpdatingItems(prev => ({ ...prev, [itemToRemove._id]: false }));
+            setIsMovingToWishlist(false);
+            setShowRemoveItemConfirm(false);
+            setItemToRemove(null);
         }
     };
 
@@ -1234,7 +1250,10 @@ const ShoppingCart = () => {
                                                                         </button>
 
                                                                         <button
-                                                                            onClick={() => handleRemoveItemClick(item)}
+                                                                            onClick={() => {
+                                                                                setIsMovingToWishlist(false);
+                                                                                handleRemoveItemClick(item);
+                                                                            }}
                                                                             disabled={isLoading}
                                                                             className='xl:hidden flex h-8 w-9 border border-[#E9098D] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer'
                                                                         >
@@ -1246,7 +1265,10 @@ const ShoppingCart = () => {
 
                                                                     <div className='w-6'>
                                                                         <button
-                                                                            onClick={() => handleRemoveItemClick(item)}
+                                                                            onClick={() => {
+                                                                                setIsMovingToWishlist(false);
+                                                                                handleRemoveItemClick(item);
+                                                                            }}
                                                                             disabled={isLoading}
                                                                             className="hidden xl:flex h-9 w-9 border border-[#E799A9] rounded-full items-center justify-center disabled:opacity-50 cursor-pointer"
                                                                         >
@@ -1501,12 +1523,20 @@ const ShoppingCart = () => {
                             <div className="flex-shrink-0">
                                 <AlertTriangle className="h-6 w-6 text-yellow-500" />
                             </div>
-                            <h3 className="text-lg font-semibold ml-3">Remove Item</h3>
+                            <h3 className="text-lg font-semibold ml-3">
+                                {isMovingToWishlist ? 'Move to Wishlist' : 'Remove Item'}
+                            </h3>
                         </div>
 
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to remove "<span className="font-semibold">{getItemName(itemToRemove)}</span>" from your cart?
-                        </p>
+                        {isMovingToWishlist ? (
+                            <p className="text-gray-600 mb-6">
+                                Are you sure you want to move "<span className="font-semibold">{getItemName(itemToRemove)}</span>" to Wishlist ?
+                            </p>
+                        ) : (
+                            <p className="text-gray-600 mb-6">
+                                Are you sure you want to remove "<span className="font-semibold">{getItemName(itemToRemove)}</span>" from your cart?
+                            </p>
+                        )}
 
                         <div className="flex justify-end space-x-3">
                             <button
@@ -1516,15 +1546,20 @@ const ShoppingCart = () => {
                                 Cancel
                             </button>
                             <button
-                                onClick={removeCartItem}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                onClick={isMovingToWishlist ? confirmMoveToWishlist : removeCartItem}
+                                className={`px-4 py-2 text-white rounded-lg transition-colors ${isMovingToWishlist
+                                    ? 'bg-[#46BCF9] hover:bg-[#3aa8e0]'
+                                    : 'bg-red-600 hover:bg-red-700'
+                                    }`}
                             >
-                                Remove Item
+                                {isMovingToWishlist ? 'Move to Wishlist' : 'Remove Item'}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+
             {/* Product Popup */}
             <ProductPopup
                 isOpen={showProductPopup}

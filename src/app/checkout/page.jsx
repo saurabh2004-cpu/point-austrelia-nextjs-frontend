@@ -1,6 +1,6 @@
 'use client'
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, Check, Plus, X, AlertCircle } from 'lucide-react';
+import { ChevronDown, Check, Plus, X, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import Image from 'next/image';
 import CheckoutFormUI from '@/components/checkout-components/CheckOutInformation';
 import Review from '@/components/checkout-components/Review';
@@ -9,6 +9,7 @@ import useUserStore from '@/zustand/user';
 import axiosInstance from '@/axios/axiosInstance';
 import useCartStore from '@/zustand/cartPopup';
 import { withAuth } from '@/components/withAuth';
+import { sub } from 'framer-motion/m';
 
 // Updated OutOfStockWarning Component
 const OutOfStockWarning = ({ outOfStockItems, onRemoveItems }) => {
@@ -535,6 +536,11 @@ const CheckoutComponent = () => {
     const [outOfStockItems, setOutOfStockItems] = useState([]);
     const [checkingStock, setCheckingStock] = useState(false);
     const [totalsLoading, setTotalsLoading] = useState(true);
+    const [notification, setNotification] = useState({
+        show: false,
+        type: '', // 'success', 'error', 'warning'
+        message: ''
+    });
 
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -546,7 +552,19 @@ const CheckoutComponent = () => {
         billingAddress: '',
         customerPO: '',
         comments: '',
-        items: []
+        items: [],
+        card: {
+            firstName: '',
+            lastName: '',
+            fullName: '',
+            cardNumber: '',
+            expiryMonth: '',
+            expiryYear: '',
+            cvn: '',
+            TransactionID: '',
+            authorisationCode: '',
+            transactionStatus: '',
+        }
     });
 
     // Updated: Check stock for both products and product groups
@@ -918,7 +936,87 @@ const CheckoutComponent = () => {
         }
     }, [latestSalesOrderDocumentNumber]);
 
-    // Updated: Complete checkout with support for both products and product groups
+
+    // Show notification function
+    const showNotification = (type, message) => {
+        setNotification({
+            show: true,
+            type,
+            message
+        });
+
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            setNotification({ show: false, type: '', message: '' });
+        }, 1000);
+    };
+
+    // Notification component
+    const Notification = () => {
+        if (!notification.show) return null;
+
+        const getNotificationStyles = () => {
+            switch (notification.type) {
+                case 'success':
+                    return 'bg-green-50 border-green-200 text-green-800';
+                case 'error':
+                    return 'bg-red-50 border-red-200 text-red-800';
+                case 'warning':
+                    return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                default:
+                    return 'bg-gray-50 border-gray-200 text-gray-800';
+            }
+        };
+
+        const getNotificationIcon = () => {
+            switch (notification.type) {
+                case 'success':
+                    return <CheckCircle className="w-5 h-5 text-green-600" />;
+                case 'error':
+                    return <XCircle className="w-5 h-5 text-red-600" />;
+                case 'warning':
+                    return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+                default:
+                    return null;
+            }
+        };
+
+        return (
+            <div className={`fixed top-4 right-4 z-50 border rounded-lg p-4 shadow-lg ${getNotificationStyles()} max-w-sm`}>
+                <div className="flex items-start gap-3">
+                    {getNotificationIcon()}
+                    <div className="flex-1">
+                        <p className="text-sm font-medium">{notification.message}</p>
+                    </div>
+                    <button
+                        onClick={closeNotification}
+                        className="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // Manual close notification
+    const closeNotification = () => {
+        setNotification({ show: false, type: '', message: '' });
+    };
+
+    function incrementDocumentNumber(doc) {
+        const prefix = doc.match(/[A-Za-z]+/)[0]; // Extract letters
+        const number = doc.replace(prefix, "");  // Extract numeric part
+
+        const newNumber = (parseInt(number) + 1).toString().padStart(number.length, "0");
+
+        return prefix + newNumber;
+    }
+
+
+
+
+
     const handleCompleteCheckout = async () => {
         // Final stock check before completing checkout
         const outOfStockItems = await checkAllProductsStock();
@@ -931,18 +1029,56 @@ const CheckoutComponent = () => {
         setLoadingCheckOut(true);
 
         try {
+            // First, process the payment with eWAY
+            const paymentResponse = await axiosInstance.post('sales-order/create-payment', {
+                cardNumber: submitForm.card.cardNumber,
+                cvn: submitForm.card.cvn,
+                expiryMonth: submitForm.card.expiryMonth,
+                expiryYear: submitForm.card.expiryYear,
+                firstName: submitForm.card.firstName,
+                fullName: submitForm.card.fullName,
+                lastName: submitForm.card.lastName,
+                totalAmount: totals.grandTotal,
+                invoiceReference: incrementDocumentNumber(latestSalesOrderDocumentNumber)
+            });
+
+            const ewayData = paymentResponse.data.data;
+
+            console.log("eway response", ewayData);
+
+            if (!ewayData || ewayData.ResponseCode !== "00" || !ewayData.TransactionStatus) {
+                showNotification('error', 'Error validating credit card credentials');
+                setLoadingCheckOut(false);
+                return;
+            }
+
+            // Update the form with the payment response data
+            const updatedForm = {
+                ...submitForm,
+                card: {
+                    ...submitForm.card,
+                    transactionId: ewayData.TransactionID.toString(),
+                    authorisationCode: ewayData.AuthorisationCode,
+                    transactionStatus: ewayData.TransactionStatus.toString()
+                }
+            };
+
+            setSubmitForm(updatedForm);
+
+            // Now create the sales order with the updated card data
             const orderData = {
-                date: submitForm.date,
+                date: updatedForm.date,
                 documentNumber: documentNumber,
                 customerName: currentUser.customerName || currentUser.contactName || '',
-                salesChannel: submitForm.salesChannel,
-                trackingNumber: submitForm.trackingNumber || '',
-                shippingAddress: submitForm.shippingAddress,
-                billingAddress: submitForm.billingAddress,
-                customerPO: submitForm.customerPO || '',
-                comments: submitForm.comments || '',
-                items: submitForm.items,
-                customer: currentUser._id
+                salesChannel: updatedForm.salesChannel,
+                trackingNumber: updatedForm.trackingNumber || '',
+                shippingAddress: updatedForm.shippingAddress,
+                billingAddress: updatedForm.billingAddress,
+                customerPO: updatedForm.customerPO || '',
+                comments: updatedForm.comments || '',
+                items: updatedForm.items,
+                customer: currentUser._id,
+                card: updatedForm.card // This now includes the transaction details
             };
 
             const response = await axiosInstance.post(
@@ -950,19 +1086,18 @@ const CheckoutComponent = () => {
                 orderData
             );
 
-            console.log("create sales order response", response)
+            console.log("create sales order response", response);
 
             if (response.data.statusCode === 200) {
                 const docNumber = response.data.data.documentNumber;
                 setCartItemsCount(0);
                 setIsNavigating(true);
 
+                showNotification('success', 'Order placed successfully!');
+
                 setTimeout(() => {
                     router.push(`/thank-you/${docNumber}`);
-                }, 0);
-
-                // axiosInstance.delete(`cart/clear-cart/${currentUser._id}`)
-                //     .catch(err => console.error('Error clearing cart:', err));
+                }, 2000);
 
             } else {
                 setError(response.data.message || 'Failed to process order.');
@@ -971,7 +1106,13 @@ const CheckoutComponent = () => {
 
         } catch (error) {
             console.error("Error placing order:", error);
-            setError("An error occurred. Please try again.");
+
+            if (error.response?.data?.message) {
+                showNotification('error', error.response.data.message);
+            } else {
+                showNotification('error', 'An error occurred. Please try again.');
+            }
+
             setLoadingCheckOut(false);
         }
     };
@@ -1079,37 +1220,7 @@ const CheckoutComponent = () => {
     }, [currentUser, step]);
 
 
-    useEffect(() => {
-        const accessCode = params.get("AccessCode");
-        if (accessCode && !accessTokenProcessed) {
-            setIsProcessingEway(true);
 
-            const fetchEwayResult = async () => {
-                try {
-                    const response = await axiosInstance.post(`card/eway-result/${accessCode}/${currentUser._id}`);
-
-                    console.log("eway result", response)
-
-                    if (response.data.statusCode === 200) {
-                        setAccessTokenProcessed(true);
-                        setCardData(response.data.data);
-                        setIsProcessingEway(false);
-                        setStep(2);
-
-                        const url = new URL(window.location.href);
-                        url.searchParams.delete("AccessCode");
-                        window.history.replaceState({}, document.title, url.toString());
-                    }
-                } catch (error) {
-                    console.error("Error fetching eway result:", error);
-                } finally {
-                    setIsProcessingEway(false);
-                }
-            };
-
-            fetchEwayResult();
-        }
-    }, [params, accessTokenProcessed, currentUser?._id]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -1178,6 +1289,9 @@ const CheckoutComponent = () => {
 
     return (
         <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
+
+            <Notification />
+
             <div className="md:max-w-[80%]  mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
@@ -1391,6 +1505,7 @@ const CheckoutComponent = () => {
                             setSubmitForm={setSubmitForm}
                             cardDetails={cardData}
                             latestSalesOrderDocumentNumber={latestSalesOrderDocumentNumber}
+                            totalAmount={totals.grandTotal.toFixed(2) || 0}
                         />
                     )}
 

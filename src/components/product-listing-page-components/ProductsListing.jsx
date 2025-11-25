@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import ProductPopup from "../product-details-components/Popup"
 import Image from "next/image"
-import { Heart, HeartIcon, Minus, Plus } from "lucide-react"
 import { usePathname, useRouter, useSearchParams, } from "next/navigation"
 import axiosInstance from "@/axios/axiosInstance"
 import useUserStore from "@/zustand/user"

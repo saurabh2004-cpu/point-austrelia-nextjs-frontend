@@ -8,6 +8,7 @@ import RecentPurchases from "./RecentPurchases"
 import useUserStore from "@/zustand/user"
 import axiosInstance from "@/axios/axiosInstance"
 import { set } from "nprogress"
+import PaymentSection from "./PaymentSection"
 
 // Address Popup Component
 // Address Popup Component
@@ -887,7 +888,7 @@ export default function MyAccount() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-[80%]">
             {/* Show Address Book tab */}
             {activeSection === "address" && (
               <div className="bg-white h-full xl:pb-30 rounded-lg font-spartan px-8">
@@ -1042,7 +1043,7 @@ export default function MyAccount() {
 
             {/* Show Purchases only if Purchases tab is active */}
             {activeSection === "purchases" && (
-              <div className="xl:h-full h-full">
+              <div className="xl:h-full h-full ">
                 <div className="border-b-2 ml-8 border-black pb-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-[24px] font-medium ">
@@ -1159,7 +1160,7 @@ export default function MyAccount() {
                 </div>
 
                 {/* Purchase History Content */}
-                <div className="text-center ">
+                <div className="text-center  ">
                   <RecentPurchases timeLapse={timeLapse} sortBy={sortBy} />
                 </div>
               </div>
@@ -1279,45 +1280,46 @@ export default function MyAccount() {
             )}
 
             {activeSection === "payment" && (
-              <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8">
-                <div className="border-b-2 border-black pb-4 mb-6">
-                  <h2 className="text-[24px] font-medium">Payment Methods</h2>
-                </div>
+              // <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8">
+              //   <div className="border-b-2 border-black pb-4 mb-6">
+              //     <h2 className="text-[24px] font-medium">Payment Methods</h2>
+              //   </div>
 
-                <div className="grid  grid-cols-1 md:grid-cols-2  xl:grid-cols-4  gap-6">
-                  {/*  Card 1 */}
-                  <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
-                    <div className="space-y-2 text-sm">
-                      <p className="font-[600]">
-                        Ending in <span className="font-[400]">6844</span>
-                      </p>
-                      <div className="flex justify-between align-center">
-                        <p className="font-[600]">
-                          Expires in <span className="font-[400]">12/22</span>
-                        </p>
-                        <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
-                      </div>
-                      <p>2 Devendra Chandora</p>
-                      <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
-                    </div>
-                    <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-                      <button className="text-[#2D2C70] font-medium hover:text-[#E9098D] cursor-pointer">Edit</button>
-                      <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70] cursor-pointer">Remove</button>
-                    </div>
-                  </div>
+              //   <div className="grid  grid-cols-1 md:grid-cols-2  xl:grid-cols-4  gap-6">
+              //     {/*  Card 1 */}
+              //     <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
+              //       <div className="space-y-2 text-sm">
+              //         <p className="font-[600]">
+              //           Ending in <span className="font-[400]">6844</span>
+              //         </p>
+              //         <div className="flex justify-between align-center">
+              //           <p className="font-[600]">
+              //             Expires in <span className="font-[400]">12/22</span>
+              //           </p>
+              //           <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
+              //         </div>
+              //         <p>2 Devendra Chandora</p>
+              //         <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
+              //       </div>
+              //       <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
+              //         <button className="text-[#2D2C70] font-medium hover:text-[#E9098D] cursor-pointer">Edit</button>
+              //         <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70] cursor-pointer">Remove</button>
+              //       </div>
+              //     </div>
 
 
-                  {/* Add New  Card */}
-                  <div className="border shadow-md border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px] hover:border-gray-400 transition-colors cursor-pointer">
-                    <div className="w-8 h-8   flex items-center justify-center ">
-                      <span className="text-[#000000]/50 text-xl font-light ">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-plus-icon lucide-circle-plus"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-                      </span>
-                    </div>
-                    <p className="text-[14px] font-medium ">Add New Card</p>
-                  </div>
-                </div>
-              </div>
+              //     {/* Add New  Card */}
+              //     <div className="border shadow-md border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px] hover:border-gray-400 transition-colors cursor-pointer">
+              //       <div className="w-8 h-8   flex items-center justify-center ">
+              //         <span className="text-[#000000]/50 text-xl font-light ">
+              //           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-plus-icon lucide-circle-plus"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
+              //         </span>
+              //       </div>
+              //       <p className="text-[14px] font-medium ">Add New Card</p>
+              //     </div>
+              //   </div>
+              // </div>
+              <PaymentSection />
             )}
 
             {activeSection === 'profile' && (

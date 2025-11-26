@@ -22,9 +22,12 @@ export default function CreditCardPopup(
         cardNumber: '',
         expiryMonth: '',
         expiryYear: '',
-        cardType: ''
+        cardType: '',
+        defaultCard: false
     });
     const [refrenceNumber, setRefrenceNumber] = useState('');
+
+
 
     // Notification state
     const [notification, setNotification] = useState({
@@ -64,6 +67,28 @@ export default function CreditCardPopup(
         setNotification({ show: false, type: '', message: '' });
     };
 
+    const handleCardNumberChange = (cardNumber) => {
+        const detectedCardType = detectCardType(cardNumber);
+        setCardDetails({
+            ...cardDetails,
+            cardNumber,
+            cardType: detectedCardType
+        });
+    };
+
+
+    const detectCardType = (cardNumber) => {
+        // Remove spaces and non-digit characters
+        const cleanNumber = cardNumber.replace(/\D/g, '');
+
+        if (cleanNumber.startsWith('4')) {
+            return 'VISA';
+        } else if (cleanNumber.startsWith('5')) {
+            return 'MASTERCARD';
+        }
+        return '';
+    };
+
     const handleAddCard = async () => {
         setLoading(true);
 
@@ -71,7 +96,7 @@ export default function CreditCardPopup(
         try {
 
             if (cardAction === 'edit') {
-                const response = await axiosInstance.post('card/edit-card-details', {
+                const response = await axiosInstance.put(`card/edit-card-details/${cardId}`, {
                     FirstName: currentUser.customerName,
                     LastName: currentUser.customerName.split(' ')[1] || '',
                     Email: currentUser?.customerEmail,
@@ -80,26 +105,28 @@ export default function CreditCardPopup(
                     cardNumber: cardDetails.cardNumber,
                     ExpiryMonth: cardDetails.expiryMonth,
                     ExpiryYear: cardDetails.expiryYear,
-                    CardType: cardDetails.cardType
+                    CardType: cardDetails.cardType,
+                    defaultCard: cardDetails.defaultCard
                 }, {
                     headers: {
                         'Content-Type': 'application/json',
                     },
                 });
 
-                console.log('edit Card response:', response);
-
                 if (response.data.statusCode === 200) {
                     const cardResponse = response.data.data
 
+                    console.log("card response", cardResponse)
+
                     setCardData(() => [...cardData.cards, {
-                        firstName: cardResponse.Customer.FirstName,
-                        lastName: cardResponse.Customer.LastName,
-                        fullName: cardResponse.Customer.CardDetails.Name,
-                        cardNumber: cardResponse.Customer.CardDetails.Number,
-                        expiryMonth: cardResponse.Customer.CardDetails.ExpiryMonth,
-                        expiryYear: cardResponse.Customer.CardDetails.ExpiryYear,
-                        cardType: cardDetails.cardType
+                        firstName: cardResponse.firstName,
+                        lastName: cardResponse.lastName,
+                        fullName: cardResponse.fullNAme,
+                        cardNumber: cardResponse.cardNumber,
+                        expiryMonth: cardResponse.expiryMonth,
+                        expiryYear: cardResponse.expiryYear,
+                        cardType: cardDetails.cardType,
+                        defaultCard: cardDetails.defaultCard
                     }]);
                     setLoading(false);
 
@@ -109,7 +136,8 @@ export default function CreditCardPopup(
                         expiryMonth: '',
                         expiryYear: '',
                         cvv: '',
-                        cardType: ''
+                        cardType: '',
+                        defaultCard: false
                     })
 
                     // Show success notification
@@ -133,7 +161,8 @@ export default function CreditCardPopup(
                     cardNumber: cardDetails.cardNumber,
                     ExpiryMonth: cardDetails.expiryMonth,
                     ExpiryYear: cardDetails.expiryYear,
-                    CardType: cardDetails.cardType
+                    CardType: cardDetails.cardType,
+                    defaultCard: cardDetails.defaultCard
                 }, {
                     headers: {
                         'Content-Type': 'application/json',
@@ -152,7 +181,8 @@ export default function CreditCardPopup(
                         cardNumber: cardResponse.Customer.CardDetails.Number,
                         expiryMonth: cardResponse.Customer.CardDetails.ExpiryMonth,
                         expiryYear: cardResponse.Customer.CardDetails.ExpiryYear,
-                        cardType: cardDetails.cardType
+                        cardType: cardDetails.cardType,
+                        defaultCard: cardDetails.defaultCard
                     }]);
                     setLoading(false);
 
@@ -290,7 +320,7 @@ export default function CreditCardPopup(
                             type="text"
                             value={cardDetails.cardNumber}
                             disabled={cardAction === 'edit' ? true : false}
-                            onChange={(e) => setCardDetails({ ...cardDetails, cardNumber: e.target.value })}
+                            onChange={(e) => handleCardNumberChange(e.target.value)}
                             placeholder="Enter card number"
                             className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
                         />
@@ -319,16 +349,12 @@ export default function CreditCardPopup(
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Card Type <span className="text-red-500">*</span>
                         </label>
-                        <select
+                        <input
                             value={cardDetails.cardType}
-                            disabled={cardAction === 'edit' ? true : false}
-                            onChange={(e) => setCardDetails({ ...cardDetails, cardType: e.target.value })}
+                            disabled
                             className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
                         >
-                            <option value="">Select Card Type</option>
-                            <option value="VISA">VISA</option>
-                            <option value="MASTERCARD">MASTERCARD</option>
-                        </select>
+                        </input>
                     </div>
 
 
@@ -378,8 +404,26 @@ export default function CreditCardPopup(
                         />
                     </div>
 
+                    {/* Default Card Checkbox */}
+                    <div className="mb-6">
+                        <label className="flex items-center space-x-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={cardDetails.defaultCard}
+                                onChange={(e) => setCardDetails({ ...cardDetails, defaultCard: e.target.checked })}
+                                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                                Make this my default credit card
+                            </span>
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1 ml-7">
+                            This card will be selected by default for future purchases
+                        </p>
+                    </div>
+
                     {/* Buttons */}
-                    <div className="flex gap-4">
+                    {cardAction !== 'edit' && <div className="flex gap-4">
                         <button onClick={handleAddCard} className="flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
                             {loading ?
                                 <div className='flex items-center'>
@@ -394,7 +438,23 @@ export default function CreditCardPopup(
                         >
                             Cancel
                         </button>
-                    </div>
+                    </div>}
+                    {cardAction === 'edit' && <div className="flex gap-4">
+                        <button onClick={handleAddCard} className="flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
+                            {loading ?
+                                <div className='flex items-center'>
+                                    UPDATING...
+                                    < Loader2 className="animate-spin" />
+                                </div>
+                                : 'UPDATE CARD'}
+                        </button>
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900 transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>}
                 </div>
             </div>
         </>

@@ -1,6 +1,7 @@
 'use client'
 import axiosInstance from '@/axios/axiosInstance';
 import { ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react'
 
 export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
@@ -200,11 +201,11 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   }
 
   return (
-    <div className="w-full h-full bg-white font-spartan ">
+    <div className=" h-full bg-white font-spartan ">
       {/* Filter, Sort and Pagination Info */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 pr-4 gap-4">
+      <div className="flex flex-col  lg:flex-row justify-between items-start lg:items-center mb-4 pr-4 gap-4">
         <div className="flex flex-col">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 ">
             {showProducts
               ? `Showing ${(productsPagination.currentPage - 1) * productsPagination.limit + 1} to ${Math.min(productsPagination.currentPage * productsPagination.limit, productsPagination.totalProducts)} of ${productsPagination.totalProducts} products`
               : `Showing ${(ordersPagination.currentPage - 1) * ordersPagination.limit + 1} to ${Math.min(ordersPagination.currentPage * ordersPagination.limit, ordersPagination.totalOrders)} of ${ordersPagination.totalOrders} orders`
@@ -262,7 +263,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
 
       {/* Desktop Table View */}
       <div className="hidden lg:block overflow-x-auto">
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border border-gray-200 rounded-lg ">
           <table className="w-full border-collapse text-base">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -271,13 +272,19 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'SKU' : 'Date'}</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Product Name' : 'Customer Name'}</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Amount' : 'Sales Channel'}</th>
+                {!showProducts &&
+                  <>
+                    <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Credit Card</th>
+                  </>
+                }
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Tax' : 'Tracking Number'}</th>
                 <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">{showProducts ? 'Pack Type' : 'Shipping Address'}</th>
                 {!showProducts &&
                   <>
                     <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Billing Address</th>
                     <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Total Amount</th>
-                  </>}
+                  </>
+                }
                 {showProducts &&
                   <th className="py-4 pl-4 text-left border-r border-gray-200 font-semibold">Units</th>}
               </tr>
@@ -303,7 +310,24 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
                     </div>
                   </td>
                   <td className="py-4 px-4 border-r">{order.salesChannel}</td>
-                  <td className="py-4 px-4 border-r">{order.trackingNumber}</td>
+                  <td className="py-4 px-4 text-start border-r min-w-[250px]">
+                    {order.creditCard && order.salesChannel === 'credit-card' && (
+                      <div>
+                        <p>{order.creditCard.cardNumber.slice(-4).padStart(order.creditCard.cardNumber.length, '*')}</p>
+                        <p>{order.creditCard.fullName}</p>
+                        <p>Expiry: {order.creditCard.expiryMonth} / {order.creditCard.expiryYear}</p>
+                        <p>Transaction Id: {order.creditCard.transactionId}</p>
+                        <p>Authorisation Code: {order.creditCard.authorisationCode}</p>
+                        <p>Transaction Status: {order.creditCard.transactionStatus}</p>
+                      </div>
+                    )}
+                  </td>
+
+                  <td className="py-4 px-4 border-r text-start min-w-[200px] flex flex-col">
+                    {order.trackingNumber}
+                    <Link href={order?.deliveryVendor?.vendorTrackingUrl || ''} className='hover:text-blue-600 cursor-pointer'>{`Vendor Name :${order?.deliveryVendor?.vendorName}`}</Link>
+                  </td>
+
                   <td className="py-4 px-4 border-r text-start">
                     {order?.shippingAddress instanceof Object ?
                       `${order?.shippingAddress.shippingAddressLineOne || ''}  ${order?.shippingAddress.shippingAddressLineTwo || ''}  ${order?.shippingAddress.shippingAddressLineThree || ''}  ${order?.shippingAddress.shippingCity || ''}  ${order?.shippingAddress.shippingState || ''}  ${order?.shippingAddress.shippingZip || ''}`.trim()

@@ -168,6 +168,42 @@ const CheckoutFormUI = ({
         }
     }, [currentUser?._id, showCardForm]);
 
+    const getCardIcon = (cardNumber) => {
+        if (cardNumber.startsWith('4')) {
+            return "https://www.pointaustralia.com.au/images/general/icons/visa.png";
+        } else if (cardNumber.startsWith('5')) {
+            return "https://www.pointaustralia.com.au/images/general/icons/master.png";
+        }
+        return null;
+    };
+
+    const getCardType = (cardNumber) => {
+        if (cardNumber.startsWith('4')) return 'VISA';
+        if (cardNumber.startsWith('5')) return 'Mastercard';
+        return 'Credit Card';
+    };
+
+    useEffect(() => {
+        if (cardData?.cards?.length > 0) {
+            const defaultCard = cardData.cards.find(c => c.defaultCard === true);
+
+            if (defaultCard) {
+                setSelectedCardId(defaultCard._id);
+                setSubmitForm(prev => ({
+                    ...prev,
+                    card: {
+                        firstName: defaultCard.firstName || '',
+                        lastName: defaultCard.lastName || '',
+                        fullName: defaultCard.fullName || '',
+                        cardNumber: defaultCard.cardNumber || '',
+                        expiryMonth: defaultCard.expiryMonth || '',
+                        expiryYear: defaultCard.expiryYear || '',
+                    }
+                }));
+            }
+        }
+    }, [cardData]);
+
     return (
         <div className="p-4 col-span-2  min-h-screen font-spartan mt-5">
             <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4">Selected addresses</h2>
@@ -305,7 +341,13 @@ const CheckoutFormUI = ({
                                             />
                                         </div>
                                         <div className="mt-4">
-                                            <p className="text-sm font-medium">{card.cardType}</p>
+                                            {card.cardNumber && getCardIcon(card.cardNumber) && (
+                                                <img
+                                                    src={getCardIcon(card.cardNumber)}
+                                                    alt={getCardType(card.cardNumber)}
+                                                    className="h-10 w-28"
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                     <div className="flex justify-end gap-2 text-[14px] mt-4">
@@ -329,6 +371,12 @@ const CheckoutFormUI = ({
                                             Remove
                                         </button>
                                     </div>
+                                    {card.defaultCard && (
+                                        <div className="absolute bottom-2 left-2 text-xs font-semibold text-blue-600  px-2 py-1 rounded">
+                                            Default Card
+                                        </div>
+                                    )}
+
                                 </div>
                             ))}
 

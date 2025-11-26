@@ -1959,12 +1959,144 @@ const ProductListing = () => {
                     </div>
                 </div>
 
-                <div className="md:max-w-[80%]  mx-auto px-2  py-3 sm:py-6">
-                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
-                        {/* // Sidebar Filter */}
+                <div className="md:max-w-[80%] lg:flex mx-auto px-2  py-3 sm:py-6">
 
-                            {/* //created grid mobile view grid */}
-                        <div className="space-y-2 max-h-64 lg:max-h-screen   overflow-y-auto min-w-[230px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
+                      {/* //created grid desktop view grid */}
+                    <div className="hidden lg:block space-y-2  max-h-full min-w-[270px]  px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
+                        <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
+                            {getPageTitle()}
+                        </h1>
+
+                        {/* Categories Section */}
+                        {loadingCategories ? (
+                            <div className="py-2 text-sm text-gray-500">Loading categories...</div>
+                        ) : categories.length > 0 ? (
+                            categories.map((category) => {
+                                const hasSubcategories = category.hasChild;
+
+                                return (
+                                    <div
+                                        key={category._id}
+                                        className="lg:border-b lg:border-dashed lg:border-b-1 lg:border-black"
+                                    >
+                                        {/* Main Category */}
+                                        <div
+                                            className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                        >
+                                            {/* Category Name - Clickable for filter */}
+                                            <span
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleMinCategoryClick(category.slug, category._id);
+                                                }}
+                                                className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
+                                            >
+                                                {category.name}
+                                            </span>
+
+                                            {/* Chevron Icon - Clickable for dropdown */}
+                                            {hasSubcategories && (
+                                                <svg
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        // Only fetch subcategories if they haven't been fetched yet
+                                                        if (!subCategoriesByCategory[category._id]) {
+                                                            fetchSubCategoriesForCategory(category._id);
+                                                        }
+                                                        // Toggle the hovered state
+                                                        setHoveredCategory(hoveredCategory === category._id ? null : category._id);
+                                                    }}
+                                                    className={`w-4 h-4 transition-transform cursor-pointer hover:text-[#e9098d]/70 ${hoveredCategory === category._id ? 'rotate-180' : ''}`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            )}
+                                        </div>
+
+                                        {/* Subcategories - Displayed as nested list */}
+                                        {hoveredCategory === category._id && hasSubcategories && (
+                                            <div className="ml-4 mt-1 space-y-1 pb-2">
+                                                {subCategoriesByCategory[category._id]?.map((subCategory) => {
+                                                    const hasSubcategoriesTwo = subCategory.hasChild;
+
+                                                    return (
+                                                        <div
+                                                            key={subCategory._id}
+                                                            className="relative"
+                                                        >
+                                                            <div
+                                                                className={`flex justify-between items-center py-1 px-2 rounded transition-colors text-xs sm:text-sm lg:text-[16px] ${subCategoryId === subCategory._id ? "bg-[#e9098d] text-white" : "text-gray-700 hover:bg-gray-100"}`}
+                                                            >
+                                                                {/* Subcategory Name - Clickable for filter */}
+                                                                <span
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSubCategoryClick(subCategory.slug, subCategory._id);
+                                                                    }}
+                                                                    className="text-[17px]  max-w-[215px] cursor-pointer"
+                                                                >
+                                                                    {subCategory.name}
+                                                                </span>
+
+                                                                {/* Chevron Icon - Clickable for dropdown */}
+                                                                {hasSubcategoriesTwo && (
+                                                                    <svg
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            // Only fetch subcategories two if they haven't been fetched yet
+                                                                            if (!subCategoriesTwoBySubCategory[subCategory._id]) {
+                                                                                fetchSubCategoriesTwoForSubCategory(subCategory._id);
+                                                                            }
+                                                                            // Toggle the hovered state
+                                                                            setHoveredSubCategory(hoveredSubCategory === subCategory._id ? null : subCategory._id);
+                                                                        }}
+                                                                        className="w-3 h-3 cursor-pointer hover:opacity-70"
+                                                                        fill="none"
+                                                                        stroke="currentColor"
+                                                                        viewBox="0 0 24 24"
+                                                                    >
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                    </svg>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Subcategories Two - Displayed as nested list */}
+                                                            {hoveredSubCategory === subCategory._id && hasSubcategoriesTwo && (
+                                                                <div className="ml-4 mt-1 space-y-1">
+                                                                    {subCategoriesTwoBySubCategory[subCategory._id]?.map((subCategoryTwo) => (
+                                                                        <div
+                                                                            key={subCategoryTwo._id}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleSubCategoryTwoClick(subCategoryTwo.slug, subCategoryTwo._id);
+                                                                            }}
+                                                                            className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                                                                        >
+                                                                            <span className="text-[17px] max-w-[200px] block">{subCategoryTwo.name}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="py-2 text-sm text-gray-500">No categories available</div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
+
+                        {/* //created grid mobile view grid */}
+                        <div className="lg:hidden space-y-2 max-h-64 overflow-y-auto lg:overflow-y-hidden lg:max-h-full     min-w-[280px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
                             <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
                                 {getPageTitle()}
                             </h1>
@@ -2118,7 +2250,7 @@ const ProductListing = () => {
                                                 text-sm text-black font-[400] font-spartan 
                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                 appearance-none w-full lg:w-[135px] cursor-pointer"
-                                                                                    >
+                                            >
                                                 <option value="12" className="text-sm font-medium">12 Per Page</option>
                                                 <option value="24" className="text-sm font-medium">24 Per Page</option>
                                                 <option value="48" className="text-sm font-medium">48 Per Page</option>
@@ -2147,7 +2279,7 @@ const ProductListing = () => {
                                                 text-sm text-black font-[400] font-spartan 
                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                 appearance-none w-full lg:w-[150px] cursor-pointer"
-                                                                                    >
+                                            >
                                                 <option value="Price Low to High" className="text-sm font-medium">Price Low to High</option>
                                                 <option value="Price High to Low" className="text-sm font-medium">Price High to Low</option>
                                                 <option value="Newest" className="text-sm font-medium">Newest</option>
@@ -2191,7 +2323,7 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid  lg:max-h-screen lg:overflow-y-auto hide-scrollbar no-scrollbar grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-5 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid   grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-5 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 

@@ -50,10 +50,9 @@ export async function generateMetadata({ params }) {
 
       if (response.data.statusCode === 200) {
         title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne?.name || ''} | Point Australia`;
+      }else{
+        title = `${slug[0].split('-').join(' ').toUpperCase()}| Point Australia`;
       }
-
-      title = `${slug[0].split('-').join(' ').toUpperCase()}| Point Australia`;
-
 
       console.log("fetched product in the dynamic page title", title)
     }

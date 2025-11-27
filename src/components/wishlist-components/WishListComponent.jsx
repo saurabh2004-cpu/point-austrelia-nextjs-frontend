@@ -389,7 +389,7 @@ const ProductCard = ({
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2 font-spartan mx-auto xl:h-full xl:w-[552px]">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2  mx-auto xl:h-full xl:w-[552px]">
             <div className="flex flex-col sm:flex-row h-full">
                 {/* Product Image with Quick View */}
                 <div className="flex-shrink-0 mr-4">
@@ -399,7 +399,7 @@ const ProductCard = ({
                         onMouseLeave={() => setHoveredImage(null)}
                     >
                         {/* Quick View Overlay */}
-                        <div className={` hidden md:block absolute top-22 left-13 inset-0 flex   items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        <div className={`font-body hidden md:block absolute top-22 left-13 inset-0 flex   items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                             <button
                                 onClick={handleQuickViewButtonClick}
                                 className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
@@ -419,7 +419,7 @@ const ProductCard = ({
                             }}
                         />
                         {isProductGroup && (
-                            <span className="absolute top-2 left-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                            <span className="font-body absolute top-2 left-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
                                 Group
                             </span>
                         )}
@@ -430,13 +430,13 @@ const ProductCard = ({
                 <div className="flex flex-col min-w-0 lg:max-w-[350px] mx-auto xl:mx-0">
                     {/* Product Name - Clickable */}
                     <h3
-                        className="text-[15px] font-semibold line-clamp-2 cursor-pointer hover:text-[#E9098D]"
+                        className="text-[15px] font-heading font-semibold line-clamp-2 cursor-pointer hover:text-[#E9098D]"
                         onClick={handleProductNameClick}
                     >
                         {getProductName()}
                     </h3>
 
-                    <div className="flex items-center space-x-10 justify-between align-middle">
+                    <div className="flex font-body items-center space-x-10 justify-between align-middle">
                         <span className="font-medium text-[13px]">
                             SKU: {getSku()}
                         </span>
@@ -455,21 +455,21 @@ const ProductCard = ({
 
                     {/* Price with Discount */}
                     <div className="flex items-center space-x-2">
-                        <span className="text-[#2D2C70] font-semibold text-[24px]">
+                        <span className="font-heading text-[#2D2C70] font-semibold text-[24px]">
                             ${discountedPrice.toFixed(2)}
                         </span>
                         {/* Show strikethrough price if there's a discount */}
                         {hasProductDiscount && discountedPrice < getOriginalPriceForDisplay(productData) && (
-                            <span className="text-sm text-gray-500 line-through">
+                            <span className="font-body text-sm text-gray-500 line-through">
                                 ${getOriginalPriceForDisplay(productData).toFixed(2)}
                             </span>
                         )}
                     </div>
 
-                    <div className='flex items-center align-middle justify-between'>
+                    <div className='font-body flex items-center align-middle justify-between'>
                         {/* Pack Type Selector - Only for individual products */}
                         {!isProductGroup && (
-                            <div className="mb-2 space-x-12 align-center items-center font-spartan">
+                            <div className="mb-2 space-x-12 align-center items-center ">
                                 <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                                 <div className="relative w-full">
                                     <select
@@ -510,7 +510,7 @@ const ProductCard = ({
                             </div>
                         )}
 
-                        <div className="flex items-start space-x-2  flex-col justify-between">
+                        <div className="font-body flex items-start space-x-2  flex-col justify-between">
                             <span className="text-[13px] font-medium cursor-pointer">Quantity</span>
                             <div className="flex items-center rounded-lg">
                                 <button
@@ -552,15 +552,15 @@ const ProductCard = ({
                     </div>
 
                     <div className="flex items-center gap-2 text-[16px] font-semibold">
-                        <span>Amount:</span>
-                        <span className="text-[#2D2C70] text-[18px]">
+                        <span className='font-body'>Amount:</span>
+                        <span className="font-body text-[#2D2C70] text-[18px]">
                             ${calculateAmount(productData, productId)}
                         </span>
                     </div>
 
                     {/* Stock Information */}
                     {!isOutOfStock && (
-                        <div className="text-xs text-gray-600 mt-1">
+                        <div className="font-body text-xs text-gray-600 mt-1">
                             {exceedsStock && (
                                 <span className="text-orange-600 ml-2">
                                     (Requested: {totalQuantity} units)
@@ -573,7 +573,7 @@ const ProductCard = ({
                         {/* ✅ UPDATE BUTTON - Fixed height */}
                         <button
                             onClick={() => onUpdateCart(productId, isProductGroup)}
-                            className={`min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${hasModifications && isAvailable && isItemInCart
+                            className={`font-heading min-h-[36px] flex items-center justify-center text-[13px] font-semibold border border-black text-white rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${hasModifications && isAvailable && isItemInCart
                                 ? 'bg-[#E799A9] hover:bg-[#d68999] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
                                 } ${isLoading ? 'h-[40px]' : 'h-[36px]'}`}
@@ -596,7 +596,7 @@ const ProductCard = ({
                         {/* ✅ ADD TO CART BUTTON - Dynamic height on click */}
                         <button
                             onClick={() => onAddToCart(productId, isProductGroup)}
-                            className={`flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-6 disabled:opacity-50 transition-all duration-200 ${isAvailable && !isItemInCart
+                            className={`font-heading flex items-center justify-center gap-2 text-[13px] text-white font-semibold border border-black rounded-2xl py-2 px-4 disabled:opacity-50 transition-all duration-200 ${isAvailable && !isItemInCart
                                 ? 'bg-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
                                 : 'bg-gray-400 cursor-not-allowed'
                                 } ${isLoading ? 'min-h-[40px] h-[40px]' : 'min-h-[36px] h-[36px]'}`}
@@ -1276,7 +1276,7 @@ const WishListComponent = () => {
 
     if (loading) {
         return (
-            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16 font-spartan flex items-center justify-center">
+            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16  flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading wishlist...</p>
@@ -1288,12 +1288,12 @@ const WishListComponent = () => {
     return (
         <>
             {/* <Navbar /> */}
-            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16 font-spartan">
+            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16 ">
                 <div className="lg:max-w-[80%] mx-auto">
                     {/* Header */}
                     <div className="mb-6">
                         <h1 className="text-[24px] font-semibold">
-                            Wishlist <span className="text-[20px] font-semibold text-[#2D2C70]">
+                            Wishlist <span className="font-heading text-[20px] font-semibold text-[#2D2C70]">
                                 ({wishListItems.length} {wishListItems.length === 1 ? 'Item' : 'Items'})
                             </span>
                         </h1>
@@ -1302,7 +1302,7 @@ const WishListComponent = () => {
 
                     {/* Global Error Message */}
                     {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+                        <div className="font-body bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
                             <span>{error}</span>
                             <button onClick={() => setError(null)} className="text-red-700 hover:text-red-900">
                                 <X size={18} />
@@ -1312,9 +1312,9 @@ const WishListComponent = () => {
 
                     {/* Stock Warnings - Show at the top */}
                     {warnings.length > 0 && (
-                        <div className="mb-6 space-y-3">
+                        <div className="font-body mb-6 space-y-3">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-lg font-semibold text-orange-800">Stock Issues</h3>
+                                <h3 className="font-headingtext-lg font-semibold text-orange-800">Stock Issues</h3>
                                 <button
                                     onClick={clearAllWarnings}
                                     className="text-sm text-orange-600 hover:text-orange-800 underline"
@@ -1361,9 +1361,9 @@ const WishListComponent = () => {
 
                     {/* Empty State */}
                     {wishListItems.length === 0 ? (
-                        <div className="text-center py-12">
+                        <div className="text-center py-12 font-body">
                             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <h2 className="text-xl font-semibold text-gray-600 mb-2">Your wishlist is empty</h2>
+                            <h2 className="text-xl font-semibold text-gray-600 mb-2 ">Your wishlist is empty</h2>
                             <p className="text-gray-500">Add products to your wishlist to save them for later</p>
                         </div>
                     ) : (

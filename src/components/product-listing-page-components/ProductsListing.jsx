@@ -1355,18 +1355,18 @@ const ProductListing = () => {
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
-                        className="text-sm  sm:text-base hover:text-[#E9098D] h-[45px] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
+                        className="text-sm font-heading sm:text-base hover:text-[#E9098D] h-[45px] xl:h-[45px] lg:text-[16px] font-[500] text-black  leading-tight uppercase"
                     >
                         {(() => {
                             const name = isProductGroup ? item.name : item.ProductName;
-                            return name.length > 40 ? name.slice(0, 40) + "..." : name;
+                            return name.length > 35 ? name.slice(0, 35) + "..." : name;
                         })()}
 
                     </h3>
 
                     {/* SKU */}
-                    <div className="space-y-1 lg:flex justify-between items-center">
-                        <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                    <div className="space-y-1 lg:flex justify-between items-center ">
+                        <p className="text-xs sm:text-sm text-gray-600 font-body">
                             SKU:{" "}
                             {isProductGroup
                                 ? item.sku.length > 8
@@ -1383,7 +1383,7 @@ const ProductListing = () => {
                             {/* {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>} */}
-                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-body py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                             </span>
                         </div>
@@ -1391,12 +1391,12 @@ const ProductListing = () => {
 
                     {/* Price */}
                     <div className="flex items-center space-x-2">
-                        <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                        <span className="text-2xl md:text-[18px] font-heading font-semibold text-[#2D2C70]">
                             ${discountedPrice.toFixed(2)}
                         </span>
                         {/* Show strikethrough price if there's a discount */}
                         {hasDiscount(item, isProductGroup) && discountedPrice < getOriginalPriceForDisplay(item, isProductGroup) && (
-                            <span className="text-sm text-gray-500 line-through">
+                            <span className="text-sm text-gray-500 line-through font-body">
                                 ${getOriginalPriceForDisplay(item, isProductGroup).toFixed(2)}
                             </span>
                         )}
@@ -1404,7 +1404,7 @@ const ProductListing = () => {
 
                     {/* Product Group Info */}
                     {isProductGroup && item.products && item.products.length > 0 && (
-                        <div className="mt-4 mb-6 text-xs text-gray-600">
+                        <div className="mt-4 mb-6 text-xs text-gray-600 font-body">
                             Includes {item.products.length} product(s)
                         </div>
                     )}
@@ -1418,21 +1418,21 @@ const ProductListing = () => {
 
                     {/* Stock Error Message */}
                     {stockError && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm font-body">
                             {stockError}
                         </div>
                     )}
 
                     {/* Units Dropdown (only for products, not product groups) */}
                     {!isProductGroup && item.typesOfPacks && item.typesOfPacks.length > 0 && (
-                        <div className="mb-3 flex space-x-5 align-center items-center font-spartan">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
+                        <div className="mb-3 flex space-x-5 align-center items-center ">
+                            <label className="block text-sm font-medium text-gray-700 mb-1 font-body">Units</label>
                             <div className="relative w-full cursor-pointer hover:cursor-pointer">
                                 <select
                                     value={selectedUnits[itemId] || ''}
                                     onChange={(e) => handleUnitChange(itemId, e.target.value, item)}
                                     disabled={isOutOfStock}
-                                    className="w-full border border-gray-200 rounded-md pl-2 pr-8 py-2 text-sm 
+                                    className="w-full border border-gray-200 font-body rounded-md pl-2 pr-8 py-2 text-sm 
       focus:outline-none focus:ring focus:ring-[#2d2c70] focus:border-[#2d2c70] 
       appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
                                 >
@@ -1443,7 +1443,7 @@ const ProductListing = () => {
                                             </option>
                                         ))
                                     ) : (
-                                        <option value="">No packs available</option>
+                                        <option value="font-body">No packs available</option>
                                     )}
                                 </select>
 
@@ -1464,8 +1464,8 @@ const ProductListing = () => {
                     )}
 
                     {/* Quantity Controls */}
-                    <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
-                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                    <div className="mb-2 space-x-[26.5px] flex align-center items-center font-body ">
+                        <label className="block text-sm font-medium text-gray-7 00">Quantity</label>
                         <div className="flex items-center lg:space-x-4">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
@@ -1524,7 +1524,7 @@ const ProductListing = () => {
                                     }
                                 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="text-[1rem]  font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 min="1"
                                 disabled={isOutOfStock}
                             />
@@ -1548,7 +1548,7 @@ const ProductListing = () => {
                     {/* Add to Cart Button */}
                     <div className="flex items-center space-x-3">
                         <button
-                            className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
+                            className={`flex font-heading items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                                 : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
                                 }`}
@@ -1578,9 +1578,9 @@ const ProductListing = () => {
 
                     {/* Action Buttons Row - Only show when item is in cart */}
                     {isInCart && (
-                        <div className="flex space-x-2 mt-1">
+                        <div className="flex space-x-2 mt-1 font-heading">
                             <button
-                                className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                className="flex-1  space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 onClick={(e) => e.stopPropagation()}
                                 disabled
                             >
@@ -1610,8 +1610,8 @@ const ProductListing = () => {
 
                     {/* Cart Quantity Info */}
                     {isInCart && cartItem && (
-                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
-                            In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
+                        <div className="mt-2 text-sm font-semibold text-[#000000]/80  hover:text-[#E9098D]">
+                            In Cart Quantity: <span className="font-medium font-body">{cartItem.unitsQuantity} ({cartItem.packType})</span>
                         </div>
                     )}
 
@@ -1918,10 +1918,10 @@ const ProductListing = () => {
                 {/* Breadcrumb */}
                 <div className="bg-white justify-items-center pt-4">
                     <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
-                        <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
+                        <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400]  w-full">
                             <div className="flex items-center space-x-2 flex-wrap">
                                 {generateBreadcrumbsFromPathname().map((breadcrumb, index, array) => (
-                                    <div key={index} className="flex items-center space-x-2">
+                                    <div key={index} className="flex items-center space-x-2 font-body">
                                         {index > 0 && <span className="hidden sm:inline">/</span>}
                                         {breadcrumb.href ? (
                                             // Category, Subcategory, Subcategory Two - clickable
@@ -1945,12 +1945,12 @@ const ProductListing = () => {
                         </nav>
                     </div>
                     <div className="text-center">
-                        <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] lg:mt-6 font-bold font-spartan pb-2 tracking-widest">
+                        <h1 className="text-lg sm:text-xl lg:text-[2rem] font-heading text-[#2D2C70] lg:mt-6 font-bold  pb-2 tracking-widest">
                             {getPageTitle()}
                         </h1>
                         {currentCategoryDescription && (
                             <p
-                                className="text-sm sm:text-base font-spartan max-w-4xl mx-auto px-4 pb-3 sm:pb-5"
+                                className="text-sm sm:text-base  max-w-4xl mx-auto px-4 pb-3 sm:pb-5"
                                 style={{ color: currentCategoryDescriptionColor }}
                             >
                                 {currentCategoryDescription}
@@ -1963,7 +1963,7 @@ const ProductListing = () => {
 
                     {/* //created grid desktop view grid */}
                     <div className="hidden lg:block space-y-2  max-h-full min-w-[270px]  px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
-                        <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
+                        <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px] font-heading">
                             {getPageTitle()}
                         </h1>
 
@@ -1977,11 +1977,11 @@ const ProductListing = () => {
                                 return (
                                     <div
                                         key={category._id}
-                                        className="lg:border-b lg:border-dashed lg:border-b-1 lg:border-black"
+                                        className="lg:border-b lg:border-dashed lg:border-b-1 lg:border-black  "
                                     >
                                         {/* Main Category */}
                                         <div
-                                            className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                            className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400]  ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                         >
                                             {/* Category Name - Clickable for filter */}
                                             <span
@@ -1989,7 +1989,7 @@ const ProductListing = () => {
                                                     e.stopPropagation();
                                                     handleMinCategoryClick(category.slug, category._id);
                                                 }}
-                                                className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
+                                                className={`text-base font-body sm:text-sm lg:text-[16px] font-medium  hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
                                             >
                                                 {category.name}
                                             </span>
@@ -2036,7 +2036,7 @@ const ProductListing = () => {
                                                                         e.stopPropagation();
                                                                         handleSubCategoryClick(subCategory.slug, subCategory._id);
                                                                     }}
-                                                                    className="text-[17px]  max-w-[215px] cursor-pointer"
+                                                                    className="text-[17px] font-body  max-w-[215px] cursor-pointer"
                                                                 >
                                                                     {subCategory.name}
                                                                 </span>
@@ -2075,7 +2075,7 @@ const ProductListing = () => {
                                                                             }}
                                                                             className={`py-1 px-2 rounded cursor-pointer transition-colors text-base ${subCategoryTwoId === subCategoryTwo._id ? "bg-[#e9098d] text-white" : "text-gray-600 hover:bg-gray-50"}`}
                                                                         >
-                                                                            <span className="text-[17px] max-w-[200px] block">{subCategoryTwo.name}</span>
+                                                                            <span className="text-[17px] max-w-[200px] block font-body">{subCategoryTwo.name}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -2115,7 +2115,7 @@ const ProductListing = () => {
                                         >
                                             {/* Main Category */}
                                             <div
-                                                className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400] font-spartan ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
+                                                className={`flex justify-between items-center py-1 px-2 transition-colors text-sm lg:text-[16px] font-[400]  ${categoryId === category._id ? "text-[#e9098d]" : "text-black hover:bg-gray-50"}`}
                                             >
                                                 {/* Category Name - Clickable for filter */}
                                                 <span
@@ -2123,7 +2123,7 @@ const ProductListing = () => {
                                                         e.stopPropagation();
                                                         handleMinCategoryClick(category.slug, category._id);
                                                     }}
-                                                    className={`text-base sm:text-sm lg:text-[16px] font-medium font-spartan hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
+                                                    className={`text-base sm:text-sm lg:text-[16px] font-medium  hover:text-[#e9098d]/70 cursor-pointer ${categoryId === category._id ? "text-[#e9098d]" : "text-black"}  max-w-[230px]`}
                                                 >
                                                     {category.name}
                                                 </span>
@@ -2234,7 +2234,7 @@ const ProductListing = () => {
                             <div className="bg-white  rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 px-3 lg:px-0">
                                 <div className="flex flex-col gap-3 lg:flex-row lg:justify-between  lg:gap-4">
                                     {/* Title */}
-                                    <h2 className="text-base lg:text-[1.2rem] font-[400] text-black">
+                                    <h2 className="text-base lg:text-[1.2rem] font-[400] text-black font-body">
                                         <span className="text-[#000000]/60">{totalItems}</span> Products
                                     </h2>
 
@@ -2242,12 +2242,12 @@ const ProductListing = () => {
                                     <div className="flex flex gap-3 ">
 
                                         {/* Items Per Page Dropdown */}
-                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
+                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer font-body">
                                             <select
                                                 value={perpageItems}
                                                 onChange={handleItemsPerPageChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-                                                text-sm text-black font-[400] font-spartan 
+                                                text-sm text-black font-[400]  
                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                 appearance-none w-full lg:w-[135px] cursor-pointer"
                                             >
@@ -2271,12 +2271,12 @@ const ProductListing = () => {
                                         </div>
 
                                         {/* Sort Dropdown */}
-                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer">
+                                        <div className="relative  xs:w-auto xs:flex-1 lg:flex-none cursor-pointer font-body">
                                             <select
                                                 value={sortBy}
                                                 onChange={handleSortChange}
                                                 className="border border-gray-300 rounded-[10px] pl-3 pr-8 py-2 lg:py-1 
-                                                text-sm text-black font-[400] font-spartan 
+                                                text-sm text-black font-[400]  
                                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                 appearance-none w-full lg:w-[150px] cursor-pointer"
                                             >
@@ -2333,7 +2333,7 @@ const ProductListing = () => {
                                             {totalPages > 1 && (
                                                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 mb-4">
                                                     {/* Items count and page info */}
-                                                    <div className="text-sm text-gray-600 font-spartan">
+                                                    <div className="text-sm text-gray-600 ">
                                                         Showing {((currentPage - 1) * parseInt(perpageItems)) + 1} to {Math.min(currentPage * parseInt(perpageItems), totalItems)} of {totalItems} items
                                                     </div>
 
@@ -2355,27 +2355,29 @@ const ProductListing = () => {
                     </div>
                 </div>
 
-                <ProductPopup
-                    isOpen={showProductPopup}
-                    onClose={handleClosePopup}
-                    productId={selectedProduct?._id}
-                    productGroupId={selectedProductGroup?._id}
-                    categoryId={categoryId}
-                    subCategoryId={subCategoryId}
-                    subCategoryTwoId={subCategoryTwoId}
-                    brandId={brandId}
-                    categorySlug={categorySlug}
-                    subCategorySlug={subCategorySlug}
-                    subCategoryTwoSlug={subCategoryTwoSlug}
-                    brandSlug={brandSlug}
-                    setFilters={setFilters}
-                    clearFilters={clearFilters}
-                    wishListItems={wishListItems}
-                    setWishlistItems={setWishlistItems}
-                    customerGroupsDiscounts={customerGroupsDiscounts}
-                    itemBasedDiscounts={itemBasedDiscounts}
-                    isProductGroup={selectedProductGroup !== null}
-                />
+                <div className="hidden md:block">
+                    <ProductPopup
+                        isOpen={showProductPopup}
+                        onClose={handleClosePopup}
+                        productId={selectedProduct?._id}
+                        productGroupId={selectedProductGroup?._id}
+                        categoryId={categoryId}
+                        subCategoryId={subCategoryId}
+                        subCategoryTwoId={subCategoryTwoId}
+                        brandId={brandId}
+                        categorySlug={categorySlug}
+                        subCategorySlug={subCategorySlug}
+                        subCategoryTwoSlug={subCategoryTwoSlug}
+                        brandSlug={brandSlug}
+                        setFilters={setFilters}
+                        clearFilters={clearFilters}
+                        wishListItems={wishListItems}
+                        setWishlistItems={setWishlistItems}
+                        customerGroupsDiscounts={customerGroupsDiscounts}
+                        itemBasedDiscounts={itemBasedDiscounts}
+                        isProductGroup={selectedProductGroup !== null}
+                    />
+                </div>
 
             </div>
         )

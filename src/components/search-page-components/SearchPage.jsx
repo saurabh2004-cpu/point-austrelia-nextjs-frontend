@@ -996,7 +996,7 @@ const SearchPage = () => {
     // Render product group badge
     const renderProductGroupBadge = () => {
         return (
-            <div className="absolute top-2 left-4 sm:left-6 z-10">
+            <div className="font-body absolute top-2 left-4 sm:left-6 z-10">
                 <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">
                     BUNDLE
                 </div>
@@ -1082,7 +1082,7 @@ const SearchPage = () => {
                     )}
 
                     {/* Quick View Overlay */}
-                    <div className={`absolute  md:top-1/2 xl:top-1/2 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <div className={`font-body absolute hidden md:block md:top-1/2 xl:top-1/2 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -1121,7 +1121,7 @@ const SearchPage = () => {
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup, item)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[50px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase cursor-pointer">
+                        className="font-heading text-sm sm:text-base hover:text-[#E9098D] h-[40px] xl:h-[50px] lg:text-[16px] font-[500] text-black  leading-tight uppercase cursor-pointer">
                         {(isProductGroup ? item.name : item.ProductName)?.length > 35
                             ? (isProductGroup ? item.name : item.ProductName).slice(0, 35) + "..."
                             : (isProductGroup ? item.name : item.ProductName)}
@@ -1129,8 +1129,8 @@ const SearchPage = () => {
                     </h3>
 
                     {/* SKU */}
-                    <div className="space-y-1 flex justify-between items-center ">
-                        <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                    <div className="font-body space-y-1 flex justify-between items-center ">
+                        <p className="text-xs sm:text-sm text-gray-600 ">
                             SKU: {(() => {
                                 const sku = isProductGroup ? item.sku : item.sku;
                                 return sku?.length > 8 ? sku.slice(0, 5) + '...' : sku;
@@ -1143,7 +1143,7 @@ const SearchPage = () => {
                             {/* {!isOutOfStock && <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>} */}
-                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                            <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold  py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                             </span>
                         </div>
@@ -1151,12 +1151,12 @@ const SearchPage = () => {
 
                     {/* Price */}
                     <div className="flex items-center space-x-2">
-                        <span className="text-2xl md:text-[24px] font-semibold text-[#2D2C70]">
+                        <span className="font-heading text-xl md:text-[20px] font-semibold text-[#2D2C70]">
                             ${discountedPrice.toFixed(2)}
                         </span>
                         {/* Show strikethrough price if there's a discount */}
                         {hasDiscount(item, isProductGroup) && discountedPrice < getOriginalPriceForDisplay(item, isProductGroup) && (
-                            <span className="text-sm text-gray-500 line-through">
+                            <span className="font-body text-sm text-gray-500 line-through">
                                 ${getOriginalPriceForDisplay(item, isProductGroup).toFixed(2)}
                             </span>
                         )}
@@ -1164,21 +1164,21 @@ const SearchPage = () => {
 
                     {/* Product Group Info */}
                     {isProductGroup && item.products && item.products.length > 0 && (
-                        <div className="mt-4 mb-6 text-xs text-gray-600">
+                        <div className="font-body mt-4 mb-6 text-xs text-gray-600">
                             Includes {item.products.length} product(s)
                         </div>
                     )}
 
                     {/* Stock Error Message */}
                     {stockError && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
+                        <div className="font-body bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm">
                             {stockError}
                         </div>
                     )}
 
                     {/* Units Dropdown (only for products, not product groups) */}
                     {!isProductGroup && getPackTypes(item).length > 0 && (
-                        <div className="mb-3 flex space-x-5 align-center items-center font-spartan">
+                        <div className="mb-3 flex space-x-5 align-center items-center ">
                             <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                             <div className="relative   w-full">
                                 <select
@@ -1216,9 +1216,9 @@ const SearchPage = () => {
                     )}
 
                     {/* Quantity Controls */}
-                    <div className="mb-2 space-x-[26.5px] flex align-center items-center font-spartan">
+                    <div className="font-body mb-2 space-x-[26.5px] flex align-center items-center ">
                         <label className="block text-sm font-medium text-gray-700">Quantity</label>
-                        <div className="flex items-center lg:space-x-1">
+                        <div className="flex items-center lg:space-x-0">
                             <button
                                 className="w-[32px] h-[25px] bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 onClick={(e) => {
@@ -1283,7 +1283,7 @@ const SearchPage = () => {
                                     }
                                 }}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="text-[1rem]  font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 min="1"
                                 disabled={isOutOfStock}
                             />
@@ -1306,7 +1306,7 @@ const SearchPage = () => {
                     </div>
 
                     {/* Add to Cart Button */}
-                    <div className="flex items-center space-x-3">
+                    <div className="font-heading flex items-center space-x-3">
                         <button
                             className={`flex items-center justify-center border border-black flex-1 gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 group ${isOutOfStock || isCartLoading || stockError
                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
@@ -1338,7 +1338,7 @@ const SearchPage = () => {
 
                     {/* Action Buttons Row - Only show when item is in cart */}
                     {isInCart && (
-                        <div className="flex space-x-1 mt-1">
+                        <div className="flex space-x-1 mt-1 font-heading ">
                             <button
                                 className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-1 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                 onClick={(e) => e.stopPropagation()}
@@ -1370,7 +1370,7 @@ const SearchPage = () => {
 
                     {/* Cart Quantity Info */}
                     {isInCart && cartItem && (
-                        <div className="mt-2 text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
+                        <div className="font-body mt-2 text-sm font-semibold text-[#000000]/80  hover:text-[#E9098D]">
                             In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
                         </div>
                     )}
@@ -1415,11 +1415,11 @@ const SearchPage = () => {
             {/* Breadcrumb */}
             <div className="bg-white justify-items-center pt-4">
                 <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
-                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
-                        <span className="hidden sm:inline">Search Results for "{searchQuery}"</span>
+                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400]  w-full">
+                        <span className="hidden sm:inline font-body">Search Results for "{searchQuery}"</span>
                     </nav>
                 </div>
-                <h1 className="text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold font-spartan pb-3 sm:pb-5 tracking-widest">
+                <h1 className="font-heading text-lg sm:text-xl lg:text-[2rem] text-[#2D2C70] mt-6 font-bold  pb-3 sm:pb-5 tracking-widest">
                     SEARCH RESULTS
                 </h1>
             </div>
@@ -1432,10 +1432,10 @@ const SearchPage = () => {
                         <div className="bg-white rounded-lg pb-3 lg:pb-4 mb-4 lg:mb-0 ">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 lg:gap-4">
                                 <h2 className="text-lg lg:text-[1.2rem] font-[400] text-black">
-                                    Search Results <span className="text-[#000000]/60">({totalItems})</span>
+                                    Search Results <span className="font-heading text-[#000000]/60">({totalItems})</span>
                                 </h2>
 
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-[27px] w-full sm:w-auto">
+                                <div className="font-body flex flex-col sm:flex-row items-start sm:items-center gap-3 lg:gap-[27px] w-full sm:w-auto">
 
                                     <div className="flex items-center gap-2 w-full ">
                                         <div className="relative inline-block   ">
@@ -1443,14 +1443,13 @@ const SearchPage = () => {
                                                 value={perpageItems}
                                                 onChange={handleItemsPerPageChange}
                                                 className="border border-gray-300 rounded pl-3 py-1 lg:py-1 rounded-[10px] 
-                                                        text-xs sm:text-sm text-black font-[400] font-spartan 
+                                                        text-xs sm:text-sm text-black font-[400]  
                                                         focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                         appearance-none  w-[135px] cursor-pointer"
                                             >
-                                                <option value="10" className="text-[15px] font-medium">10 Per Page</option>
-                                                <option value="15" className="text-[15px] font-medium">15 Per Page</option>
-                                                <option value="20" className="text-[15px] font-medium">20 Per Page</option>
-                                                <option value="25" className="text-[15px] font-medium">25 Per Page</option>
+                                                <option value="12" className="text-[15px] font-medium">12 Per Page</option>
+                                                <option value="24" className="text-[15px] font-medium">24 Per Page</option>
+                                                <option value="48" className="text-[15px] font-medium">48 Per Page</option>
                                             </select>
 
                                             <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
@@ -1477,7 +1476,7 @@ const SearchPage = () => {
                                                     value={sortBy}
                                                     onChange={handleSortChange}
                                                     className="border border-gray-300 rounded pl-3 pr-8 py-2 sm:py-1 lg:py-1 rounded-[10px] 
-                                                            text-sm sm:text-xs md:text-sm text-black font-[400] font-spartan 
+                                                            text-sm sm:text-xs md:text-sm text-black font-[400]  
                                                             focus:outline-none focus:ring-2 focus:ring-blue-500 
                                                             appearance-none w-full sm:w-[132px] md:w-[140px] lg:w-[132px] cursor-pointer"
                                                 >
@@ -1547,7 +1546,7 @@ const SearchPage = () => {
 
                         {/* Error Display */}
                         {error && (
-                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                            <div className="font-body bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                                 {error}
                             </div>
                         )}
@@ -1561,7 +1560,7 @@ const SearchPage = () => {
 
                         {/* No Results State */}
                         {!loading && searchQuery && allItems.length === 0 && (
-                            <div className="text-center py-12">
+                            <div className="text-center py-12 font-body">
                                 <div className="max-w-md mx-auto">
                                     <svg className="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1583,13 +1582,13 @@ const SearchPage = () => {
                         {/* Items Grid */}
                         {!loading && allItems.length > 0 && (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                <div className="font-body grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
                                     {sortedItems.map((item) => renderItemCard(item))}
                                 </div>
 
                                 {/* Pagination */}
                                 {totalPages > 1 && (
-                                    <div className="flex justify-center items-center space-x-2 mt-8 mb-4">
+                                    <div className="flex font-body justify-center items-center space-x-2 mt-8 mb-4">
                                         {renderPaginationButtons()}
                                     </div>
                                 )}

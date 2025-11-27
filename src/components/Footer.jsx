@@ -43,8 +43,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Navigation Column */}
           <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[125px]">
-            <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">NAVIGATION</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[200px] lg:min-w-0 xl:min-w-[200px]">
+            <h3 className="text-[20px] font-[700] font-heading text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">NAVIGATION</h3>
+            <ul className="space-y-3 text-[16px] font-[500] font-body md:min-w-[200px] lg:min-w-0 xl:min-w-[200px]">
               <li>
                 <a href="/" className="text-gray-600 transition-colors hover:text-[#E9098D]">
                   Home
@@ -71,8 +71,8 @@ export function Footer() {
 
           {/* Quick Links Column */}
           <div className="md:max-w-none lg:max-w-[125px] max-w-[125px] xl:min-w-[200px] relative md:right-0 lg:right-20">
-            <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
-            <ul className="space-y-3 text-[16px] font-[500] font-spartan md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
+            <h3 className="text-[20px] font-[700] font-heading text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">QUICK LINKS</h3>
+            <ul className="space-y-3 text-[16px] font-[500] font-body md:min-w-[300px] lg:min-w-0 xl:min-w-[160px]">
               {!user && <li>
                 <a href="/login" className="text-gray-600 hover:text-[#E9098D] transition-colors">
                   Login
@@ -113,37 +113,37 @@ export function Footer() {
 
           {/* Keep in Touch Column */}
           <div className="xl:min-w-[400px] max-w-[175px] md:max-w-none lg:max-w-[175px] md:min-w-[350px] lg:min-w-[400px] relative md:right-0 lg:right-32">
-            <h3 className="text-[20px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
+            <h3 className="text-[20px] font-[700] font-heading text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               KEEP IN TOUCH
             </h3>
 
             <div className="space-y-4 md:max-w-[300px]  lg:min-w-[400px] min-w-[300px]">
               {/* Row 1 */}
               <div className="flex justify-between">
-                <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan">
+                <div className="text-[#2d2c70] text-[16px] font-[700] font-heading">
                   Matador Wholesale
                 </div>
-                <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan">
+                <div className="text-[#2d2c70] text-[16px] font-[700] font-body">
                   +91 1234567891
                 </div>
               </div>
 
               {/* Row 2 */}
               <div className="flex justify-between">
-                <div className="text-[#4cbcf9] text-[16px] font-[700] font-spartan">
+                <div className="text-[#4cbcf9] text-[16px] font-[700] font-heading">
                   Asra Aromas
                 </div>
-                <div className="text-[#4cbcf9] text-[16px] font-[700] font-spartan">
+                <div className="text-[#4cbcf9] text-[16px] font-[700] font-body">
                   +91 1234564587
                 </div>
               </div>
 
               {/* Row 3 */}
               <div className="flex justify-between">
-                <div className="text-[#e9098d] text-[16px] font-[700] font-spartan">
+                <div className="text-[#e9098d] text-[16px] font-[700] font-heading">
                   Point Accessories
                 </div>
-                <div className="text-[#e9098d] text-[16px] font-[700] font-spartan">
+                <div className="text-[#e9098d] text-[16px] font-[700] font-body">
                   +91 1235789124
                 </div>
               </div>
@@ -152,18 +152,18 @@ export function Footer() {
 
           {/* About Us Column */}
           <div className="md:ml-0 lg:ml-19 relative md:right-0 lg:right-10">
-            <h3 className="text-[20px] md:min-w-[280px] lg:min-w-[244px] xl:min-w-[300px] max-w-[250px] font-[700] font-spartan text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
+            <h3 className="text-[20px] md:min-w-[280px] lg:min-w-[244px] xl:min-w-[300px] max-w-[250px] font-[700] font-heading text-[#2d2c70] mb-6 uppercase tracking-wide border-b border-[#2d2c70] border-b-1">
               ABOUT POINT AUSTRALIA
             </h3>
             <div className="space-y-4 min-w-[280px]">
-              <p className="text-[#2d2c70]/80 text-[16px] font-[500] font-spartan leading-relaxed">
+              <p className="text-[#2d2c70]/80 text-[16px] font-[500] font-body leading-relaxed">
                 Point Australia has combined all our wholesale stores into one easy to use online shop.
               </p>
-              <div className="text-[#2d2c70]/80 text-[16px] font-[500] font-spartan">
+              <div className="text-[#2d2c70]/80 text-[16px] font-[500] font-body">
                 <div>25 Jade Drive,</div>
                 <div>Molendinar QLD 2214</div>
               </div>
-              <div className="text-[#2d2c70]/80 text-[16px] font-[500] font-spartan">ABN: 92 108 558 489</div>
+              <div className="text-[#2d2c70]/80 text-[16px] font-[500] font-body">ABN: 92 108 558 489</div>
 
               <div className="flex space-x-2 pt-6">
                 <Image
@@ -188,7 +188,7 @@ export function Footer() {
         {/* Copyright */}
         <div className="mt-12 pt-2 border-t-1 border-[#2d2c70]">
           <div className="md:text-right">
-            <p className="text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-spartan tracking-tight">
+            <p className="text-[20px] text-[#000000]/75 text-gary-700 font-[600] font-heading tracking-tight">
               <span className="font-medium text-[#00000080]">© 2025</span> Point Australia
             </p>
           </div>

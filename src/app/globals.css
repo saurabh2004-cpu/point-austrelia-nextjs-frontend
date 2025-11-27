@@ -194,3 +194,17 @@ a:active {
   display: none;
   /* Chrome, Safari and Opera */
 }
+
+:root {
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+}
+
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}

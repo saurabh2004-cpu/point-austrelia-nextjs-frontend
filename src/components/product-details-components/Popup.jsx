@@ -834,7 +834,7 @@ export default function ProductPopup({
             <div className="bg-white rounded-lg max-w-2xl md:max-w-xl xl:max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2
-                        className="text-lg font-medium font-spartan cursor-pointer hover:text-[#E9098D] "
+                        className="text-lg font-medium  cursor-pointer hover:text-[#E9098D] font-heading "
                         onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
                     >
                         {getItemName()}
@@ -880,7 +880,7 @@ export default function ProductPopup({
                                             {itemType === 'product' && getCurrentItem().badge && (
                                                 <div className="absolute top-2 left-4 sm:left-6 z-10">
                                                     <div
-                                                        className="px-2 py-1 rounded text-xs font-bold"
+                                                        className="px-2 py-1 rounded text-xs font-bold font-body"
                                                         style={{
                                                             backgroundColor: getCurrentItem().badge.backgroundColor,
                                                             color: getCurrentItem().badge.textColor || '#fff',
@@ -936,13 +936,13 @@ export default function ProductPopup({
                             </div>
 
                             {/* Right side details */}
-                            <div className="flex-1 space-y-3 font-spartan">
+                            <div className="flex-1 space-y-3 ">
                                 <h1
                                     className="text-[18px] font-semibold text-black uppercase cursor-pointer hover:text-[#E9098D]"
                                     onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
                                 >{getItemName()}</h1>
-                                <div className="space-y-1 flex justify-between items-center">
-                                    <p className="text-xs sm:text-sm text-gray-600 font-spartan">
+                                <div className="space-y-1 flex justify-between items-center font-body">
+                                    <p className="text-xs sm:text-sm text-gray-600 ">
                                         SKU: {getItemSku()}
                                     </p>
 
@@ -951,7 +951,7 @@ export default function ProductPopup({
                                         <svg className={`w-5 h-5 ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`} fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                         </svg>
-                                        <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold font-spartan py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
+                                        <span className={`${isOutOfStock ? 'text-[12px]' : 'text-[14px]'} font-semibold  py-1 rounded ${isOutOfStock ? 'text-red-600' : 'text-black'}`}>
                                             {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                                         </span>
                                     </div>
@@ -959,7 +959,7 @@ export default function ProductPopup({
 
                                 {/* Product Group Info */}
                                 {itemType === 'productGroup' && getCurrentItem().products && getCurrentItem().products.length > 0 && (
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 font-body">
                                         <p className="text-sm text-blue-800 font-medium">
                                             This bundle includes {getCurrentItem().products.length} product(s)
                                         </p>
@@ -968,12 +968,12 @@ export default function ProductPopup({
 
                                 {/* Price */}
                                 <div className="flex items-center space-x-2">
-                                    <span className="text-[24px] font-semibold text-[#2D2C70]">
+                                    <span className="text-[24px] font-semibold text-[#2D2C70] font-heading">
                                         ${discountedPrice.toFixed(2)}
                                     </span>
                                     {/* ✅ UPDATED: Show strikethrough price if there's a discount */}
                                     {hasItemDiscount && discountedPrice < originalPriceForDisplay && (
-                                        <span className="text-sm text-gray-500 line-through">
+                                        <span className="text-sm text-gray-500 line-through font-body">
                                             ${originalPriceForDisplay.toFixed(2)}
                                         </span>
                                     )}
@@ -992,7 +992,7 @@ export default function ProductPopup({
                                 )}
 
                                 {/* Quantity & Units - Only show units for products */}
-                                <div className="flex items-center space-x-6">
+                                <div className="flex items-center space-x-6 font-body">
                                     <div>
                                         <span className="block mb-2 text-sm">Quantity</span>
                                         <div className="flex items-center">
@@ -1078,7 +1078,7 @@ export default function ProductPopup({
                                             disabled={isOutOfStock || loadingCart || !!stockError}
                                             className={`flex-1 flex items-center justify-center gap-2 text-[1rem] font-semibold border rounded-lg py-2 px-6 transition-colors duration-300 cursor-pointer ${isOutOfStock || loadingCart || stockError
                                                 ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
-                                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]'
+                                                : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0] font-heading'
                                                 }`}
                                         >
                                             {loadingCart ? (
@@ -1125,7 +1125,7 @@ export default function ProductPopup({
 
                                     {/* Added and Update Row - Only show when item is in cart */}
                                     {isInCart && (
-                                        <div className="flex space-x-2">
+                                        <div className="flex space-x-2 font-body">
                                             <button
                                                 className="flex-1 space-x-[6px] border-1 border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center space-x-1 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                                 disabled
@@ -1149,7 +1149,7 @@ export default function ProductPopup({
 
                                     {/* Cart Quantity Info */}
                                     {isInCart && cartItem && (
-                                        <div className="text-sm font-semibold text-[#000000]/80 font-spartan hover:text-[#E9098D]">
+                                        <div className="font-body text-sm font-semibold text-[#000000]/80  hover:text-[#E9098D]">
                                             In Cart Quantity: <span className="font-medium">{cartItem.unitsQuantity} ({cartItem.packType})</span>
                                         </div>
                                     )}
@@ -1157,7 +1157,7 @@ export default function ProductPopup({
 
                                 <button
                                     onClick={handleViewItemDetails}
-                                    className="text-sm underline flex items-center hover:text-[#E9098D] transition-colors cursor-pointer"
+                                    className="font-body text-sm underline flex items-center hover:text-[#E9098D] transition-colors cursor-pointer"
                                 >
                                     View {itemType === 'product' ? 'product' : 'bundle'} details <ArrowRight className="ml-1 h-4 w-4" />
                                 </button>

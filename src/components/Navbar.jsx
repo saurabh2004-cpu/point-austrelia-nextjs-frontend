@@ -536,30 +536,30 @@ export function Navbar() {
                       onClick={(e) => {
                         e.preventDefault();
                         if (pathname !== '/login') handleFastNavigation('/login');
-                      }} className="font-Spartan transition-colors duration-200 group-hover:text-[#E9098D]">LOGIN</Link>
+                      }} className=" transition-colors duration-200 group-hover:text-[#E9098D]">LOGIN</Link>
                   </div>
-                  <span className="font-Spartan text-[#2d2c70] mx-4">|</span>
+                  <span className=" text-[#2d2c70] mx-4">|</span>
                   <Link
                     href="/sign-up"
                     prefetch={true}
                     onClick={(e) => {
                       e.preventDefault();
                       if (pathname !== '/sign-up') handleFastNavigation('/sign-up');
-                    }} className="font-Spartan text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">SIGN UP</Link>
+                    }} className=" text-[#2d2c70] cursor-pointer transition-colors duration-200 hover:text-[#E9098D]">SIGN UP</Link>
                 </div>
               ) : (
                 <div className="hidden lg:flex items-center gap-2 text-[1rem] font-medium ml-20 relative">
-                  <span className="text-[#2d2c70] font-medium">Welcome</span>
+                  <span className="text-[#2d2c70] font-semibold font-heading">Welcome</span>
                   <div className="relative" ref={userDropdownRef}>
                     <button onClick={handleUserDropdownToggle} className="flex hover:cursor-pointer items-center gap-2 hover:text-[#E9098D] transition-colors duration-200 group">
                       <User className="w-4 h-4 text-gray-600 group-hover:text-[#E9098D]" />
-                      <span className="font-semibold text-black group-hover:text-[#E9098D]">{currentUser?.customerName || currentUser?.contactName}</span>
+                      <span className="font-semibold font-heading text-black group-hover:text-[#E9098D]">{currentUser?.customerName || currentUser?.contactName}</span>
                       <ChevronDown strokeWidth={3} className={`w-4 h-4 text-[#2d2c70] mt-1 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`} />
                     </button>
                     {showUserDropdown && (
                       <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                        <div className="py-1">
-                          <button onClick={handleMyAccount} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200">My Account</button>
+                        <div className="py-1 font-semibold font-body">
+                          <button onClick={handleMyAccount} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200 ">My Account</button>
                           <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#E9098D] transition-colors duration-200">Logout</button>
                         </div>
                       </div>
@@ -603,7 +603,7 @@ export function Navbar() {
                       <svg width="18" height="17" viewBox="0 0 20 19" fill="currentColor" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-[#2d2c70] group-hover:text-[#E9098D] transition-colors duration-200">
                         <path d="M18.8889 18.5H1.11111C0.497466 18.5 0 18.0859 0 17.575V0.925C0 0.414141 0.497466 0 1.11111 0H18.8889C19.5026 0 20 0.414141 20 0.925V17.575C20 18.0859 19.5026 18.5 18.8889 18.5ZM17.7778 16.65V1.85H2.22222V16.65H17.7778ZM6.66666 3.7V5.55C6.66666 7.08259 8.15901 8.325 10 8.325C11.8409 8.325 13.3333 7.08259 13.3333 5.55V3.7H15.5556V5.55C15.5556 8.10429 13.0682 10.175 10 10.175C6.93175 10.175 4.44444 8.10429 4.44444 5.55V3.7H6.66666Z" />
                       </svg>
-                      <Badge className="absolute -top-1 -right-1 h-3 w-3 md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">{currentCartItems || 0}</Badge>
+                      <Badge className="absolute -top-1 -right-1 min-h-3 min-w-4  md:h-4 md:w-4 p-0 text-[10px] md:text-xs bg-[#2d2c70] group-hover:bg-[#E9098D] flex items-center justify-center">{currentCartItems || 0}</Badge>
                     </Link>
                   </div>
                 )}
@@ -612,9 +612,9 @@ export function Navbar() {
                   {currentUser && !isCheckoutPage && (
                     <div className="hidden lg:flex items-center" ref={desktopSearchRef}>
                       {!isDesktopSearchOpen && <button variant="ghost" size="sm" onClick={() => setIsDesktopSearchOpen(!isDesktopSearchOpen)} className="p-2 mr-2 flex items-center text-[1rem] font-semibold gap-[8px] text-[#2d2c70] hover:text-[#E9098D] cursor-pointer group">
-                        <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D] group-hover:text-[#E9098D]" />Search</button>}
+                        <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D] group-hover:text-[#E9098D] font-semibold font-heading" />Search</button>}
                       {isDesktopSearchOpen && currentUser && (
-                        <div className="flex items-center relative w-64">
+                        <div className="flex items-center relative w-64 font-mnedium font-body ">
                           <Input placeholder="Search products..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onKeyPress={handleSearch} className="pr-10 border-[#2d2c70] focus:border-[#E9098D]" autoFocus />
                           <Button variant="ghost" size="sm" onClick={handleSearch} className="absolute right-0 h-full px-3 hover:bg-transparent">
                             <Search className="w-4 h-4 text-[#2d2c70] hover:text-[#E9098D]" />
@@ -699,7 +699,7 @@ export function Navbar() {
                     onClick={(e) => {
                       e.preventDefault();
                       handleFastNavigation(item.link || '/');
-                    }} className="text-[1rem] hover:cursor-pointer font-semibold text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
+                    }} className="text-[1rem] hover:cursor-pointer font-semibold font-heading text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</Link>
                 ) : (
                   <button
                     onClick={() => {
@@ -708,7 +708,7 @@ export function Navbar() {
                       } else {
                         handleNavigation(item)
                       }
-                    }} className="text-[1rem] font-semibold hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</button>
+                    }} className="text-[1rem] font-semibold font-heading hover:cursor-pointer text-[#2d2c70] transition-colors duration-200 whitespace-nowrap hover:text-[#E9098D]">{item.label}</button>
                 )}
 
                 {item.label === "COMPANY" && showCompanyDropDown && currentUser && (
@@ -740,7 +740,7 @@ export function Navbar() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    <span className="font-semibold">BACK</span>
+                    <span className="font-semibold font-heading">BACK</span>
                   </button>
                 ) : (
                   <div className="flex items-center justify-center flex-1">
@@ -775,7 +775,7 @@ export function Navbar() {
                     {/* Login/Signup Section */}
                     {!currentUser && (
                       <div className="border-b border-gray-200 pb-3 mb-3"> {/* Reduced pb-4 to pb-3, mb-4 to mb-3 */}
-                        <div className="flex flex-col space-y-2"> {/* Reduced space-y-3 to space-y-2 */}
+                        <div className="flex font-heading flex-col space-y-2"> {/* Reduced space-y-3 to space-y-2 */}
                           <Link
                             href="/login"
                             prefetch={true}
@@ -785,7 +785,7 @@ export function Navbar() {
                               setIsMenuOpen(false);
                               setMobileViewStack([{ type: 'main', data: null }]);
                             }}
-                            className="w-full text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
+                            className="w-full  text-center py-2 text-sm font-semibold text-[#2d2c70] border border-[#2d2c70] rounded-md hover:bg-[#2d2c70] hover:text-white transition-colors duration-200"
                           >
                             LOGIN
                           </Link>
@@ -808,7 +808,7 @@ export function Navbar() {
 
                     {/* User Info Section */}
                     {currentUser && (
-                      <div className="border-b border-gray-200 pb-2 mb-3"> {/* Reduced pb-4 to pb-3, mb-4 to mb-3 */}
+                      <div className="border-b border-gray-200 pb-2 mb-3 font-heading"> {/* Reduced pb-4 to pb-3, mb-4 to mb-3 */}
                         <div className="flex flex-col space-y-1"> {/* Reduced space-y-3 to space-y-2 */}
                           <div className="flex items-center space-x-2 py-2"> {/* Reduced py-2 to py-1 */}
                             <User className="w-5 h-5 text-[#2d2c70]" />
@@ -841,7 +841,7 @@ export function Navbar() {
 
                     {/* Navigation Items */}
                     {navigationItems.map((item) => (
-                      <div key={item.index}>
+                      <div key={item.index} className="font-body">
                         {!item.hasDropdown ? (
                           <Link
                             href={item.link || '/'}
@@ -903,7 +903,7 @@ export function Navbar() {
 
                 {/* Company View */}
                 {mobileViewStack[mobileViewStack.length - 1].type === 'company' && (
-                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                  <div className="space-y-0 font-body"> {/* Changed from space-y-2 to space-y-0 */}
                     {brands.map((brand) => (
                       <Link
                         key={brand._id}
@@ -940,7 +940,7 @@ export function Navbar() {
 
                 {/* Categories View */}
                 {mobileViewStack[mobileViewStack.length - 1].type === 'categories' && (
-                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                  <div className="space-y-0 font-body"> {/* Changed from space-y-2 to space-y-0 */}
                     {(() => {
                       const currentView = mobileViewStack[mobileViewStack.length - 1];
                       const categories = categoriesByBrand[currentView.brandId] || [];
@@ -989,7 +989,7 @@ export function Navbar() {
 
                 {/* Subcategories View */}
                 {mobileViewStack[mobileViewStack.length - 1].type === 'subcategories' && (
-                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                  <div className="space-y-0 font-body"> {/* Changed from space-y-2 to space-y-0 */}
                     {(() => {
                       const currentView = mobileViewStack[mobileViewStack.length - 1];
                       const subcategories = subCategoriesByCategory[currentView.categoryId] || [];
@@ -1032,7 +1032,7 @@ export function Navbar() {
 
                 {/* Subcategories Two View */}
                 {mobileViewStack[mobileViewStack.length - 1].type === 'subcategoriesTwo' && (
-                  <div className="space-y-0"> {/* Changed from space-y-2 to space-y-0 */}
+                  <div className="space-y-0 font-body"> {/* Changed from space-y-2 to space-y-0 */}
                     {(() => {
                       const currentView = mobileViewStack[mobileViewStack.length - 1];
                       const subcategoriesTwo = subCategoriesTwoBySubCategory[currentView.subcategoryId] || [];
@@ -1068,7 +1068,7 @@ export function Navbar() {
 
         {/* Desktop Full-Width Dropdown */}
         {activeDropdown !== null && currentUser && (
-          <div data-brand-dropdown className="hidden overflow-x-hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50" onMouseEnter={() => setActiveDropdown(activeDropdown)} onMouseLeave={() => { setActiveDropdown(null); setHoveredCategory(null); setHoveredSubcategory(null); }}>
+          <div data-brand-dropdown className="hidden font-body  overflow-x-hidden lg:block absolute top-44 left-0 w-full bg-white border-t border-b border-gray-200 shadow-lg z-50" onMouseEnter={() => setActiveDropdown(activeDropdown)} onMouseLeave={() => { setActiveDropdown(null); setHoveredCategory(null); setHoveredSubcategory(null); }}>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               {navigationItems.find(item => item.index === activeDropdown)?.categories && (
                 <div className="grid grid-cols-5 gap-6">
@@ -1083,7 +1083,7 @@ export function Navbar() {
                             }
                           }} onMouseLeave={() => setHoveredCategory(null)}>
                             <Link href={`/${category.slug}`} prefetch={true} onClick={(e) => { e.preventDefault(); handleCategoryClick(category.link); }} className={`text-left text-sm font-medium transition-colors duration-200 hover:bg-gray-100 p-1 rounded-sm flex items-center justify-between w-full group cursor-pointer ${category.label === "NEW!" || category.label === "SALE" ? "text-[#E9098D] font-bold" : "text-[#2d2c70] hover:text-[#E9098D]"} ${hoveredCategory === `${colIdx}-${catIdx}` ? 'bg-gray-100' : ''}`}>
-                              <span>{category.label}</span>
+                              <span className="font-semibold">{category.label}</span>
                               {category.hasChild && (<ChevronRight className="w-4 h-4 opacity-100 transition-opacity" />)}
                             </Link>
 

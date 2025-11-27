@@ -208,14 +208,17 @@ const Carousel = () => {
           {currentCarouselImages.map((image) => (
             <div
               key={image.id}
-              className="relative flex-shrink-0 h-full cursor-pointer"
-              style={{ width: '100%', minWidth: '100%' }}
+              className="relative flex-shrink-0 h-full cursor-pointer "
+              style={
+                { width: '100%', minWidth: '100%' }
+
+              }
               onClick={() => {
                 if (image.url) window.location.href = image.url;
               }}
             >
               {/* Next/Image for better responsiveness */}
-              <Image
+              <img
                 src={image.src}
                 alt={image.alt}
                 fill
@@ -257,11 +260,10 @@ const Carousel = () => {
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                  index === currentIndex 
-                    ? 'bg-white' 
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentIndex
+                    ? 'bg-white'
                     : 'bg-white/50 hover:bg-white/70'
-                }`}
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
@@ -333,6 +335,13 @@ const Carousel = () => {
             height: 40rem; /* Full HD and larger monitors */
           }
         }
+
+         @media (min-width: 1710px) {
+        .carousel-container {
+          height: 38rem;
+          width: 100vw;
+        }
+  }
       `}</style>
     </div>
   );

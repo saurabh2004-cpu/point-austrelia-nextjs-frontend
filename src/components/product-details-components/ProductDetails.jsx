@@ -1655,7 +1655,7 @@ function ProductDetail() {
       {/* Breadcrumb */}
       <div className="bg-white justify-items-center pt-4 overflow-x-hidden cursor-pointer">
         <div className="md mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
-          <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full cursor-pointer">
+          <nav className="font-body text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400]  w-full cursor-pointer">
             <span className="uppercase">Home </span>
             <span className="">/ </span>
             <span className="hidden sm:inline">{getPageTitle()}</span>
@@ -1666,7 +1666,7 @@ function ProductDetail() {
       {/* Header */}
       <div className="bg-white justify-items-center cursor-pointer">
         <div className="md:max-w-[80%] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 justify-items-center">
-          <h1 className="text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400] font-spartan pb-3 sm:pb-5 cursor-pointer">
+          <h1 className="font-heading font-medium text-lg sm:text-xl lg:text-[1.2rem] text-black font-[400]  pb-3 sm:pb-5 cursor-pointer">
             {getItemName()}
           </h1>
         </div>
@@ -1709,7 +1709,7 @@ function ProductDetail() {
                 {/* Badge */}
                 {itemType === 'product' && getCurrentItem().badge && (
                   <span
-                    className="absolute top-2 left-2 z-10 text-white text-[11px] font-[600] font-spartan tracking-widest px-2 py-1 rounded-lg cursor-pointer"
+                    className="absolute top-2 left-2 z-10 text-white text-[11px] font-[600]  tracking-widest px-2 py-1 rounded-lg cursor-pointer"
                     style={{ backgroundColor: getCurrentItem().badge.backgroundColor }}
                   >
                     {getCurrentItem().badge.text}
@@ -1755,15 +1755,15 @@ function ProductDetail() {
           </div>
 
           {/* Item Information */}
-          <div className="space-y-[17px] font-spartan xl:max-w-[360px] mt-5 cursor-pointer">
+          <div className="space-y-[17px]  xl:max-w-[360px] mt-5 cursor-pointer">
             {/* Header */}
             <div>
-              <h1 className="text-lg sm:text-xl lg:text-[1.3rem] font-medium text-black cursor-pointer">
+              <h1 className="text-lg sm:text-xl lg:text-[1.3rem] font-heading font-semibold text-black cursor-pointer">
                 {getItemName()}
               </h1>
-              <div className="flex items-center justify-between mt-3 cursor-pointer">
+              <div className="flex items-center justify-between mt-3 cursor-pointer font-body">
                 <p className="text-[13px] font-medium cursor-pointer">SKU: {getItemSku()}</p>
-                <span className={`text-[14px] ${isOutOfStock ? 'bg-red-100 text-red-800' : 'bg-[#E7FAEF] text-black'} p-2 font-semibold font-spartan py-1 rounded cursor-pointer`}>
+                <span className={`text-[14px] ${isOutOfStock ? 'bg-red-100 text-red-800' : 'bg-[#E7FAEF] text-black'} p-2 font-semibold  py-1 rounded cursor-pointer`}>
                   {isOutOfStock ? '✗ OUT OF STOCK' : '✓ IN STOCK'}
                 </span>
               </div>
@@ -1771,7 +1771,7 @@ function ProductDetail() {
 
             {/* Product Group Info */}
             {itemType === 'productGroup' && getCurrentItem().products && getCurrentItem().products.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 cursor-pointer font-body">
                 <p className="text-sm text-blue-800 font-medium cursor-pointer">
                   This bundle includes {getCurrentItem().products.length} product(s)
                 </p>
@@ -1780,12 +1780,12 @@ function ProductDetail() {
 
             {/* Price */}
             <div className="flex items-center space-x-2 cursor-pointer">
-              <span className="text-[24px] font-semibold text-[#2D2C70] cursor-pointer">
+              <span className="text-[24px] font-semibold font-heading text-[#2D2C70] cursor-pointer">
                 ${mainDiscountedPrice.toFixed(2)}
               </span>
               {/* ✅ UPDATED: Show strikethrough only if there's an actual discount */}
               {mainHasDiscount && mainDiscountedPrice < getOriginalPriceForDisplay(getCurrentItem()) && (
-                <span className="text-sm text-gray-500 line-through cursor-pointer">
+                <span className="text-sm text-gray-500 font-body line-through cursor-pointer">
                   ${getOriginalPriceForDisplay(getCurrentItem()).toFixed(2)}
                 </span>
               )}
@@ -1798,13 +1798,13 @@ function ProductDetail() {
 
             {/* Stock Error Message */}
             {stockError && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm cursor-pointer">
+              <div className="bg-red-100 font-body border border-red-400 text-red-700 px-3 py-2 rounded text-sm cursor-pointer">
                 {stockError}
               </div>
             )}
 
             {/* Quantity & Units - Only show units for products */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-[48px] space-y-4 sm:space-y-0 cursor-pointer">
+            <div className="font-body flex flex-col sm:flex-row sm:items-center sm:space-x-[48px] space-y-4 sm:space-y-0 cursor-pointer">
               {/* Quantity */}
               <div className="flex flex-col space-y-2 cursor-pointer">
                 <span className="text-sm font-[400] cursor-pointer">Quantity</span>
@@ -1814,7 +1814,7 @@ function ProductDetail() {
                     onClick={decrementQuantity}
                     disabled={quantity <= 1 || isOutOfStock}
                   >
-                    <Minus className="w-4 h-4 text-white cursor-pointer" />
+                    <Minus className="w-5 h-5 text-white cursor-pointer" />
                   </button>
                   <input
                     type="number"
@@ -1852,7 +1852,7 @@ function ProductDetail() {
                     onClick={incrementQuantity}
                     disabled={isOutOfStock || calculateTotalQuantity() >= getStockLevel()}
                   >
-                    <Plus className="w-4 h-4 text-white cursor-pointer" />
+                    <Plus className="w-5 h-5 text-white cursor-pointer" />
                   </button>
                 </div>
               </div>
@@ -1906,7 +1906,7 @@ function ProductDetail() {
 
               <div className="flex items-center space-x-5 cursor-pointer">
                 <button
-                  className="flex items-center border border-black text-white bg-[#46BCF9] xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 group disabled:bg-gray-400 disabled:border-gray-400 cursor-pointer"
+                  className="font-heading flex items-center border border-black text-white bg-[#46BCF9] xl:min-w-[360px] justify-center flex-1 gap-2 text-[15px] font-semibold border border-[#46BCF9] rounded-lg text-white py-2 px-6 transition-colors duration-300 group disabled:bg-gray-400 disabled:border-gray-400 cursor-pointer"
                   onClick={handleAddToCart}
                   disabled={isOutOfStock || calculateTotalQuantity() > getStockLevel() || loading || !!stockError}
                 >
@@ -1973,10 +1973,10 @@ function ProductDetail() {
           </div>
 
           <div className="lg:col-span-2 space-y-[15px] cursor-pointer">
-            <div className="font-spartan space-y-[15px] cursor-pointer">
-              <h3 className="text-[1rem] font-medium text-black cursor-pointer">Details:</h3>
+            <div className=" space-y-[15px] cursor-pointer">
+              <h3 className="text-[1rem] font-medium text-black cursor-pointer font-heading">Details:</h3>
               <div
-                className="text-black text-[15px] font-[400] cursor-pointer"
+                className="text-black text-[15px] font-[400] cursor-pointer font-body"
                 dangerouslySetInnerHTML={{
                   __html: getItemDescription(),
                 }}
@@ -1995,7 +1995,7 @@ function ProductDetail() {
 
         {/* Related Items Section */}
         <div className="space-y-8 lg:space-y-12 pb-18 cursor-pointer">
-          <h2 className="text-xl sm:text-2xl lg:text-[2rem] font-medium text-center text-[#2E2F7F] cursor-pointer">
+          <h2 className="font-heading text-xl sm:text-2xl lg:text-[2rem] font-medium text-center text-[#2E2F7F] cursor-pointer">
             Related Products
           </h2>
 
@@ -2047,7 +2047,7 @@ function ProductDetail() {
                       {/* Product Group Badge */}
                       {isProductGroup && (
                         <div className="absolute top-0 left-0 z-10 cursor-pointer">
-                          <div className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white cursor-pointer">
+                          <div className="px-2 py-1 font-body rounded text-xs font-medium bg-blue-500 text-white cursor-pointer">
                             BUNDLE
                           </div>
                         </div>
@@ -2073,7 +2073,7 @@ function ProductDetail() {
                     {/* Item Info - Flex column that grows to fill space */}
                     <div className="flex flex-col flex-grow cursor-pointer">
                       <h3
-                        className="text-gray-900 text-sm mb-2 line-clamp-2 hover:text-[#E9098D] cursor-pointer min-h-[40px] flex items-start"
+                        className="font-heading font-medium text-gray-900 text-sm mb-2 line-clamp-2 hover:text-[#E9098D] cursor-pointer min-h-[40px] flex items-start"
                         onClick={() => handleRelatedItemClick(
                           isProductGroup ? item.name : item.ProductName,
                           item._id,
@@ -2083,7 +2083,7 @@ function ProductDetail() {
                         {isProductGroup ? item.name : item.ProductName}
                       </h3>
 
-                      <div className="font-spartan text-[14px] font-medium  cursor-pointer">
+                      <div className="font-body text-[14px] font-medium  cursor-pointer">
                         <div className="flex flex-row justify-between items-center">
                           <p className="mb-2 text-xs text-gray-600 cursor-pointer">SKU: {item.sku}</p>
 
@@ -2100,7 +2100,7 @@ function ProductDetail() {
                               <svg className={`w-3 h-3 ${isOutOfStock ? 'text-red-600' : 'text-green-600'} cursor-pointer`} fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
-                              <span className={`text-xs font-semibold font-spartan ${isOutOfStock ? 'text-red-600' : 'text-black'} cursor-pointer`}>
+                              <span className={`text-xs font-semibold  ${isOutOfStock ? 'text-red-600' : 'text-black'} cursor-pointer`}>
                                 {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
                               </span>
                             </div>
@@ -2109,12 +2109,12 @@ function ProductDetail() {
 
                         {/* Price */}
                         <div className="flex items-center space-x-2 mb-3 cursor-pointer">
-                          <span className="text-[#2D2C70] text-[16px] font-semibold cursor-pointer">
+                          <span className="font-heading text-[#2D2C70] text-[16px] font-semibold cursor-pointer">
                             ${discountedPrice.toFixed(2)}
                           </span>
                           {/* ✅ UPDATED: Show strikethrough only if there's an actual discount */}
                           {hasItemDiscount && discountedPrice < getOriginalPriceForDisplay(item) && (
-                            <span className="text-xs text-gray-500 line-through cursor-pointer">
+                            <span className="font-body text-xs text-gray-500 line-through cursor-pointer">
                               ${getOriginalPriceForDisplay(item).toFixed(2)}
                             </span>
                           )}
@@ -2127,14 +2127,14 @@ function ProductDetail() {
 
                         {/* Stock Error Message */}
                         {stockError && (
-                          <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs mb-3 cursor-pointer">
+                          <div className="font-body bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs mb-3 cursor-pointer">
                             {stockError}
                           </div>
                         )}
 
                         {/* Units Dropdown - Only for products */}
                         {!isProductGroup && (
-                          <div className="mb-3 cursor-pointer">
+                          <div className="font-body mb-3 cursor-pointer">
                             <label className="block text-xs font-medium text-gray-700 mb-1 cursor-pointer">Units</label>
                             <div className="relative w-full cursor-pointer">
                               <select
@@ -2254,7 +2254,7 @@ function ProductDetail() {
                           {/* Add to Cart Button - Show when NOT in cart */}
 
                           <button
-                            className={`flex w-full  mb-2 items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
+                            className={`font-heading flex w-full  mb-2 items-center justify-center gap-2 text-sm font-semibold border rounded-lg py-2 transition-colors duration-300 ${isOutOfStock || isCartLoading || stockError
                               ? 'bg-gray-400 text-gray-200 border-gray-400 cursor-not-allowed'
                               : 'bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0] cursor-pointer'
                               }`}
@@ -2275,7 +2275,7 @@ function ProductDetail() {
 
                           {/* Action Buttons Row - Only show when item is in cart */}
                           {isInCart && (
-                            <div className="flex space-x-2 cursor-pointer">
+                            <div className="font-heading flex space-x-2 cursor-pointer">
                               <button
                                 className="flex-1 border border-[#2D2C70] text-white bg-[#2D2C70] rounded-lg py-2 text-xs font-medium transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer"
                                 disabled

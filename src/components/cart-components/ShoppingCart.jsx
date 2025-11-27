@@ -1026,7 +1026,7 @@ const ShoppingCart = () => {
                                                                     onMouseLeave={() => setHoveredImage(null)}
                                                                 >
                                                                     {/* Quick View Overlay */}
-                                                                    <div className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === item._id ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                                                                    <div className={`absolute hidden md:block top-17 left-13 inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === item._id ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                                                                         <button
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();

@@ -542,6 +542,54 @@ export default function MyAccount() {
   const [error, setError] = useState('');
   const [sucessMessage, setSuccessMessage] = useState('');
   const setUser = useUserStore((state) => state.setUser);
+  const [loadingCard, setLoadingCard] = useState(true);
+  const [cards, setCards] = useState([])
+
+
+  const fetchCustomersCardDetails = async () => {
+    try {
+      setLoadingCard(true);
+      const response = await axiosInstance.get(`card/get-card-by-customer-id/${currentUser._id}`);
+
+      if (response.data.statusCode === 200) {
+        const cardData = response.data.data;
+        if (cardData && Array.isArray(cardData.cards) && cardData.cards.length > 0) {
+          setCards(cardData.cards)
+        } else {
+          setCards([]);
+        }
+      } else {
+        setCards([]);
+      }
+    } catch (error) {
+      console.error('Error fetching customer card details:', error);
+      setCards([]);
+    } finally {
+      setLoadingCard(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUser?._id) {
+      fetchCustomersCardDetails();
+    }
+  }, [currentUser?._id]);
+
+  const getCardIcon = (cardNumber) => {
+    if (cardNumber.startsWith('4')) {
+      return "https://www.pointaustralia.com.au/images/general/icons/visa.png";
+    } else if (cardNumber.startsWith('5')) {
+      return "https://www.pointaustralia.com.au/images/general/icons/master.png";
+    }
+    return null;
+  };
+
+  const getCardType = (cardNumber) => {
+    if (cardNumber.startsWith('4')) return 'VISA';
+    if (cardNumber.startsWith('5')) return 'Mastercard';
+    return 'Credit Card';
+  };
+
 
 
   const fetchCurentUser = async () => {
@@ -1245,32 +1293,42 @@ export default function MyAccount() {
                         {/* Payment */}
                         <div className="flex flex-col space-y-[25px]">
                           <h3 className="font-[500] text-[20px] text-[#2D2C70]">Payment</h3>
-                          <div className="relative flex  justify-between items-start border shadow-bottom shadow-sm p-6 rounded-lg h-full">
-                            <div className="space-y-2 text-sm flex-col flex text-[14px] text-[500]">
-                              <p className="font-[600]">
-                                Ending in <span className="font-[400]">6844</span>
-                              </p>
-                              <p className="font-[600]">
-                                Expires in <span className="font-[400]">12/22</span>
-                              </p>
-                              <p>2 Devendra Chandora</p>
-                            </div>
+                          {cards.length > 0 && cards.map((card) => (
 
-                            <div className="mt-6">
-                              <Image
-                                src="/account-details/payment-images.png"
-                                alt="Matador Wholesale Logo "
-                                width={50}
-                                height={50}
-                                className="object-contain"
-                              />
+
+                            <div className="relative flex  justify-between items-start border shadow-bottom shadow-sm p-6 rounded-lg h-full">
+
+                              <div className="space-y-2 text-sm flex-col flex text-[14px] text-[500]">
+                                <p className="font-[600]">
+                                  Ending in <span className="font-[400]">{card.cardNumber ? card.cardNumber.slice(-4).padStart(card.cardNumber.length, '*') : '****'}</span>
+                                </p>
+                                <p className="font-[600]">
+                                  Expires in <span className="font-[400]">
+                                    <p className="font-[600]">
+                                      Expires in <span className="font-[400]">{card.expiryMonth} / {card.expiryYear}</span>
+                                    </p>
+
+                                  </span>
+                                </p>
+                                <p>{card.fullName}</p>
+                              </div>
+
+                              <div className="mt-6">
+                                {card.cardNumber && getCardIcon(card.cardNumber) && (
+                                  <img
+                                    src={getCardIcon(card.cardNumber)}
+                                    alt={getCardType(card.cardNumber)}
+                                    className="h-9 w-auto"
+                                  />
+                                )}
+                              </div>
+                              {/* <button
+                                onClick={() => setActiveSection("address")}
+                                className="absolute bottom-4 right-4 cursor-pointer text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
+                                edit
+                              </button> */}
                             </div>
-                            <button
-                              onClick={() => setActiveSection("address")}
-                              className="absolute bottom-4 right-4 cursor-pointer text-[#2D2C70] hover:text-[#E9098D] text-[14px] font-medium">
-                              edit
-                            </button>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     </div>

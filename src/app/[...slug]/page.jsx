@@ -2,6 +2,7 @@
 import axiosInstance from '@/axios/axiosInstance';
 import ProductListing from '@/components/product-listing-page-components/ProductsListing'
 import { metadataService } from '@/utils/metadataService';
+import axios from 'axios';
 
 const convertToSEOText = (arr) => {
   const formatText = str =>
@@ -40,7 +41,7 @@ export async function generateMetadata({ params }) {
       title = convertToSEOText(slug);
     } else {
 
-      const response = await axiosInstance.post(`products/get-product-by-name`, {
+      const response = await axios.post(`http://localhost:3000/api/v1/products/get-product-by-name`, {
         name: slug[0]
       });
 
@@ -53,8 +54,6 @@ export async function generateMetadata({ params }) {
 
       console.log("fetched product in the dynamic page title", title)
     }
-
-    const res = await metadataService.getMetadataByPage('product-listing');
 
     if (res.success && res.data) {
       return {

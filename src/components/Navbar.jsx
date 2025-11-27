@@ -173,9 +173,9 @@ export function Navbar() {
 
   const handleFastNavigation = useCallback((path) => {
 
-    if (pathname === path) {
-      return;
-    }
+    // if (pathname === path) {
+    //   return;
+    // }
 
     setIsNavigating(true);
     setIsMenuOpen(false);

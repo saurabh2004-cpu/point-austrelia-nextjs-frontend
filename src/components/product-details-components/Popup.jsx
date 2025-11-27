@@ -831,7 +831,7 @@ export default function ProductPopup({
 
     return (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-[#000000]/10 bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
+            <div className="bg-white rounded-lg max-w-2xl md:max-w-xl xl:max-w-2xl w-full max-h-[90vh] overflow-y-auto hide-scrollbar border-2 border-gray-300">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2
                         className="text-lg font-medium font-spartan cursor-pointer hover:text-[#E9098D] "
@@ -853,9 +853,9 @@ export default function ProductPopup({
                         <div className="flex flex-col lg:flex-row gap-6">
                             {/* Left side images */}
                             <div className="flex-1 y-6">
-                                <div className="flex flex-col-reverse xl:flex-row space-x-8">
+                                <div className="flex flex-col-reverse md:flex-row  xl:flex-row space-x-8">
                                     {itemImages.length > 0 && (
-                                        <div className="flex xl:flex-col space-x-2 xl:space-x-0 xl:space-y-2 justify-center max-h-[300px] lg:pt-18 overflow-y-auto ">
+                                        <div className="flex md:flex-col xl:flex-col space-x-2 md:space-y-2 xl:space-x-0 xl:space-y-2 justify-center max-h-[300px] lg:pt-18 overflow-y-auto ">
                                             {itemImages.map((image, index) => (
                                                 <button
                                                     key={index}
@@ -866,7 +866,7 @@ export default function ProductPopup({
                                                     <img
                                                         src={image || "/placeholder.svg"}
                                                         alt={`Thumbnail ${index + 1}`}
-                                                        className="h-[50px] w-[50px] object-contain rounded-md"
+                                                        className="h-[50px] w-[50px] md:h-[100px] md:w-[100px] xl:object-contain rounded-md"
 
                                                     />
                                                 </button>
@@ -921,7 +921,13 @@ export default function ProductPopup({
                                             <img
                                                 src={itemImages[selectedImage] || "/placeholder.svg"}
                                                 alt={getItemName()}
-                                                className="w-[200px] h-[200px] object-contain"
+                                                className="w-[200px] h-[200px] md:hidden lg:block object-contain"
+                                                onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
+                                            />
+                                            <img
+                                                src={itemImages[selectedImage] || "/placeholder.svg"}
+                                                alt={getItemName()}
+                                                className="w-[300px] h-[300px] hidden md:block lg:hidden object-contain"
                                                 onClick={() => handleProductClick(getItemName(), getCurrentItem()._id, itemType === 'productGroup' ? true : false)}
                                             />
                                         </div>
@@ -1041,7 +1047,7 @@ export default function ProductPopup({
 
                                     {/* Units - Only for products */}
                                     {itemType === 'product' && (
-                                        <div className="flex flex-col space-y-2 w-full">
+                                        <div className="flex flex-col space-y-2 md:w-1/3 xl:w-full w-full">
                                             <span className="text-sm">Units</span>
                                             <select
                                                 value={selectedUnitId}

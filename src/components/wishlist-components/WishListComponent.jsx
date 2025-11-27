@@ -399,7 +399,7 @@ const ProductCard = ({
                         onMouseLeave={() => setHoveredImage(null)}
                     >
                         {/* Quick View Overlay */}
-                        <div className={`absolute inset-0 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                        <div className={` hidden md:block absolute top-22 left-13 inset-0 flex   items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === productId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                             <button
                                 onClick={handleQuickViewButtonClick}
                                 className=" text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm bg-[#46BCF9] transition-colors cursor-pointer"
@@ -407,6 +407,7 @@ const ProductCard = ({
                                 Quick View
                             </button>
                         </div>
+                        
 
                         <img
                             src={getImageUrl()}
@@ -667,7 +668,7 @@ const WishListComponent = () => {
     const [showProductPopup, setShowProductPopup] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedProductGroup, setSelectedProductGroup] = useState(null);
-     const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
+    const { showCartPopup, setShowCartPopup } = useCartPopupStateStore();
 
     const router = useRouter();
 
@@ -1275,7 +1276,7 @@ const WishListComponent = () => {
 
     if (loading) {
         return (
-            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan flex items-center justify-center">
+            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16 font-spartan flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading wishlist...</p>
@@ -1287,7 +1288,7 @@ const WishListComponent = () => {
     return (
         <>
             {/* <Navbar /> */}
-            <div className="bg-gray-50 min-h-screen p-4 pb-16 font-spartan">
+            <div className="bg-gray-50 h-full xl:min-h-full p-4 pb-16 font-spartan">
                 <div className="lg:max-w-[80%] mx-auto">
                     {/* Header */}
                     <div className="mb-6">

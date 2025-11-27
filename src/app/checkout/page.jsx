@@ -1301,17 +1301,17 @@ const CheckoutComponent = () => {
 
                     {/* Progress Steps */}
                     <div className="flex flex-wrap items-center justify-center sm:justify-start text-sm sm:text-base font-semibold mb-2 text-[#00000080]/50 gap-x-1 sm:gap-x-2">
-                        <span className={`font-medium ${step === 1 ? 'text-[#2D2C70]' : ''}`}>
+                        <button onClick={() => setStep(1)} className={`font-medium cusror-pointer hover:text-[#2D2C70] ${step === 1 ? 'text-[#2D2C70]' : ''}`}>
                             1. Select Addresses
-                        </span>
+                        </button>
                         <span className="mx-1">/</span>
-                        <span className={`font-medium ${step === 2 ? 'text-[#2D2C70]' : ''}`}>
+                        <button onClick={() => setStep(2)} className={`font-medium cusror-pointer hover:text-[#2D2C70] ${step === 2 ? 'text-[#2D2C70]' : ''}`}>
                             2. Checkout Information
-                        </span>
+                        </button>
                         <span className="mx-1">/</span>
-                        <span className={`font-medium ${step === 3 ? 'text-[#2D2C70]' : ''}`}>
+                        <button onClick={() => setStep(3)} className={`font-medium cusror-pointer hover:text-[#2D2C70] ${step === 3 ? 'text-[#2D2C70]' : ''}`}>
                             3. Review
-                        </span>
+                        </button>
                     </div>
 
                     <hr className="border-[1.5px] sm:border-[1px] border-[#2D2C70]" />
@@ -1610,7 +1610,7 @@ const CheckoutComponent = () => {
 
                                 {/* Order Items */}
                                 <div className="space-y-4 mb-6 border-2 border-gray-300 h-90 overflow-y-scroll rounded-lg">
-                                    <div className='space-y-4 mt-4 p-3 sm:p-4'>
+                                    <div className='space-y-4 mt-4 p-3 sm:p-4   grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1'>
                                         {cartItems.map((item) => {
                                             const isOutOfStock = outOfStockItems.some(outOfStockItem =>
                                                 outOfStockItem._id === item._id
@@ -1623,7 +1623,7 @@ const CheckoutComponent = () => {
                                             const packName = item.packType;
 
                                             return (
-                                                <div key={item._id} className={`flex items-center space-x-3 p-2 justify-between ${isOutOfStock ? 'bg-red-50 border border-red-200 rounded-md' : ''}`}>
+                                                <div key={item._id} className={`flex md:flex-col xl:flex-row items-center md:max-w-[280px] xl:max-w-full space-x-3 p-2 md:justify-center justify-between ${isOutOfStock ? 'bg-red-50 border border-red-200 rounded-md' : ''}`}>
                                                     <div className=" rounded-lg flex items-center justify-center flex-shrink-0">
                                                         <img
                                                             src={isProductGroup ? item.productGroup.thumbnail : item.product.images}

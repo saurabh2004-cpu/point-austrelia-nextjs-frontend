@@ -1272,7 +1272,7 @@ const ProductListing = () => {
         return (
             <div
                 key={itemId}
-                className="rounded-lg p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
+                className="rounded-lg md:p-3 sm:p-4 mx-auto relative cursor-pointer transition-all max-w-sm sm:max-w-none"
             >
                 {/* Wishlist Icon */}
                 <div className="absolute top-2 right-4 sm:right-6 z-10">
@@ -1315,7 +1315,7 @@ const ProductListing = () => {
                     )}
 
                     {/* Quick View Overlay */}
-                    <div className={`absolute xl:top-1/2  flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    <div className={`hidden md:block absolute md:top-1/2 xl:top-1/2  flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'
                         }`}>
                         <button
                             onClick={(e) => {
@@ -1351,15 +1351,15 @@ const ProductListing = () => {
                 </div>
 
                 {/* Item Info */}
-                <div className="text-start space-y-2 mt-2 max-w-[11.875rem] lg:max-w-[229px]">
+                <div className="text-start space-y-2 mt-2 max-w-[11.875rem] md:min-w-[200px]  lg:max-w-[229px]">
                     {/* Item Name */}
                     <h3
                         onClick={() => handleProductClick(isProductGroup ? item.name : item.ProductName, itemId, isProductGroup)}
-                        className="text-sm sm:text-base hover:text-[#E9098D] h-[45px] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
+                        className="text-sm  sm:text-base hover:text-[#E9098D] h-[45px] xl:h-[45px] lg:text-[16px] font-[500] text-black font-spartan leading-tight uppercase"
                     >
                         {(() => {
                             const name = isProductGroup ? item.name : item.ProductName;
-                            return name.length > 42 ? name.slice(0, 42) + "..." : name;
+                            return name.length > 40 ? name.slice(0, 40) + "..." : name;
                         })()}
 
                     </h3>
@@ -1961,7 +1961,7 @@ const ProductListing = () => {
 
                 <div className="md:max-w-[80%] lg:flex mx-auto px-2  py-3 sm:py-6">
 
-                      {/* //created grid desktop view grid */}
+                    {/* //created grid desktop view grid */}
                     <div className="hidden lg:block space-y-2  max-h-full min-w-[270px]  px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
                         <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
                             {getPageTitle()}
@@ -2096,7 +2096,7 @@ const ProductListing = () => {
                     <div className="flex flex-col lg:flex-row gap-4 lg:gap-y-8">
 
                         {/* //created grid mobile view grid */}
-                        <div className="lg:hidden space-y-2 max-h-64 overflow-y-auto lg:overflow-y-hidden lg:max-h-full     min-w-[280px] hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
+                        <div className="lg:hidden space-y-2 max-h-64 overflow-y-auto lg:overflow-y-hidden lg:max-h-full min-w-[280px]  hide-scrollbar px-2 grid grid-cols-2 xs:grid-cols-1 lg:grid-cols-1">
                             <h1 className="hidden lg:block px-2 text-lg font-bold max-w-[280px]">
                                 {getPageTitle()}
                             </h1>
@@ -2323,7 +2323,7 @@ const ProductListing = () => {
                                 <>
                                     {sortedItems.length > 0 ? (
                                         <>
-                                            <div className="grid   grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-5 max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                            <div className="grid   grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 @[1750px]:grid-cols-5 gap-4 md:gap-5 max-h-full border-t-2 border-[#2D2C70] pt-1">
                                                 {sortedItems.map((item) => renderItemCard(item))}
                                             </div>
 

@@ -888,10 +888,10 @@ export default function MyAccount() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 max-w-[80%]">
+          <div className="flex-1 w-full md:max-w-[80%]">
             {/* Show Address Book tab */}
             {activeSection === "address" && (
-              <div className="bg-white h-full xl:pb-30 rounded-lg font-spartan px-8">
+              <div className="bg-white h-full xl:pb-30 rounded-lg font-spartan md:px-8 w-[94vw] md:w-[80vw] lg:w-[60vw] mx-auto">
                 <div className="border-b-2 border-black pb-4 mb-6">
                   <h2 className="text-[24px] font-medium">Address Book</h2>
                 </div>
@@ -1043,10 +1043,10 @@ export default function MyAccount() {
 
             {/* Show Purchases only if Purchases tab is active */}
             {activeSection === "purchases" && (
-              <div className="xl:h-full h-full ">
-                <div className="border-b-2 ml-8 border-black pb-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-[24px] font-medium ">
+              <div className="xl:h-full h-full   w-[94vw] md:w-[80vw] lg:w-[60vw] mx-auto ">
+                <div className="border-b-2 md:ml-8  border-black pb-6 mb-6">
+                  <div className="flex items-center  justify-between mb-4">
+                    <h2 className="text-base lg:text-[24px] font-medium ">
                       All Purchase History
                     </h2>
 
@@ -1069,9 +1069,9 @@ export default function MyAccount() {
                     </div> */}
 
                     {/* Date Range */}
-                    <div className="flex items-end gap-10 justify-between mt-2">
+                    <div className="flex items-end gap-3 md:gap-10 justify-between mt-2">
                       {/* From */}
-                      <div className="flex gap-10">
+                      <div className="flex flex-col md:flex-row gap-3 md:gap-10">
                         <div className="flex flex-col cursor-pointer">
                           <label className="text-[1rem] font-medium mb-2 text-gray-900">From</label>
                           <div className="relative">
@@ -1170,7 +1170,7 @@ export default function MyAccount() {
             {activeSection === "overview" && (
               <>
                 {/* Recent Purchases Section */}
-                <div className="pb-12">
+                <div className="pb-12 w-[94vw] md:w-[80vw] lg:w-[60vw]">
                   <div className="bg-white rounded-lg">
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 border-b-2 border-black pb-4">

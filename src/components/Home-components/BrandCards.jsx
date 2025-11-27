@@ -71,7 +71,7 @@ const BrandCards = () => {
           {[...Array(3)].map((_, index) => (
             <div
               key={index}
-              className="w-full max-w-xs h-36 sm:h-40 md:h-44 bg-gray-200 rounded-lg animate-pulse"
+              className="w-full max-w-xs h-26 sm:h-40 md:h-44 bg-gray-200 rounded-lg animate-pulse"
             >
               <div className="w-full h-full flex items-center justify-center text-gray-400">
                 Loading...
@@ -109,23 +109,17 @@ const BrandCards = () => {
 
   // Brand grid
   return (
-    <div className="w-full xl:max-w-5xl mx-auto px-4 sm:px-5 md:pt-6 xl:pt-6">
+    <div className="w-full xl:max-w-5xl mx-auto px-4 sm:px-5">
       <div
         className="
-          grid 
-          grid-cols-2
-         lg:grid-cols-3
-          gap-4 
-          sm:gap-6 
-          justify-items-center
-        "
+          grid grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 justify-items-center "
       >
         {brands.map((brand) => (
           <div
             key={brand._id}
-            className="w-full max-w-xs h-36 sm:h-40 md:h-44  overflow-hidden  duration-300 rounded-lg cursor-pointer group bg-white"
+            className="w-full max-w-xs xs:h-8 sm:h-12  md:h-37 lg:h-40  overflow-hidden  duration-300 rounded-lg cursor-pointer group bg-white"
           >
-            <div className="relative w-full h-full flex items-center justify-center ">
+            <div className="relative w-full h-20 md:h-40 lg:h-full flex items-center justify-center ">
               <Image
                 src={brand?.brandImages || "/fallback-image.jpg"}
                 alt={brand?.brand?.name || "Brand Image"}
@@ -135,7 +129,7 @@ const BrandCards = () => {
                   group-hover:scale-105 
                   transition-transform 
                   duration-300 
-                  p-3
+                  lg:p-3
                  
                 "
                 sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

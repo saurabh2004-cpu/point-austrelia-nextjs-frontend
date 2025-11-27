@@ -192,15 +192,15 @@ const Carousel = () => {
   }
 
   return (
-    <div className="w-full mx-auto pb-3 sm:py-4 md:py-4 xl:pb-12 overflow-x-hidden">
+    <div className="w-full  mx-auto pb-3 sm:pb-4 md:pb-4 xl:pb-12 overflow-x-hidden">
       <div
-        className="relative w-full overflow-hidden rounded-lg carousel-container"
+        className="relative w-full overflow-hidden  carousel-container"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         {/* Carousel Images Wrapper */}
         <div
-          className={`flex transition-transform duration-[2000ms] ease-in-out h-full`}
+          className={`flex transition-transform duration-[2000ms] ease-in-out h-full md:h-70 xl:h-125`}
           style={{
             transform: `translateX(-${currentIndex * 100}%)`,
           }}
@@ -220,8 +220,8 @@ const Carousel = () => {
                 alt={image.alt}
                 fill
                 priority
-                className="object-contain transition-transform duration-500"
-                sizes="(max-width: 480px) 100vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                className=" md:object-contain  transition-transform duration-500 "
+                sizes="(max-width: 440px) 110vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
               />
             </div>
           ))}

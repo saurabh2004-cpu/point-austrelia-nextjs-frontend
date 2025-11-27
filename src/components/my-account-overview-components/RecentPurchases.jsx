@@ -262,7 +262,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       )}
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <div className="border border-gray-200 rounded-lg ">
           <table className="w-full border-collapse text-base">
             <thead>
@@ -393,7 +393,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
       </div>
 
       {/* Mobile Card View */}
-      <div className="block md:hidden px-2 sm:px-4 py-4 space-y-3 sm:space-y-4">
+      <div className="block md:hidden  py-4 space-y-3 sm:space-y-4 w-[92vw] mx-auto  ">
         {currentItems.map((item, index) => (
           <div
             key={index}

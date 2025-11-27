@@ -1082,7 +1082,7 @@ const SearchPage = () => {
                     )}
 
                     {/* Quick View Overlay */}
-                    <div className={`absolute xl:top-1/2 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                    <div className={`absolute  md:top-1/2 xl:top-1/2 flex items-center justify-center rounded-lg transition-opacity duration-300 z-20 ${hoveredImage === itemId ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -1583,7 +1583,7 @@ const SearchPage = () => {
                         {/* Items Grid */}
                         {!loading && allItems.length > 0 && (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
+                                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4  2xl:grid-cols-5 md:gap-10 lg:gap-0  max-h-full border-t-2 border-[#2D2C70] pt-1">
                                     {sortedItems.map((item) => renderItemCard(item))}
                                 </div>
 

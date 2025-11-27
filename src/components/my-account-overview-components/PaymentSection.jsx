@@ -90,7 +90,7 @@ const PaymentSection = () => {
     }, [currentUser?._id, showCardForm]);
 
     return (
-        <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8">
+        <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8 w-[94vw] md:w-[76vw] lg:w-[60vw]">
             <div className="border-b-2 border-black pb-4 mb-6">
                 <h2 className="text-[24px] font-medium">Payment Methods</h2>
             </div>

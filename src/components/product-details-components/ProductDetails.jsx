@@ -2004,7 +2004,7 @@ function ProductDetail() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2D2C70] cursor-pointer"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 cursor-pointer">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 cursor-pointer">
               {relatedItems.map((item) => {
                 const isProductGroup = item.type === 'productGroup';
                 const isInCart = isRelatedItemInCart(item._id, isProductGroup);
@@ -2023,7 +2023,7 @@ function ProductDetail() {
                 const itemImages = getItemImages(item);
 
                 return (
-                  <div key={item._id} className="bg-white rounded-lg p-4 border border-gray-200 flex flex-col h-full cursor-pointer">
+                  <div key={item._id} className="bg-white rounded-lg p-2 md:p-4 border border-gray-200 flex flex-col h-full cursor-pointer">
                     {/* Wishlist Icon & Badge Container */}
                     <div className="relative  cursor-pointer">
                       <button
@@ -2056,7 +2056,7 @@ function ProductDetail() {
 
                     {/* Item Image - Fixed Height Container */}
                     <div
-                      className="relative flex justify-center items-center pb-4 mb-4  rounded-xl cursor-pointer bg-gray-50 min-h-[180px]"
+                      className="relative flex justify-center items-center pb-4 mb-4  rounded-xl cursor-pointer bg-gray-50 md:min-h-[180px]"
                       onClick={() => handleRelatedItemClick(
                         isProductGroup ? item.name : item.ProductName,
                         item._id,
@@ -2066,7 +2066,7 @@ function ProductDetail() {
                       <img
                         src={item.images || "/placeholder.svg"}
                         alt={isProductGroup ? item.name : item.ProductName}
-                        className="h-[250px] w-[250px]  w-auto object-contain cursor-pointer"
+                        className="h-[100px] w-[100px] md:h-[250px] md:w-[250px]  w-auto object-contain cursor-pointer"
                       />
                     </div>
 
@@ -2083,25 +2083,27 @@ function ProductDetail() {
                         {isProductGroup ? item.name : item.ProductName}
                       </h3>
 
-                      <div className="font-spartan text-[14px] font-medium flex-grow cursor-pointer">
-                        <p className="mb-2 text-xs text-gray-600 cursor-pointer">SKU: {item.sku}</p>
+                      <div className="font-spartan text-[14px] font-medium  cursor-pointer">
+                        <div className="flex flex-row justify-between items-center">
+                          <p className="mb-2 text-xs text-gray-600 cursor-pointer">SKU: {item.sku}</p>
 
-                        {/* Product Group Info */}
-                        {isProductGroup && item.products && item.products.length > 0 && (
-                          <div className="mb-2 text-xs text-blue-600 cursor-pointer">
-                            Includes {item.products.length} product(s)
-                          </div>
-                        )}
+                          {/* Product Group Info */}
+                          {isProductGroup && item.products && item.products.length > 0 && (
+                            <div className="mb-2 text-xs text-blue-600 cursor-pointer">
+                              Includes {item.products.length} product(s)
+                            </div>
+                          )}
 
-                        {/* Stock Status */}
-                        <div className="flex items-center justify-between mb-3 cursor-pointer">
-                          <div className={`flex items-center space-x-1 px-2 py-1 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'} cursor-pointer`}>
-                            <svg className={`w-3 h-3 ${isOutOfStock ? 'text-red-600' : 'text-green-600'} cursor-pointer`} fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            <span className={`text-xs font-semibold font-spartan ${isOutOfStock ? 'text-red-600' : 'text-black'} cursor-pointer`}>
-                              {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
-                            </span>
+                          {/* Stock Status */}
+                          <div className="flex items-center justify-between mb-3 cursor-pointer">
+                            <div className={`flex items-center space-x-1 px-2 py-1 ${isOutOfStock ? 'bg-red-100' : 'bg-[#E7FAEF]'} cursor-pointer`}>
+                              <svg className={`w-3 h-3 ${isOutOfStock ? 'text-red-600' : 'text-green-600'} cursor-pointer`} fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                              <span className={`text-xs font-semibold font-spartan ${isOutOfStock ? 'text-red-600' : 'text-black'} cursor-pointer`}>
+                                {isOutOfStock ? 'OUT OF STOCK' : 'IN STOCK'}
+                              </span>
+                            </div>
                           </div>
                         </div>
 

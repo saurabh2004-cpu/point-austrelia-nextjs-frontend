@@ -117,7 +117,7 @@ export function Footer() {
               KEEP IN TOUCH
             </h3>
 
-            <div className="space-y-4 md:min-w-[350px] lg:min-w-[400px] min-w-[300px]">
+            <div className="space-y-4 md:max-w-[300px]  lg:min-w-[400px] min-w-[300px]">
               {/* Row 1 */}
               <div className="flex justify-between">
                 <div className="text-[#2d2c70] text-[16px] font-[700] font-spartan">

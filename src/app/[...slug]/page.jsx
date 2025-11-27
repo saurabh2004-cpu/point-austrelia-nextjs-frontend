@@ -45,7 +45,8 @@ export async function generateMetadata({ params }) {
         name: slug[0].split('-').join(' ').toUpperCase()
       });
 
-      console.log("response of fetched product by thge name", response.data.data)
+      console.log("response of fetched product by thge name", response.data.statusCode)
+      console.log("brand name in fetched product", response?.data?.data?.commerceCategoriesOne?.name)
 
       if (response.data.statusCode === 200) {
         title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne?.name || ''} | Point Australia`;

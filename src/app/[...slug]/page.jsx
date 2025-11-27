@@ -58,7 +58,7 @@ export async function generateMetadata({ params }) {
     if (title && title.length > 0) {
       return {
         title: title,
-        description: res.data.description,
+        description: 'res.data.description',
       };
     }
   } catch (err) {

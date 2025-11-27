@@ -221,7 +221,7 @@ const Carousel = () => {
                 fill
                 priority
                 className=" md:object-contain  transition-transform duration-500 "
-                sizes="(max-width: 440px) 110vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                sizes="(max-width: 440px) 110vw, (max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw "
               />
             </div>
           ))}

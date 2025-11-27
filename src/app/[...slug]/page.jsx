@@ -42,7 +42,9 @@ export async function generateMetadata({ params }) {
 
       console.log("fetched product in the dynamic page ", response.data.data)
 
-      title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response.data.data.commerceCategoriesOne.name} | Point Australia`;
+      title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne.name|| ''} | Point Australia`;
+
+      console.log("fetched product in the dynamic page title", title)
     }
 
     const res = await metadataService.getMetadataByPage('product-listing');

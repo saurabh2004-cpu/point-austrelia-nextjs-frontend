@@ -55,7 +55,7 @@ export async function generateMetadata({ params }) {
       console.log("fetched product in the dynamic page title", title)
     }
 
-    if (res.success && res.data) {
+    if (title && title.length > 0) {
       return {
         title: title,
         description: res.data.description,

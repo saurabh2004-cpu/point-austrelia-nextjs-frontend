@@ -42,13 +42,15 @@ export async function generateMetadata({ params }) {
     } else {
 
       const response = await axios.post(`http://localhost:3000/api/v1/products/get-product-by-name`, {
-        name: slug[0]
+        name: slug[0].split('-').join(' ').toUpperCase()
       });
 
-      if(response.data.statusCode === 200) {
+      console.log("response of fetched product by thge name", response.data.data)
+
+      if (response.data.statusCode === 200) {
         title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne?.name || ''} | Point Australia`;
       }
-      
+
       title = `${slug[0].split('-').join(' ').toUpperCase()}| Point Australia`;
 
 

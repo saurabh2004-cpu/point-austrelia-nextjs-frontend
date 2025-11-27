@@ -32,6 +32,8 @@ export async function generateMetadata({ params }) {
     const resolvedParams = await params;
     const { slug } = resolvedParams;
 
+    console.log(" slug in search params", slug)
+
     let title = ''
 
     if (slug.length > 1) {
@@ -42,7 +44,7 @@ export async function generateMetadata({ params }) {
         name: slug[0]
       });
 
-    
+
       title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne.name || ''} | Point Australia`;
 
       console.log("fetched product in the dynamic page title", title)

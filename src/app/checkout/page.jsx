@@ -1029,56 +1029,61 @@ const CheckoutComponent = () => {
         setLoadingCheckOut(true);
 
         try {
-            // First, process the payment with eWAY
-            const paymentResponse = await axiosInstance.post('sales-order/create-payment', {
-                cardNumber: submitForm.card.cardNumber,
-                cvn: submitForm.card.cvn,
-                expiryMonth: submitForm.card.expiryMonth,
-                expiryYear: submitForm.card.expiryYear,
-                firstName: submitForm.card.firstName,
-                fullName: submitForm.card.fullName,
-                lastName: submitForm.card.lastName,
-                totalAmount: totals.grandTotal,
-                invoiceReference: incrementDocumentNumber(latestSalesOrderDocumentNumber)
-            });
+            let cardData = null;
 
-            const ewayData = paymentResponse.data.data;
+            // Only process payment if sales channel is credit-card
+            if (submitForm.salesChannel === 'credit-card') {
+                // Process the payment with eWAY
+                const paymentResponse = await axiosInstance.post('sales-order/create-payment', {
+                    cardNumber: submitForm.card.cardNumber,
+                    cvn: submitForm.card.cvn,
+                    expiryMonth: submitForm.card.expiryMonth,
+                    expiryYear: submitForm.card.expiryYear,
+                    firstName: submitForm.card.firstName,
+                    fullName: submitForm.card.fullName,
+                    lastName: submitForm.card.lastName,
+                    totalAmount: totals.grandTotal,
+                    invoiceReference: incrementDocumentNumber(latestSalesOrderDocumentNumber)
+                });
 
-            console.log("eway response", ewayData);
+                const ewayData = paymentResponse.data.data;
 
-            if (!ewayData || ewayData.ResponseCode !== "00" || !ewayData.TransactionStatus) {
-                showNotification('error', 'Error validating credit card credentials');
-                setLoadingCheckOut(false);
-                return;
-            }
+                console.log("eway response", ewayData);
 
-            // Update the form with the payment response data
-            const updatedForm = {
-                ...submitForm,
-                card: {
-                    ...submitForm.card,
+                if (!ewayData || ewayData.ResponseCode !== "00" || !ewayData.TransactionStatus) {
+                    showNotification('error', 'Error validating credit card credentials');
+                    setLoadingCheckOut(false);
+                    return;
+                }
+
+                // Set card data with transaction details
+                cardData = {
+                    firstName: submitForm.card.firstName,
+                    lastName: submitForm.card.lastName,
+                    fullName: submitForm.card.fullName,
+                    cardNumber: submitForm.card.cardNumber,
+                    expiryMonth: submitForm.card.expiryMonth,
+                    expiryYear: submitForm.card.expiryYear,
                     transactionId: ewayData.TransactionID.toString(),
                     authorisationCode: ewayData.AuthorisationCode,
                     transactionStatus: ewayData.TransactionStatus.toString()
-                }
-            };
+                };
+            }
 
-            setSubmitForm(updatedForm);
-
-            // Now create the sales order with the updated card data
+            // Create the sales order
             const orderData = {
-                date: updatedForm.date,
+                date: submitForm.date,
                 documentNumber: documentNumber,
                 customerName: currentUser.customerName || currentUser.contactName || '',
-                salesChannel: updatedForm.salesChannel,
-                trackingNumber: updatedForm.trackingNumber || '',
-                shippingAddress: updatedForm.shippingAddress,
-                billingAddress: updatedForm.billingAddress,
-                customerPO: updatedForm.customerPO || '',
-                comments: updatedForm.comments || '',
-                items: updatedForm.items,
+                salesChannel: submitForm.salesChannel,
+                trackingNumber: submitForm.trackingNumber || '',
+                shippingAddress: submitForm.shippingAddress,
+                billingAddress: submitForm.billingAddress,
+                customerPO: submitForm.customerPO || '',
+                comments: submitForm.comments || '',
+                items: submitForm.items,
                 customer: currentUser._id,
-                card: updatedForm.card // This now includes the transaction details
+                ...(cardData && { card: cardData }) // Only include card data if it exists
             };
 
             const response = await axiosInstance.post(

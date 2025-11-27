@@ -29,7 +29,9 @@ const convertToSEOText = (arr) => {
 export async function generateMetadata({ params }) {
   try {
 
-    const { slug } = params;
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
+
     let title = ''
 
     if (slug.length > 1) {
@@ -40,9 +42,8 @@ export async function generateMetadata({ params }) {
         name: slug[0]
       });
 
-      console.log("fetched product in the dynamic page ", response.data.data)
-
-      title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne.name|| ''} | Point Australia`;
+    
+      title = `${slug[0].split('-').join(' ').toUpperCase()} | ${response?.data?.data?.commerceCategoriesOne.name || ''} | Point Australia`;
 
       console.log("fetched product in the dynamic page title", title)
     }

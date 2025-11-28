@@ -67,7 +67,7 @@ const TrustedByCarousel = () => {
   // Loading state
   if (!brandPage) {
     return (
-      <div className="lg:w-6xl mx-auto bg-white py-8 sm:py-12 lg:py-12 px-4 sm:px-6 lg:px-4">
+      <div className="lg:w-6xl mx-auto bg-white py-8 sm:py-12 lg:py-12 px-4 sm:px-6 lg:px-4 font-body">
         <div className="max-w-7xl mx-auto">
           {/* Loading header */}
           <div className="text-center mb-8 sm:mb-12 lg:mb-8">
@@ -90,7 +90,7 @@ const TrustedByCarousel = () => {
   }
 
   return (
-    <div className="lg:w-6xl mx-auto bg-white py-8 sm:py-12 lg:py-12 ">
+    <div className="lg:w-6xl mx-auto bg-white py-8 sm:py-12 lg:py-12 font-body">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-8">
@@ -103,7 +103,7 @@ const TrustedByCarousel = () => {
 
             {/* Title */}
             <h2 
-              className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold whitespace-nowrap"
+              className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold whitespace-nowrap font-heading"
               style={{ color: brandPage?.trustedByHeadingTextColor || '#000000' }}
             >
               {brandPage?.trustedByHeadingText || 'Trusted by'}

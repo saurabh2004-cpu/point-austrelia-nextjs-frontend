@@ -1293,14 +1293,14 @@ const CheckoutComponent = () => {
     }
 
     return (
-        <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-spartan">
+        <div className="min-h-screen py-4 px-4 sm:px-6 lg:px-8 lg:pb-32 lg:pt-4 font-body">
 
             <Notification />
 
             <div className="md:max-w-[80%]  mx-auto">
                 {/* Header */}
                 <div className="mb-6 sm:mb-4 relative top-6">
-                    <h1 className="text-lg sm:text-xl lg:text-[24px] font-semibold mb-4 text-center sm:text-left">
+                    <h1 className="text-lg sm:text-xl font-heading lg:text-[24px] font-semibold mb-4 text-center sm:text-left">
                         Checkout Process
                     </h1>
 
@@ -1385,7 +1385,7 @@ const CheckoutComponent = () => {
                         <div className="min-w-full col-span-2 mx-auto xl:min-h-screen">
                             {/* Shipping Address Section */}
                             <div className="mb-8">
-                                <h2 className="text-[24px] font-semibold text-[#2D2C70] py-6">Select Shipping Address</h2>
+                                <h2 className="text-[24px] font-semibold text-[#2D2C70] font-heading py-6">Select Shipping Address</h2>
                                 <div className="space-y-3">
                                     <p className="text-[20px] mb-4">Shipping Address ({shippingAddresses.length})</p>
                                     {shippingAddresses.map((address) => (
@@ -1443,7 +1443,7 @@ const CheckoutComponent = () => {
 
                             {/* Billing Address Section */}
                             <div className="mb-8">
-                                <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-2">Select Billing Address</h2>
+                                <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-2 font-heading">Select Billing Address</h2>
                                 <p className="text-[20px] mb-4">Billing Address ({billingAddresses.length})</p>
                                 <div className="space-y-3">
                                     {billingAddresses.map((address) => (
@@ -1533,14 +1533,14 @@ const CheckoutComponent = () => {
                                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#2D2C70]"></div>
                                     </div>
                                 ) : (
-                                    <div className="border-2 border-gray-300 rounded-lg space-y-3 font-spartan">
+                                    <div className="border-2 border-gray-300 rounded-lg space-y-3 ">
                                         <div className="flex items-center justify-center mb-4 py-4 border-b">
-                                            <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold">Order Summary</h2>
+                                            <h2 className="text-lg sm:text-xl lg:text-[20px] font-semibold font-heading">Order Summary</h2>
                                         </div>
                                         <div className="px-4">
                                             <div className="flex justify-between">
-                                                <span className="text-base sm:text-lg lg:text-[20px] font-medium">
-                                                    Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] text-[#000000]/50'>{totals.totalQuantity} Items</span>
+                                                <span className="text-base sm:text-lg lg:text-[20px] font-medium font-heading">
+                                                    Subtotal <span className='text-xs sm:text-sm lg:text-base font-[400] font-body text-[#000000]/50'>{totals.totalQuantity} Items</span>
                                                 </span>
                                                 <span className="text-[#2D2C70] font-semibold text-[20px]">
                                                     ${(totals.subtotal.toFixed(2) || 0)}
@@ -1559,7 +1559,7 @@ const CheckoutComponent = () => {
                                             </div>
                                         </div>
                                         <div className="p-4 flex justify-between text-base sm:text-lg font-semibold pt-2 border-t border-gray-200 mt-2">
-                                            <span>Total</span>
+                                            <span className='font-heading'>Total</span>
                                             <span>${(totals.grandTotal.toFixed(2) || 0)}</span>
                                         </div>
                                     </div>
@@ -1568,7 +1568,7 @@ const CheckoutComponent = () => {
                                 {step < 3 ? (
                                     <>
                                         <button
-                                            className={`w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${checkingStock || outOfStockItems.length > 0
+                                            className={`font-heading w-full py-2 rounded-2xl text-sm sm:text-base font-medium my-4 border-1 border-black transition-colors ${checkingStock || outOfStockItems.length > 0
                                                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                                                 : 'bg-[#2D2C70] text-white hover:bg-[#25245a] cursor-pointer'
                                                 }`}
@@ -1581,7 +1581,7 @@ const CheckoutComponent = () => {
                                         <div className="flex items-center space-x-3 mb-8">
                                             <button
                                                 onClick={() => router.push('/products')}
-                                                className="flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
+                                                className="font-heading flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold py-2 px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]"
                                             >
                                                 <svg
                                                     className="w-5 h-5 transition-colors duration-300"
@@ -1609,7 +1609,7 @@ const CheckoutComponent = () => {
                                 )}
 
                                 <div className='flex cursor-pointer items-center bg-[#2D2C70] text-white justify-between mb-2 flex-row border-1 border-black rounded-2xl px-3 py-3'>
-                                    <p className='text-xs sm:text-sm lg:text-[14px] font-[500]'>Items To Ship ({totalItems})</p>
+                                    <p className='text-xs sm:text-sm lg:text-[14px] font-[500] font-heading'>Items To Ship ({totalItems})</p>
                                     <span><ChevronDown className="w-4 h-4 text-white" /></span>
                                 </div>
 
@@ -1639,7 +1639,7 @@ const CheckoutComponent = () => {
                                                         />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h3 className="text-xs sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
+                                                        <h3 className="text-xs font-heading sm:text-sm lg:text-[16px] font-medium mb-1 line-clamp-2">
                                                             {itemData.name || itemData.ProductName}
                                                             {isProductGroup && (
                                                                 <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
@@ -1715,7 +1715,7 @@ const CheckoutComponent = () => {
                             <div className='px-4'>
                                 <button
                                     onClick={() => router.push('/cart')}
-                                    className="w-full bg-[#2D2C70] cursor-pointer text-white p-2 rounded-2xl text-sm sm:text-base font-medium  mb-4 hover:bg-[#25245a] transition-colors"
+                                    className="w-full bg-[#2D2C70] font-heading cursor-pointer text-white p-2 rounded-2xl text-sm sm:text-base font-medium  mb-4 hover:bg-[#25245a] transition-colors"
                                 >
                                     Edit Cart
                                 </button>

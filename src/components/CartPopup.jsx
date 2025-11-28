@@ -524,11 +524,11 @@ const ShoppingCartPopup = () => {
 
 
   return (
-    <div className="absolute inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none font-spartan">
+    <div className="absolute  inset-0 top-20 flex xl:items-start lg:justify-end p-4 z-50 pointer-events-none font-body">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-[30.1875rem] md:max-w-[36rem] lg:max-w-[30.1875rem] max-h-[90vh] overflow-hidden border border-gray-300 pointer-events-auto flex flex-col">
         <div className="flex flex-col items-center justify-between px-4 pt-4">
           <div className="w-full flex justify-between border-b pb-3">
-            <h1 className='text-lg font-semibold uppercase'>Shopping Cart</h1>
+            <h1 className='text-lg font-semibold uppercase font-heading'>Shopping Cart</h1>
             <button onClick={() => setIsOpen(false)} className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors">
               <X className="w-5 h-5" />
             </button>
@@ -628,7 +628,7 @@ const ShoppingCartPopup = () => {
                             <div>
                               <h3
                                 onClick={() => handleProductClick(getItemName(item), isProductGroup ? item.productGroup?._id : item.product?._id, isProductGroup)}
-                                className="text-[14px] cursor-pointer font-medium line-clamp-2 hover:text-[#E9098D]"
+                                className="text-[14px] font-heading cursor-pointer font-medium line-clamp-2 hover:text-[#E9098D]"
                               >
                                 {getItemName(item)}
                               </h3>
@@ -658,7 +658,7 @@ const ShoppingCartPopup = () => {
                         <div className="flex flex-wrap items-center gap-2 mb-2">
 
                           <div className='flex items-center space-x-2'>
-                            <span className="text-[#2D2C70] font-semibold text-[18px]">${item?.amount?.toFixed(2)}</span>
+                            <span className="font-heading text-[#2D2C70] font-semibold text-[18px]">${item?.amount?.toFixed(2)}</span>
                             {getOriginalPriceForDisplay(item, isProductGroup) &&
                               <span className="text-sm text-gray-500 line-through">
                                 ${parseFloat(getOriginalPriceForDisplay(item, isProductGroup)).toFixed(2)}
@@ -722,7 +722,7 @@ const ShoppingCartPopup = () => {
                                     }));
                                   }
                                 }}
-                                className="text-[1rem] font-spartan font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                className="text-[1rem]  font-medium w-[2rem] text-center border-none outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                 disabled={outOfStock}
                               />
 
@@ -815,7 +815,7 @@ const ShoppingCartPopup = () => {
             >
               {navigatingToCart ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white font-heading"></div>
                   Loading...
                 </>
               ) : (
@@ -838,7 +838,7 @@ const ShoppingCartPopup = () => {
             >
               {navigatingToCheckout ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white font-heading"></div>
                   Loading...
                 </>
               ) : hasStockIssues ? (

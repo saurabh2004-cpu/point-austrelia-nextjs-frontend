@@ -11,7 +11,7 @@ const BrandsGrid = () => {
     // Loading state
     if (!brandPage) {
         return (
-            <div className="w-full bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8">
+            <div className="w-full bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8 font-body">
                 <div className="max-w-8xl mx-auto">
                     {/* Loading skeleton for header */}
                     <div className="text-center mb-8 sm:mb-12 lg:mb-8">
@@ -39,7 +39,7 @@ const BrandsGrid = () => {
     }
 
     return (
-        <div className="lg:w-6xl mx-auto bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8">
+        <div className="lg:w-6xl mx-auto bg-gray-50 py-8 sm:py-12 px-4 lg:px-0 lg:py-8 font-body">
             <div className="max-w-8xl mx-auto">
                 {/* Header Section */}
                 <div className="text-center mb-8 sm:mb-12 lg:mb-8">
@@ -52,7 +52,7 @@ const BrandsGrid = () => {
 
                         {/* Title */}
                         <h2 
-                            className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold whitespace-nowrap"
+                            className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold whitespace-nowrap font-heading"
                             style={{ color: brandPage?.brandHeadingTextColor || '#000000' }}
                         >
                             {brandPage?.brandHeadingText || 'Our Brands'}
@@ -116,7 +116,7 @@ const BrandsGrid = () => {
                     style={{ backgroundColor: brandPage?.QnaSectionBgColor || '#2D2C70' }}
                 >
                     <h3
-                        className="text-xl sm:text-2xl font-semibold mb-6 sm:mb-8 px-4 lg:px-16"
+                        className="text-xl font-heading sm:text-2xl font-semibold mb-6 sm:mb-8 px-4 lg:px-16"
                         style={{ color: brandPage?.QnaHeadingTextColor || '#ffffff' }}
                     >
                         {brandPage?.QnaHeadingText?.endsWith('?') 
@@ -139,7 +139,7 @@ const BrandsGrid = () => {
                                             }`}
                                         />
                                         <p 
-                                            className="text-base sm:text-lg font-semibold leading-relaxed flex-1"
+                                            className="font-heading text-base sm:text-lg font-semibold leading-relaxed flex-1"
                                             style={{ color: brandPage?.QnaHeadingTextColor || '#ffffff' }}
                                         >
                                             {question}

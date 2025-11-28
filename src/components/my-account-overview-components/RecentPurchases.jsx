@@ -164,7 +164,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   if (loading && currentItems.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
-        <p className="text-[#46BCF9] text-[18px] font-spartan font-medium">Loading {showProducts ? 'products' : 'purchases'}...</p>
+        <p className="text-[#46BCF9] text-[18px]  font-medium">Loading {showProducts ? 'products' : 'purchases'}...</p>
       </div>
     )
   }
@@ -172,7 +172,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   if (currentItems.length === 0 && !loading) {
     return (
       <div className="text-center py-8">
-        <p className="text-[#E9098D] text-[24px] font-spartan font-medium mb-4">
+        <p className="text-[#E9098D] text-[24px]  font-medium mb-4">
           {showProducts
             ? 'No products found for this order'
             : hasTimeFilter
@@ -201,7 +201,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
   }
 
   return (
-    <div className=" h-full bg-white font-spartan ">
+    <div className=" h-full bg-white font-body ">
       {/* Filter, Sort and Pagination Info */}
       <div className="flex flex-col  lg:flex-row justify-between items-start lg:items-center mb-4 pr-4 gap-4">
         <div className="flex flex-col">
@@ -266,7 +266,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
         <div className="border border-gray-200 rounded-lg ">
           <table className="w-full border-collapse text-base">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-gray-50 border-b border-gray-200 font-heading">
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">#</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'Image' : 'Document Number'}</th>
                 <th className="py-4 pl-4 border-r border-gray-200 text-left font-semibold">{showProducts ? 'SKU' : 'Date'}</th>

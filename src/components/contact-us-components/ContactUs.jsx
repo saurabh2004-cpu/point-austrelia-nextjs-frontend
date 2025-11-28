@@ -71,12 +71,12 @@ export default function ContactUs() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-4  font-spartan">
+        <div className="max-w-6xl mx-auto px-4  font-body">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-0 py-8 md:py-12 xl:pb-20 ">
                 {/* Left Column - Contact Information */}
                 <div className="space-y-6 xl:w-[280px] ">
                     <div className="space-y-[15px]">
-                        <h1 className="text-[2rem] font-semibold  ">Contact Us</h1>
+                        <h1 className="text-[2rem] font-semibold font-heading ">Contact Us</h1>
                         <p className="text-[#000000]/50 text-sm font-[400] md:text-base leading-tight ">
                             We love connecting with our customers! Whether you have a question about our products, need some support,
                             or just want to share your feedback, drop us a line. We'll do our best to get back to you quickly.
@@ -130,7 +130,7 @@ export default function ContactUs() {
 
                 {/* Right Column - Contact Form */}
                 <div className="space-y-6">
-                    <div className="-space-y-4">
+                    <div className="-space-y-4 font-heading">
                         <h2 className="text-[1.8rem]  font-medium ">We'd love to hear from you!</h2>
                         <p className="text-[#E9098D] text-[1.8rem]  font-medium ">Let's get in touch</p>
                     </div>
@@ -265,7 +265,7 @@ export default function ContactUs() {
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="w-full border border-black bg-[#2D2C70] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg  transition-colors disabled:cursor-not-allowed"
+                            className="w-full font-heading border border-black bg-[#2D2C70] text-white text-[1rem] font-[500] py-3 px-6 rounded-lg  transition-colors disabled:cursor-not-allowed"
                         >
                             {loading ? "Sending..." : "Send Message"}
                         </Button>

@@ -243,8 +243,8 @@ const CheckoutFormUI = ({
     }, [cardData]);
 
     return (
-        <div className="p-4 col-span-2  min-h-screen font-spartan mt-5">
-            <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4">Selected addresses</h2>
+        <div className="p-4 col-span-2  min-h-screen font-body mt-5">
+            <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4 font-heading">Selected addresses</h2>
 
             <div>
                 <div className="space-y-3">
@@ -284,7 +284,7 @@ const CheckoutFormUI = ({
                 </div>
             </div>
 
-            <h2 className="text-[24px] font-semibold mb-4 mt-8">Delivery method</h2>
+            <h2 className="text-[24px] font-semibold mb-4 mt-8 font-heading">Delivery method</h2>
             <div className="bg-white rounded-lg px-4 py-2 mb-6 border-2 border-gray-300">
                 <div className="flex items-center">
                     <div className="flex items-center justify-center w-4 h-4 rounded-full border-2 border-[#E9098D]">
@@ -294,7 +294,7 @@ const CheckoutFormUI = ({
                 </div>
             </div>
 
-            <h2 className="text-[24px] font-semibold mb-4 mt-8">Order Comments</h2>
+            <h2 className="text-[24px] font-semibold mb-4 mt-8 font-heading">Order Comments</h2>
             <div className="bg-white rounded-lg mb-4">
                 <textarea
                     value={orderComments}
@@ -305,8 +305,8 @@ const CheckoutFormUI = ({
                 />
             </div>
 
-            <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4 mt-8">Payment</h2>
-            <label className="text-[20px] font-medium flex items-center gap-4 block mb-2">
+            <h2 className="text-[24px] font-semibold text-[#2D2C70] mb-4 mt-8 font-heading">Payment</h2>
+            <label className="text-[20px] font-medium flex items-center gap-4 block mb-2 font-heading">
                 Payment Method
                 <span><ChevronDown size={20} strokeWidth={3} className="text-[#000000]/50 font-semibold" /></span>
             </label>

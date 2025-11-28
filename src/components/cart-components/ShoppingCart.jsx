@@ -846,11 +846,11 @@ const ShoppingCart = () => {
     };
 
     return (
-        <>
+        <div className='font-body'>
             {/* <Navbar /> */}
-            <div className="bg-white  justify-items-center pt-6 font-spartan">
+            <div className="bg-white  justify-items-center pt-6 ">
                 <div className="md:max-w-[80%] mx-auto px-2  lg:px-6 xl:px-8 ">
-                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full" >
+                    <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400]  w-full" >
                         <span>Home</span>
                         <span className="mx-1 sm:mx-2">/</span>
                         <span className=" text-black ">Shopping Cart</span>
@@ -866,7 +866,7 @@ const ShoppingCart = () => {
                     <button
                         onClick={handleCheckoutclick}
                         disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
-                        className={`w-full text-white py-3  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
+                        className={`w-full font-heading text-white py-3  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                             ? 'bg-gray-400 cursor-not-allowed'
                             : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
                             }`}
@@ -891,7 +891,7 @@ const ShoppingCart = () => {
 
             {/* Header */}
             <div className="px-6 md:px-0  md:max-w-[80%] md:ml-30  xl:left-14 2xl:left-[4.5%] mackbook-cart-heading mx-auto text-[24px] py-4  relative top-5  flex items-center justify-between ">
-                <h1 className="text-xl font-semibold text-gray-900 ">
+                <h1 className="text-xl font-semibold text-gray-900 font-heading">
                     Shopping Cart
                     <span className="text-[#2D2C70] ml-2">({cartItemsCount} Products, {totals.totalQuantity} Items)</span>
                 </h1>
@@ -976,7 +976,7 @@ const ShoppingCart = () => {
                 </div>
             )}
 
-            <div className="min-h-screen  py-4 px-4 sm:px-6  lg:px-8 font-spartan ">
+            <div className="min-h-screen  py-4 px-4 sm:px-6  lg:px-8  ">
                 <div className="md:max-w-[80%] justify-between mx-auto border-t-2 border-[#2D2C70]">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Shopping Cart Section */}
@@ -1069,7 +1069,7 @@ const ShoppingCart = () => {
                                                                 {/* Product Name */}
                                                                 <div className="flex items-center gap-2 mb-1">
                                                                     <h3
-                                                                        className="text-[15px] font-semibold cursor-pointer hover:text-[#E9098D]"
+                                                                        className="font-heading text-[15px] font-semibold cursor-pointer hover:text-[#E9098D]"
                                                                         onClick={() => handleProductClick(getItemName(item), isProductGroupItem ? item.productGroup?._id : item.product?._id, isProductGroupItem)}
                                                                     >
                                                                         {getItemName(item)}
@@ -1125,7 +1125,7 @@ const ShoppingCart = () => {
                                                                     <div className="flex flex-col xl:flex-row   align-middle sm:space-x-8 space-y-4 sm:space-y-0">
                                                                         {/* Pack Type Dropdown (only for products) */}
                                                                         {item.product && item.product.typesOfPacks && item.product.typesOfPacks.length > 0 && (
-                                                                            <div className="mb-3 space-x-6 align-center items-center font-spartan">
+                                                                            <div className="mb-3 space-x-6 align-center items-center ">
                                                                                 <label className="block text-sm font-medium text-gray-700 mb-1 cursor-pointer">Pack Type</label>
                                                                                 <div className="relative w-full">
                                                                                     <select
@@ -1232,7 +1232,7 @@ const ShoppingCart = () => {
                                                                     <button
                                                                         onClick={() => updateCartItem(item)}
                                                                         disabled={isLoading || !hasModifications || exceedsStock}
-                                                                        className={`w-full xl:w-auto text-white px-8 py-2 rounded-full cursor-pointer transition-colors ${hasModifications && !exceedsStock
+                                                                        className={`font-heading w-full xl:w-auto text-white px-8 py-2 rounded-full cursor-pointer transition-colors ${hasModifications && !exceedsStock
                                                                             ? 'bg-[#E799A9] hover:bg-[#d68999]'
                                                                             : 'bg-gray-400 cursor-not-allowed'
                                                                             } disabled:opacity-50`}
@@ -1244,7 +1244,7 @@ const ShoppingCart = () => {
                                                                         <button
                                                                             onClick={() => moveToWishlist(item)}
                                                                             disabled={isLoading}
-                                                                            className="flex items-center w-full justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-4 py-2 rounded-full disabled:opacity-50 cursor-pointer">
+                                                                            className="font-heading flex items-center w-full items-center justify-center space-x-2 bg-[#46BCF9] text-white text-[13px] font-semibold px-2 py-2 rounded-full disabled:opacity-50 cursor-pointer">
                                                                             <Heart className="h-4 w-4" />
                                                                             <span className='mt-1'>Move to wishlist</span>
                                                                         </button>
@@ -1308,7 +1308,7 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
-                                                className={`w-full text-white py-1  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                className={`w-full font-heading font-heading text-white py-1  rounded-lg font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 cursor-not-allowed'
                                                     : 'bg-[#2D2C70] hover:bg-[#46BCF9]'
                                                     }`}
@@ -1335,16 +1335,16 @@ const ShoppingCart = () => {
                         </div>
 
                         {/* Order Summary */}
-                        <div className="lg:col-span-1 pt-5 font-spartan">
+                        <div className="lg:col-span-1 pt-5 ">
                             <div className="bg-white rounded-lg shadow-sm sticky top-6 border">
                                 <div className="p-6">
-                                    <h2 className="text-[20px] font-semibold mb-6">Order Summary</h2>
+                                    <h2 className="text-[20px] font-semibold mb-6 font-heading">Order Summary</h2>
 
                                     <div className="space-y-4">
                                         <div className="text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-[1rem] font-[400]">
-                                                    <span className='text-[20px] font-medium'>Subtotal</span> ({totals.totalQuantity} Items)
+                                                    <span className='text-[20px] font-medium font-heading' >Subtotal</span> ({totals.totalQuantity} Items)
                                                 </span>
                                                 <span className="text-[20px] font-medium text-[#2D2C70]">
                                                     ${totals?.subtotal.toFixed(2)}
@@ -1367,7 +1367,7 @@ const ShoppingCart = () => {
                                         {/* Total */}
                                         <div className="border-t border-gray-200 pt-4">
                                             <div className="flex justify-between text-lg font-semibold mb-2">
-                                                <span>Total</span>
+                                                <span className='font-heading'>Total</span>
                                                 <span className="text-[#2D2C70]">${totals.grandTotal.toFixed(2)}</span>
                                             </div>
                                         </div>
@@ -1390,7 +1390,7 @@ const ShoppingCart = () => {
                                                     onClick={() => setIsTaxShippingOpen(!isTaxShippingOpen)}
                                                     className="w-full flex px-3 py-2 justify-between transition-colors items-center"
                                                 >
-                                                    <div className='flex gap-2 items-center cursor-pointer'>
+                                                    <div className='flex gap-2 items-center cursor-pointer font-heading'>
                                                         Gst & shipping
                                                         <span>
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-circle-question-mark-icon lucide-circle-question-mark">
@@ -1431,7 +1431,7 @@ const ShoppingCart = () => {
                                             <button
                                                 onClick={handleCheckoutclick}
                                                 disabled={exceedingStockCount > 0 || outOfStockCount > 0 || navigationLoading}
-                                                className={`w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
+                                                className={`font-heading w-full border-1 text-white py-2 rounded-2xl text-[15px] font-medium transition-colors cursor-pointer flex items-center justify-center ${exceedingStockCount > 0 || outOfStockCount > 0
                                                     ? 'bg-gray-400 border-black cursor-not-allowed'
                                                     : 'bg-[#2D2C70] border-[#2D2C70]'
                                                     }`}
@@ -1455,7 +1455,7 @@ const ShoppingCart = () => {
                                             <div className="flex items-center space-x-3">
                                                 <button
                                                     onClick={() => router.push('/')}
-                                                    className={`flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 xl:px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
+                                                    className={`font-heading flex items-center cursor-pointer justify-center rounded-2xl border border-black flex-1 gap-2 text-[1rem] font-semibold border  py-2 xl:px-6 transition-colors duration-300 group bg-[#46BCF9] text-white border-[#46BCF9] hover:bg-[#3aa8e0]`}
                                                 >
                                                     <svg
                                                         className="w-5 h-5 transition-colors duration-300 "
@@ -1470,7 +1470,7 @@ const ShoppingCart = () => {
                                             </div>
                                             <button
                                                 onClick={handleClearCartClick}
-                                                className="w-full border-1 cursor-pointer border-black rounded-2xl py-2 transition-colors hover:bg-gray-50">
+                                                className="font-heading w-full border-1 cursor-pointer border-black rounded-2xl py-2 transition-colors hover:bg-gray-50">
                                                 Clear cart
                                             </button>
                                         </div>
@@ -1585,7 +1585,7 @@ const ShoppingCart = () => {
                 customerGroupsDiscounts={[]} // You'll need to pass customerGroupsDiscounts if available
                 itemBasedDiscounts={[]} // You'll need to pass itemBasedDiscounts if available
             />
-        </>
+        </div>
     );
 };
 

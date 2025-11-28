@@ -67,7 +67,7 @@ const OrderConfirmationUI = () => {
     // OPTIMIZED: Show success immediately with skeleton
     if (loading || !orderData || orderData.length === 0) {
         return (
-            <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-spartan">
+            <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-body">
                 <div className="max-w-2xl mx-auto">
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
                         <div className="text-center mb-6">
@@ -145,7 +145,7 @@ const OrderConfirmationUI = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-spartan">
+        <div className="min-h-screen bg-gray-50 py-8 pb-32 px-4 sm:px-6 lg:px-8 font-body">
             <div className="max-w-2xl mx-auto">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 sm:p-8">
@@ -159,7 +159,7 @@ const OrderConfirmationUI = () => {
                                     height={55}
                                     className="object-contain h-8 w-8 xl:w-[55px] xl:h-[55px]"
                                 />
-                                <h1 className="md:text-[3rem] text-[22px] sm:text-[2rem] font-semibold">
+                                <h1 className="md:text font-heading-[3rem] text-[22px] sm:text-[2rem] font-semibold">
                                     Thanks for shopping!
                                 </h1>
                             </div>
@@ -167,7 +167,7 @@ const OrderConfirmationUI = () => {
 
                         {/* Order Reference */}
                         <div className="mb-6">
-                            <p className="text-base font-semibold">
+                            <p className="text-base font-semibold font-heading">
                                 <span>Order Reference No: </span>
                                 <span>{firstItem.documentNumber}</span>
                             </p>
@@ -176,7 +176,7 @@ const OrderConfirmationUI = () => {
                         <div className="space-y-4">
                             {/* Shipping Address */}
                             <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">
+                                <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-2">
                                     Shipping Address
                                 </h2>
                                 <div className="text-[14px] space-y-1 font-medium">
@@ -189,7 +189,7 @@ const OrderConfirmationUI = () => {
 
                             {/* Billing Address */}
                             <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">
+                                <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-2">
                                     Billing Address
                                 </h2>
                                 <div className="text-[14px] space-y-1 font-medium">
@@ -202,7 +202,7 @@ const OrderConfirmationUI = () => {
 
                             {/* Payment Method */}
                             <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">
+                                <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-2">
                                     Payment Method
                                 </h2>
                                 <p className="text-[14px]">
@@ -212,7 +212,7 @@ const OrderConfirmationUI = () => {
 
                             {/* Delivery Method */}
                             <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">
+                                <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-2">
                                     Delivery Method
                                 </h2>
                                 <p className="text-[14px]">Standard Delivery</p>
@@ -221,7 +221,7 @@ const OrderConfirmationUI = () => {
                             {/* Order Comment */}
                             {firstItem.comments && (
                                 <div>
-                                    <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-2">
+                                    <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-2">
                                         Order Comment
                                     </h2>
                                     <p className="text-[14px]">{firstItem.comments}</p>
@@ -230,13 +230,13 @@ const OrderConfirmationUI = () => {
 
                             {/* Order Summary */}
                             <div>
-                                <h2 className="text-[20px] font-semibold text-[#2D2C70] mb-4">
+                                <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-4">
                                     Order Summary ({orderData.length} {orderData.length === 1 ? 'Item' : 'Items'})
                                 </h2>
                                 <div className="space-y-3">
                                     {calculateItemsSummary()}
                                     <div className="flex justify-between font-semibold border-t pt-3 text-base">
-                                        <span>Total Amount:</span>
+                                        <span className=' font-heading'>Total Amount:</span>
                                         <span>${totals.total.toFixed(2)}</span>
                                     </div>
                                 </div>

@@ -16,7 +16,7 @@ const CategoriesGrid = () => {
     // Loading state
     if (!brandPage) {
         return (
-            <div className="w-full bg-white py-8 sm:py-12 lg:py-8 px-4 sm:px-6 lg:px-8">
+            <div className="w-full bg-white py-8 sm:py-12 lg:py-8 px-4 sm:px-6 lg:px-8 font-body">
                 <div className="max-w-8xl mx-auto">
                     <div className="text-center mb-8 sm:mb-12 lg:mb-8">
                         <div className="flex items-center justify-center mb-4">
@@ -58,7 +58,7 @@ const CategoriesGrid = () => {
 
                         {/* Title */}
                         <h2 
-                            className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold"
+                            className="px-4 text-lg sm:text-xl lg:text-2xl font-semibold font-heading"
                             style={{ color: brandPage?.categoryHeadingTextColor || '#000000' }}
                         >
                             {brandPage?.categoryHeadingText || 'OUR CATEGORIES'}
@@ -105,7 +105,7 @@ const CategoriesGrid = () => {
 
                                         {/* Category Label Overlay */}
                                         <div 
-                                            className="absolute bottom-0 left-0 right-0 py-2 sm:py-3 text-center transition-colors duration-300"
+                                            className="font-heading absolute bottom-0 left-0 right-0 py-2 sm:py-3 text-center transition-colors duration-300"
                                             style={{ 
                                                 backgroundColor: brandPage?.categoryTitleBgColor || '#000000',
                                             }}

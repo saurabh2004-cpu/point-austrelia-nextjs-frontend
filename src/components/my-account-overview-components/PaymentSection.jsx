@@ -90,9 +90,9 @@ const PaymentSection = () => {
     }, [currentUser?._id, showCardForm]);
 
     return (
-        <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8 w-[94vw] md:w-[76vw] lg:w-[60vw]">
+        <div className="bg-white rounded-lg xl:pb-30 font-body xl:px-8 w-[94vw] md:w-[76vw] lg:w-[60vw] lg:mt-4">
             <div className="border-b-2 border-black pb-4 mb-6">
-                <h2 className="text-[24px] font-medium">Payment Methods</h2>
+                <h2 className="text-[24px] font-medium font-heading">Payment Methods</h2>
             </div>
 
             {loadingCard ? (
@@ -101,19 +101,19 @@ const PaymentSection = () => {
                     <span className="ml-3 text-sm font-medium">Loading cards...</span>
                 </div>
             ) : cards.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {/* Existing Cards */}
                     {cards.map((card, index) => (
                         <div key={index} className="border border-gray-200 rounded-lg p-6 shadow-md relative">
                             <div className="space-y-2 text-sm">
                                 <p className="font-[600]">
-                                    Ending in <span className="font-[400]">
+                                    Ending in: <span className="font-[400]">
                                         {card.cardNumber ? card.cardNumber.slice(-4).padStart(card.cardNumber.length, '*') : '****'}
                                     </span>
                                 </p>
                                 <div className="flex justify-between items-center">
                                     <p className="font-[600]">
-                                        Expires in <span className="font-[400]">{card.expiryMonth} / {card.expiryYear}</span>
+                                        Expires in: <span className="font-[400]">{card.expiryMonth} / {card.expiryYear}</span>
                                     </p>
                                     {card.cardNumber && getCardIcon(card.cardNumber) && (
                                         <img

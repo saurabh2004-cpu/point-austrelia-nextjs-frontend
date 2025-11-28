@@ -296,7 +296,7 @@ export default function CreditCardPopup(
             {/* Notification */}
             <Notification />
 
-            <div className="fixed  inset-0 lg:z-20 bg-[#000000]/10 bg-opacity-50 flex items-center justify-center p-4">
+            <div className="fixed font-body inset-0 lg:z-20 bg-[#000000]/10 bg-opacity-50 flex items-center justify-center p-4">
                 <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-8 relative max-h-[90%] overflow-y-scroll hide-scrollbar">
                     {/* Close Button */}
                     <button
@@ -307,13 +307,13 @@ export default function CreditCardPopup(
                     </button>
 
                     {/* Title */}
-                    <h2 className="text-2xl font-bold mb-8 text-gray-800">
+                    <h2 className="text-2xl font-heading font-bold mb-8 text-gray-800">
                         {cardAction === 'edit' ? 'EDIT CREDIT CARD' : 'ADD CREDIT CARD'}
                     </h2>
 
                     {/* Credit Card Number */}
                     <div className="mb-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">
                             Credit card number <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -346,7 +346,7 @@ export default function CreditCardPopup(
                     </div>
 
                     <div className="mb-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">
                             Card Type <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -360,7 +360,7 @@ export default function CreditCardPopup(
 
                     {/* Expiration Date */}
                     <div className="mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">
                             Expiration date <span className="text-red-500">*</span>
                         </label>
                         <div className="flex gap-4">
@@ -391,7 +391,7 @@ export default function CreditCardPopup(
 
                     {/* Name on Card */}
                     <div className="mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 font-heading">
                             Name on card <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -413,7 +413,7 @@ export default function CreditCardPopup(
                                 onChange={(e) => setCardDetails({ ...cardDetails, defaultCard: e.target.checked })}
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                             />
-                            <span className="text-sm font-medium text-gray-700">
+                            <span className="text-sm font-medium text-gray-700 font-heading">
                                 Make this my default credit card
                             </span>
                         </label>
@@ -424,7 +424,7 @@ export default function CreditCardPopup(
 
                     {/* Buttons */}
                     {cardAction !== 'edit' && <div className="flex gap-4">
-                        <button onClick={handleAddCard} className="flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
+                        <button onClick={handleAddCard} className="font-heading flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
                             {loading ?
                                 <div className='flex items-center'>
                                     ADDING...
@@ -434,13 +434,13 @@ export default function CreditCardPopup(
                         </button>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900 transition"
+                            className="font-heading flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900 transition"
                         >
                             Cancel
                         </button>
                     </div>}
                     {cardAction === 'edit' && <div className="flex gap-4">
-                        <button onClick={handleAddCard} className="flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
+                        <button onClick={handleAddCard} className="font-heading flex-1 px-6 py-3 bg-blue-400 text-white font-semibold rounded hover:bg-blue-500 transition">
                             {loading ?
                                 <div className='flex items-center'>
                                     UPDATING...
@@ -450,7 +450,7 @@ export default function CreditCardPopup(
                         </button>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900 transition"
+                            className="font-heading flex-1 px-6 py-3 bg-gray-800 text-white font-semibold rounded hover:bg-gray-900 transition"
                         >
                             Cancel
                         </button>

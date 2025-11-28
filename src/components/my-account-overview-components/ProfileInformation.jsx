@@ -361,14 +361,14 @@ export default function ProfileInformation({ setActiveSection }) {
     }
 
     return (
-        <div className="xl:h-screen font-spartan px-4">
+        <div className="xl:h-screen font-body px-4">
             <div className="max-w-8xl ">
                 {/* Header */}
                 <div className="bg-white rounded-lg ">
                     <div className="pb-16">
 
-                        <div className="border-b-2 border-black pb-4 mb-8">
-                            <h1 className="text-[24px]  font-medium text-black">
+                        <div className="border-b-2 border-black pb-4 mb-8 lg:mt-4">
+                            <h1 className="text-[24px] font-heading  font-medium text-black">
                                 Profile Information
                             </h1>
                         </div>
@@ -409,7 +409,7 @@ export default function ProfileInformation({ setActiveSection }) {
                             <div className="max-w-[470px]">
                                 {/* Company Name Field */}
                                 <div className="mb-6 text-[1rem] font-medium ">
-                                    <label className="block text-black mb-2">
+                                    <label className="block text-black mb-2 font-heading">
                                         Company name <span className="text-[#E9098D]">*</span>
                                     </label>
                                     <input
@@ -424,7 +424,7 @@ export default function ProfileInformation({ setActiveSection }) {
 
                                 {/* Phone Number Field */}
                                 <div className="mb-8 text-[1rem] font-medium">
-                                    <label className="block text-black mb-2">
+                                    <label className="block text-black mb-2 font-heading">
                                         Phone number <span className="text-[#E9098D]">*</span>
                                     </label>
                                     <div className="relative">
@@ -479,7 +479,7 @@ export default function ProfileInformation({ setActiveSection }) {
                                     <div className="flex flex-col sm:flex-row ">
                                         {/* Email */}
                                         <div className="flex-1">
-                                            <div className="text-sm font-medium text-black mb-1">Email:</div>
+                                            <div className="text-sm font-medium text-black mb-1Email:">Email:</div>
                                             <div className="text-sm break-all sm:break-normal">
                                                 {currentUser?.customerEmail}
                                             </div>
@@ -503,7 +503,7 @@ export default function ProfileInformation({ setActiveSection }) {
                                     <button
                                         onClick={handleUpdate}
                                         disabled={loading}
-                                        className="w-[200px] cursor-pointer border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 py-1 rounded-2xl text-[20px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        className="font-heading w-[200px] cursor-pointer border border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/90 py-1 rounded-2xl text-[20px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                         {loading ? (
                                             <div className="flex items-center justify-center">

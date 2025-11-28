@@ -845,15 +845,15 @@ export default function MyAccount() {
 
 
   return (
-    <div className="h-full py-6 p-4 md:p-6 lg:px-8 font-spartan">
+    <div className="h-full py-6 p-4 md:p-6 lg:px-8 font-body">
       <div className="md:max-w-[80%] mx-auto">
         {/* Breadcrumb */}
         <div className="bg-white justify-items-center ">
           <div className="max-w-8xl mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 ">
-            <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400] font-spartan w-full">
+            <nav className="text-xs sm:text-sm lg:text-[1.2rem] text-gray-500 font-[400]  w-full">
               <span>Home</span>
               <span className="mx-1 sm:mx-2">/</span>
-              <span className="text-xs sm:text-sm lg:text-[1.2rem] text-black font-[400] font-spartan">
+              <span className="text-xs sm:text-sm lg:text-[1.2rem] text-black font-[400] ">
                 My Account
               </span>
             </nav>
@@ -864,7 +864,7 @@ export default function MyAccount() {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Sidebar */}
           <div className="lg:w-69 flex-shrink-0">
-            <h1 className="text-[24px] font-bold mb-8">MY ACCOUNT</h1>
+            <h1 className="text-[24px] font-bold mb-8 font-heading">MY ACCOUNT</h1>
             <div className="bg-white rounded-lg ">
               {sidebarItems.map((item) => (
                 <div key={item.id}>
@@ -889,7 +889,7 @@ export default function MyAccount() {
                       />
                       <div className="flex justify-between w-full ml-2">
                         <span
-                          className={`${item.label === "OVERVIEW"
+                          className={`font-heading ${item.label === "OVERVIEW"
                             ? "text-[20px] font-[500] text-[#E9098D]"
                             : "text-[1rem] font-[500] text-[#000000]/50"
                             } ${activeSection === item.id ? "text-[#2D2C70]" : ""} ${item.id === 'payment' ? 'text-[#2D2C70]' : ''}`}
@@ -939,15 +939,15 @@ export default function MyAccount() {
           <div className="flex-1 w-full md:max-w-[80%]">
             {/* Show Address Book tab */}
             {activeSection === "address" && (
-              <div className="bg-white h-full xl:pb-30 rounded-lg font-spartan md:px-8 w-[94vw] md:w-[80vw] lg:w-[60vw] mx-auto">
+              <div className="bg-white h-full xl:pb-30 rounded-lg  md:px-8 w-[94vw] md:w-[80vw] lg:w-[60vw] mx-auto lg:mt-4">
                 <div className="border-b-2 border-black pb-4 mb-6">
-                  <h2 className="text-[24px] font-medium">Address Book</h2>
+                  <h2 className="text-[24px] font-medium font-heading">Address Book</h2>
                 </div>
 
                 {/* Shipping Addresses Section */}
                 <div className="mb-12">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-[20px] font-semibold text-[#2D2C70]">Shipping Addresses</h3>
+                    <h3 className="text-[20px] font-semibold text-[#2D2C70] font-heading">Shipping Addresses</h3>
                     <span className="text-[14px] text-gray-500">
                       {currentUser?.shippingAddresses?.length || 0} address(es)
                     </span>
@@ -1009,7 +1009,7 @@ export default function MyAccount() {
                       <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-full mb-3">
                         <Plus className="w-6 h-6 text-gray-600" />
                       </div>
-                      <p className="text-[16px] font-medium text-gray-700">Add Shipping Address</p>
+                      <p className="text-[16px] font-medium text-gray-700 font-heading">Add Shipping Address</p>
                       <p className="text-[12px] text-gray-500 mt-1 text-center">Add a new shipping destination</p>
                     </div>
                   </div>
@@ -1018,7 +1018,7 @@ export default function MyAccount() {
                 {/* Billing Addresses Section */}
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-[20px] font-semibold text-[#2D2C70]">Billing Addresses</h3>
+                    <h3 className="text-[20px] font-semibold text-[#2D2C70] font-heading">Billing Addresses</h3>
                     <span className="text-[14px] text-gray-500">
                       {currentUser?.billingAddresses?.length || 0} address(es)
                     </span>
@@ -1079,7 +1079,7 @@ export default function MyAccount() {
                       <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-full mb-3">
                         <Plus className="w-6 h-6 text-gray-600" />
                       </div>
-                      <p className="text-[16px] font-medium text-gray-700">Add Billing Address</p>
+                      <p className="text-[16px] font-medium text-gray-700 font-heading">Add Billing Address</p>
                       <p className="text-[12px] text-gray-500 mt-1 text-center">Add a new billing address</p>
                     </div>
                   </div>
@@ -1094,11 +1094,11 @@ export default function MyAccount() {
               <div className="xl:h-full h-full   w-[94vw] md:w-[80vw] lg:w-[60vw] mx-auto ">
                 <div className="border-b-2 md:ml-8  border-black pb-6 mb-6">
                   <div className="flex items-center  justify-between mb-4">
-                    <h2 className="text-base lg:text-[24px] font-medium ">
+                    <h2 className="text-base lg:text-[24px] font-medium font-heading lg:mt-4">
                       All Purchase History
                     </h2>
 
-                    <button className="p-2 text-[17px] cursor-pointer font-medium bg-[#2D2C70] text-white rounded-xl">
+                    <button className="font-heading p-2 text-[17px] cursor-pointer font-medium bg-[#2D2C70] text-white rounded-xl">
                       Reorder Items
                     </button>
 
@@ -1107,7 +1107,7 @@ export default function MyAccount() {
                   {/* Filter Controls */}
                   <div className=" gap-4 items-start sm:items-center pt-4 border-t-2 border-black ">
                     {/* Status Filter */}
-                    {/* <div className="flex items-center text-[1rem] font-[500] font-spartan inline-block border-2 rounded-lg  ">
+                    {/* <div className="flex items-center text-[1rem] font-[500]  inline-block border-2 rounded-lg  ">
                       <button className="px-4 py-1  w-1/2   rounded-l-lg text-sm font-medium`  ">
                         Open
                       </button>
@@ -1121,7 +1121,7 @@ export default function MyAccount() {
                       {/* From */}
                       <div className="flex flex-col md:flex-row gap-3 md:gap-10">
                         <div className="flex flex-col cursor-pointer">
-                          <label className="text-[1rem] font-medium mb-2 text-gray-900">From</label>
+                          <label className="text-[1rem] font-medium mb-2 text-gray-900 font-heading">From</label>
                           <div className="relative">
                             <input
                               type="date"
@@ -1143,7 +1143,7 @@ export default function MyAccount() {
 
                         {/* To */}
                         <div className="flex flex-col cursor-pointer">
-                          <label className="text-[1rem] font-medium mb-2 text-gray-900">To</label>
+                          <label className="text-[1rem] font-medium mb-2 text-gray-900 font-heading">To</label>
                           <div className="relative">
                             <input
                               type="date"
@@ -1222,7 +1222,7 @@ export default function MyAccount() {
                   <div className="bg-white rounded-lg">
                     <div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 border-b-2 border-black pb-4">
-                        <h2 className="text-[24px] font-medium mb-2 sm:mb-0">
+                        <h2 className="text-[24px] font-medium mb-2 sm:mb-0 font-heading">
                           Recent Purchases
                         </h2>
                         <div className="relative">
@@ -1244,14 +1244,14 @@ export default function MyAccount() {
                   {/* My Settings Section */}
                   <div className="bg-white rounded-lg mt-12 pl-4 pb-16 ">
                     <div>
-                      <h2 className="text-[24px] font-medium relative lg:bottom-3">
+                      <h2 className="text-[24px] font-medium relative lg:bottom-3 font-heading">
                         My Settings
                       </h2>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                         {/* Profile */}
                         <div className="flex flex-col space-y-[25px]">
-                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Profile</h3>
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70] font-heading">Profile</h3>
                           <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
                             <div className="space-y-2 text-sm text-[400]">
                               <p>{currentUser?.customerName}</p>
@@ -1269,7 +1269,7 @@ export default function MyAccount() {
 
                         {/* Shipping */}
                         <div className="flex flex-col space-y-[25px]">
-                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Shipping</h3>
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70] font-heading">Shipping</h3>
                           <div className="relative flex flex-col border shadow-bottom shadow-sm p-6 rounded-lg h-full">
                             <div className="space-y-2 text-sm text-[14px] text-[500]">
                               <p className="font-[600]">{currentUser?.storeName}</p>
@@ -1292,7 +1292,7 @@ export default function MyAccount() {
 
                         {/* Payment */}
                         <div className="flex flex-col space-y-[25px]">
-                          <h3 className="font-[500] text-[20px] text-[#2D2C70]">Payment</h3>
+                          <h3 className="font-[500] text-[20px] text-[#2D2C70] font-heading">Payment</h3>
                           {cards.length > 0 && cards.map((card) => (
 
 
@@ -1338,45 +1338,6 @@ export default function MyAccount() {
             )}
 
             {activeSection === "payment" && (
-              // <div className="bg-white rounded-lg xl:pb-30 font-spartan xl:px-8">
-              //   <div className="border-b-2 border-black pb-4 mb-6">
-              //     <h2 className="text-[24px] font-medium">Payment Methods</h2>
-              //   </div>
-
-              //   <div className="grid  grid-cols-1 md:grid-cols-2  xl:grid-cols-4  gap-6">
-              //     {/*  Card 1 */}
-              //     <div className="border border-gray-200 rounded-lg p-6 shadow-md relative">
-              //       <div className="space-y-2 text-sm">
-              //         <p className="font-[600]">
-              //           Ending in <span className="font-[400]">6844</span>
-              //         </p>
-              //         <div className="flex justify-between align-center">
-              //           <p className="font-[600]">
-              //             Expires in <span className="font-[400]">12/22</span>
-              //           </p>
-              //           <Image src="/account-details/payment-images.png" alt="mastercard" width={50} height={50} />
-              //         </div>
-              //         <p>2 Devendra Chandora</p>
-              //         <p className="text-[14px] font-[400] text-[#2D2C70]"> Default credit card</p>
-              //       </div>
-              //       <div className="absolute bottom-4 right-4 flex gap-2 text-[14px]">
-              //         <button className="text-[#2D2C70] font-medium hover:text-[#E9098D] cursor-pointer">Edit</button>
-              //         <button className="text-[#46BCF9] font-medium hover:text-[#2D2C70] cursor-pointer">Remove</button>
-              //       </div>
-              //     </div>
-
-
-              //     {/* Add New  Card */}
-              //     <div className="border shadow-md border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px] hover:border-gray-400 transition-colors cursor-pointer">
-              //       <div className="w-8 h-8   flex items-center justify-center ">
-              //         <span className="text-[#000000]/50 text-xl font-light ">
-              //           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-plus-icon lucide-circle-plus"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-              //         </span>
-              //       </div>
-              //       <p className="text-[14px] font-medium ">Add New Card</p>
-              //     </div>
-              //   </div>
-              // </div>
               <PaymentSection />
             )}
 
@@ -1387,9 +1348,9 @@ export default function MyAccount() {
             )}
 
             {activeSection === 'security' && (
-              <div className="px-8 h-screen">
+              <div className="px-8 h-screen lg:mt-4">
                 <div className="border-b-2 border-black pb-4 mb-8 ">
-                  <h1 className="text-[24px]  font-medium text-black">
+                  <h1 className="text-[24px]  font-medium text-black font-heading">
                     Update Your Password
                   </h1>
 
@@ -1401,7 +1362,7 @@ export default function MyAccount() {
                   <span className="text-[#E9098D] text-[16px] font-bold">*</span>
                 </div>
                 <div className="mb-6 text-[1rem] font-medium ">
-                  <label className="block text-black mb-2">
+                  <label className="block text-black mb-2 font-heading">
                     Current password <span className="text-[#E9098D]">*</span>
                   </label>
                   <input
@@ -1415,7 +1376,7 @@ export default function MyAccount() {
 
                 {/* Phone Number Field */}
                 <div className="mb-8 text-[1rem] font-medium">
-                  <label className="block  text-black mb-2">
+                  <label className="block  text-black mb-2 font-heading">
                     New password <span className="text-[#E9098D]">*</span>
                   </label>
                   <input
@@ -1431,7 +1392,7 @@ export default function MyAccount() {
                 <div className="">
                   <button
                     onClick={changePassword}
-                    className="w-[200px] border cursor-pointer border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/95 py-1 rounded-2xl text-[20px] font-medium  "
+                    className="w-[200px] font-heading border cursor-pointer border-black bg-[#2D2C70] text-white hover:bg-[#2D2C70]/95 py-1 rounded-2xl text-[20px] font-medium  "
                   >
                     Update
                   </button>

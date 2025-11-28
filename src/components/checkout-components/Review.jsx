@@ -36,12 +36,12 @@ const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm })
 
 
     return (
-        <div className="w-full col-span-2 md:px-3 xl:px-0 py-6 bg-white xl:min-h-screen font-spartan">
-            <h1 className='text-[24px] font-semibold text-[#2D2C70]'>Review</h1>
+        <div className="w-full col-span-2 md:px-3 xl:px-0 py-6 bg-white xl:min-h-screen font-body">
+            <h1 className='text-[24px] font-semibold text-[#2D2C70] font-heading'>Review</h1>
             <div className="space-y-2 border-2 rounded-xl p-4 mt-3 px-8 mt-6">
                 {/* Shipping Address */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base text-[#2D2C70] mb-3">Shipping Address</h2>
+                    <h2 className="text-base text-[#2D2C70] mb-3 font-heading">Shipping Address</h2>
                     <div className="space-y-1 text-[14px]">
                         <p className="font-semibold">{currentUser?.customerName || currentUser?.contactName || ''}</p>
                         <p className="font-medium">{shippingAddressFormatted}</p>
@@ -51,7 +51,7 @@ const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm })
 
                 {/* Billing Address */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base text-[#2D2C70] mb-3">Billing Address</h2>
+                    <h2 className="text-base text-[#2D2C70] mb-3 font-heading">Billing Address</h2>
                     <div className="space-y-1 text-[14px]">
                         <p className="font-semibold">{currentUser?.customerName || currentUser?.contactName || ''}</p>
                         <p className="font-medium">{billingAddressFormatted}</p>
@@ -61,25 +61,25 @@ const Review = ({ selectedBillingAddress, selectedShippingAddress, submitForm })
 
                 {/* Delivery Method */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base font-semibold text-[#2D2C70]">Delivery method</h2>
+                    <h2 className="text-base font-semibold text-[#2D2C70] font-heading">Delivery method</h2>
                     <p className="text-base font-[400]">{deliveryMethodText}</p>
                 </div>
 
                 {/* Order Comments */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base font-semibold text-[#2D2C70]">Order Comments</h2>
+                    <h2 className="text-base font-semibold text-[#2D2C70] font-heading">Order Comments</h2>
                     <p className="text-base font-[400]">{submitForm.comments || 'No comments'}</p>
                 </div>
 
                 {/* Payment Method */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base font-semibold text-[#2D2C70]">Payment Method</h2>
+                    <h2 className="text-base font-semibold text-[#2D2C70] font-heading">Payment Method</h2>
                     <p className="text-base font-[400]">{paymentMethodText}</p>
                 </div>
 
                 {/* Purchase Order Number */}
                 <div className="border-b border-gray-100 pb-6">
-                    <h2 className="text-base font-semibold text-[#2D2C70]">Purchase Order Number</h2>
+                    <h2 className="text-base font-semibold text-[#2D2C70] font-heading">Purchase Order Number</h2>
                     <p className="text-base font-[400]">{submitForm.customerPO || 'N/A'}</p>
                 </div>
             </div>

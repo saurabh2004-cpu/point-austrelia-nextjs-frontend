@@ -842,6 +842,17 @@ export default function MyAccount() {
     }
   }
 
+  useEffect(() => {
+    if (sucessMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 1000);
+
+      // Cleanup timer on unmount
+      return () => clearTimeout(timer);
+    }
+  }, [sucessMessage]);
+
 
 
   return (
@@ -949,7 +960,7 @@ export default function MyAccount() {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-[20px] font-semibold text-[#2D2C70] font-heading">Shipping Addresses</h3>
                     <span className="text-[14px] text-gray-500">
-                      {currentUser?.shippingAddresses?.length || 0} address(es)
+                      {currentUser?.shippingAddresses?.length || 0} addresses
                     </span>
                   </div>
 
@@ -962,7 +973,7 @@ export default function MyAccount() {
 
 
                           </div>
-                          <p className="font-[500] text-[14px]">{currentUser.storeName}</p>
+                          {/* <p className="font-[500] text-[14px]">{currentUser.storeName}</p> */}
                           <p className="font-[500] text-[14px]">{currentUser.contactName}</p>
                           <p className="text-[14px] text-[500]">
                             {address.shippingAddressOne}<br />
@@ -1020,7 +1031,7 @@ export default function MyAccount() {
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-[20px] font-semibold text-[#2D2C70] font-heading">Billing Addresses</h3>
                     <span className="text-[14px] text-gray-500">
-                      {currentUser?.billingAddresses?.length || 0} address(es)
+                      {currentUser?.billingAddresses?.length || 0} addresses
                     </span>
                   </div>
 

@@ -544,7 +544,7 @@ const CheckoutComponent = () => {
 
     const [submitForm, setSubmitForm] = useState({
         date: new Date().toISOString().split('T')[0],
-        documentNumber: '',
+        documentNumber: 'SO00001',
         customerName: '',
         salesChannel: 'credit-card',
         trackingNumber: '',
@@ -927,8 +927,8 @@ const CheckoutComponent = () => {
 
     useEffect(() => {
         if (latestSalesOrderDocumentNumber) {
-            const prefix = latestSalesOrderDocumentNumber.match(/[A-Za-z]+/)[0];
-            const number = parseInt(latestSalesOrderDocumentNumber.match(/\d+/)[0], 10);
+            const prefix = latestSalesOrderDocumentNumber?.match(/[A-Za-z]+/)[0];
+            const number = parseInt(latestSalesOrderDocumentNumber?.match(/\d+/)[0], 10);
             const nextDocumentNumber = `${prefix}${String(number + 1).padStart(5, '0')}`;
             setDocumentNumber(nextDocumentNumber);
         } else if (latestSalesOrderDocumentNumber === null) {
@@ -1005,10 +1005,10 @@ const CheckoutComponent = () => {
     };
 
     function incrementDocumentNumber(doc) {
-        const prefix = doc.match(/[A-Za-z]+/)[0]; // Extract letters
-        const number = doc.replace(prefix, "");  // Extract numeric part
+        const prefix = doc?.match(/[A-Za-z]+/)[0]; // Extract letters
+        const number = doc?.replace(prefix, "");  // Extract numeric part
 
-        const newNumber = (parseInt(number) + 1).toString().padStart(number.length, "0");
+        const newNumber = (parseInt(number) + 1).toString().padStart(number?.length, "0");
 
         return prefix + newNumber;
     }
@@ -1020,6 +1020,8 @@ const CheckoutComponent = () => {
     const handleCompleteCheckout = async () => {
         // Final stock check before completing checkout
         const outOfStockItems = await checkAllProductsStock();
+
+        console.log("submit form", submitForm)
 
         if (outOfStockItems.length > 0) {
             setError('Some items in your cart are out of stock. Please remove them before completing your order.');

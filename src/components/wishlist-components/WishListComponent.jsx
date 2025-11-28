@@ -865,7 +865,7 @@ const WishListComponent = () => {
             setLoading(true);
             const response = await axiosInstance.get(`wishlist/get-wishlist-by-customer-id/${currentUser._id}`);
 
-            console.log("get wishlistby csutometr id ", response);
+            console.log("get wishlistby csutometer id ", response);
 
             if (response.data.statusCode === 200) {
                 const items = response.data.data || [];
@@ -875,7 +875,7 @@ const WishListComponent = () => {
                 // Initialize quantities and selected units from existing wishlist data
                 const initialQuantities = {};
                 const initialUnits = {};
-                items.forEach(item => {
+                items?.forEach(item => {
                     const isProductGroup = !!item.productGroup;
                     const itemId = isProductGroup ? item.productGroup._id : item.product._id;
 
@@ -1372,7 +1372,7 @@ const WishListComponent = () => {
                             <div className="grid gap-6">
                                 {/* Large screens: 2 cards per row */}
                                 <div className="hidden lg:grid 2xl:grid-cols-2 md:gap-6 lg:ml-18 xl:ml-0">
-                                    {wishListItems.map((item) => (
+                                    {wishListItems?.map((item) => (
                                         <ProductCard
                                             key={item._id}
                                             item={item}

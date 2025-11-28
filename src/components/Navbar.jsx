@@ -761,7 +761,7 @@ export function Navbar() {
               </div>
 
               {/* Mobile Content */}
-              <div className="px-4 py-2"> {/* Reduced py-4 to py-2 */}
+              <div className="px-4 py-2 overflow-y-auto"> {/* Reduced py-4 to py-2 */}
                 {/* Current View Title */}
                 {mobileViewStack.length > 1 && (
                   <h2 className="text-xl font-bold text-[#2d2c70] mb-3 pb-2 border-b border-gray-200"> {/* Reduced mb-4 to mb-3 */}
@@ -954,10 +954,23 @@ export function Navbar() {
                       }
 
                       return categories.map((category) => (
-                        <div key={category._id}>
+                        <div key={category._id} className="flex items-center justify-between w-full text-left py-1 text-base hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100">
                           <button
                             onClick={() => {
-                              if (category.hasChild) {
+                              handleCategoryClick(`/${category.slug}`);
+                              setIsMenuOpen(false);
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="flex-1 text-left text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                          >
+                            <span className={category.name === "NEW!" || category.name === "SALE" ? "text-[#E9098D] font-bold" : ""}>
+                              {category.name}
+                            </span>
+                          </button>
+                          {category.hasChild && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 fetchSubCategoriesForCategory(category._id);
                                 setMobileViewStack([...mobileViewStack, {
                                   type: 'subcategories',
@@ -967,20 +980,12 @@ export function Navbar() {
                                   brandSlug: currentView.brandSlug,
                                   data: subCategoriesByCategory[category._id] || []
                                 }]);
-                              } else {
-                                handleCategoryClick(`/${category.slug}`);
-                                setIsMenuOpen(false);
-                                setMobileViewStack([{ type: 'main', data: null }]);
-                              }
-                            }}
-                            className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                          // {/* Reduced py-4 to py-3 */}
-                          >
-                            <span className={category.name === "NEW!" || category.name === "SALE" ? "text-[#E9098D] font-bold" : ""}>
-                              {category.name}
-                            </span>
-                            {category.hasChild && <ChevronRight className="w-5 h-5" />}
-                          </button>
+                              }}
+                              className="p-2 text-[#2d2c70] hover:text-[#E9098D] transition-colors duration-200"
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          )}
                         </div>
                       ));
                     })()}
@@ -989,20 +994,33 @@ export function Navbar() {
 
                 {/* Subcategories View */}
                 {mobileViewStack[mobileViewStack.length - 1].type === 'subcategories' && (
-                  <div className="space-y-0 font-body"> {/* Changed from space-y-2 to space-y-0 */}
+                  <div className="space-y-0 font-body">
                     {(() => {
                       const currentView = mobileViewStack[mobileViewStack.length - 1];
                       const subcategories = subCategoriesByCategory[currentView.categoryId] || [];
 
                       if (subcategories.length === 0) {
-                        return <div className="py-3 text-center text-gray-500">No subcategories available</div>; {/* Reduced py-4 to py-3 */ }
+                        return <div className="py-3 text-center text-gray-500">No subcategories available</div>;
                       }
 
                       return subcategories.map((subcat) => (
-                        <div key={subcat._id}>
+                        <div key={subcat._id} className="flex items-center justify-between border-b border-gray-100">
+                          {/* Subcategory Name - Clickable */}
                           <button
                             onClick={() => {
-                              if (subcat.hasChild) {
+                              handleCategoryClick(`/${subcat.slug}`);
+                              setIsMenuOpen(false);
+                              setMobileViewStack([{ type: 'main', data: null }]);
+                            }}
+                            className="flex-1 text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200"
+                          >
+                            {subcat.name}
+                          </button>
+
+                          {/* Chevron Icon - Only for subcategories with children */}
+                          {subcat.hasChild && (
+                            <button
+                              onClick={() => {
                                 fetchSubCategoriesTwoForSubCategory(subcat._id);
                                 setMobileViewStack([...mobileViewStack, {
                                   type: 'subcategoriesTwo',
@@ -1012,18 +1030,12 @@ export function Navbar() {
                                   brandSlug: currentView.brandSlug,
                                   data: subCategoriesTwoBySubCategory[subcat._id] || []
                                 }]);
-                              } else {
-                                handleCategoryClick(`/${subcat.slug}`);
-                                setIsMenuOpen(false);
-                                setMobileViewStack([{ type: 'main', data: null }]);
-                              }
-                            }}
-                            className="flex items-center justify-between w-full text-left py-1 text-base text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md px-3 transition-colors duration-200 border-b border-gray-100"
-                          // {/* Reduced py-4 to py-3 */}
-                          >
-                            {subcat.name}
-                            {subcat.hasChild && <ChevronRight className="w-5 h-5" />}
-                          </button>
+                              }}
+                              className="p-2 text-[#2d2c70] hover:text-[#E9098D] hover:bg-gray-50 rounded-md transition-colors duration-200"
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          )}
                         </div>
                       ));
                     })()}

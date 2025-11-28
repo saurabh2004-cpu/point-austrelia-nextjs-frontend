@@ -192,7 +192,7 @@ const Carousel = () => {
   }
 
   return (
-    <div className="w-full  mx-auto pb-3 sm:pb-4 md:pb-4 xl:pb-12 overflow-x-hidden">
+    <div className="w-full  mx-auto pb-3 sm:pb-4 md:pb-4 xl:pb-0 overflow-x-hidden">
       <div
         className="relative w-full overflow-hidden  carousel-container"
         onMouseEnter={handleMouseEnter}
@@ -274,7 +274,7 @@ const Carousel = () => {
       {/* Responsive height adjustments for tablets and desktop */}
       <style jsx>{`
         .carousel-container {
-          height: 40rem; /* Mobile devices (320px+) */
+          height: 38rem; /* Mobile devices (320px+) */
         }
 
         @media (min-width: 480px) {
@@ -308,7 +308,7 @@ const Carousel = () => {
         @media (min-width: 796px) {
           .carousel-container {
             width: 100vw; /* Tablets (iPad Mini, etc.) */
-            height: 22rem;
+            height: 16rem;
           }
         }
 
@@ -326,7 +326,7 @@ const Carousel = () => {
 
         @media (min-width: 1536px) {
           .carousel-container {
-            height: 36rem; /* Large desktop monitors (2K) */
+            height: 32rem; /* Large desktop monitors (2K) */
           }
         }
 
@@ -338,7 +338,7 @@ const Carousel = () => {
 
          @media (min-width: 1710px) {
         .carousel-container {
-          height: 38rem;
+          height: 35rem;
           width: 100vw;
         }
   }

@@ -325,7 +325,7 @@ export default function RecentPurchases({ timeLapse, sortBy = 'date-desc' }) {
 
                   <td className="py-4 px-4 border-r text-start min-w-[200px] flex flex-col">
                     {order.trackingNumber}
-                    <Link href={order?.deliveryVendor?.vendorTrackingUrl || ''} className='hover:text-blue-600 cursor-pointer'>{`Vendor Name :${order?.deliveryVendor?.vendorName}`}</Link>
+                    <Link href={order?.deliveryVendor?.vendorTrackingUrl || ''} className='text-blue-600 cursor-pointer underline'>{`Vendor Name :${order?.deliveryVendor?.vendorName || ''} ` }</Link>
                   </td>
 
                   <td className="py-4 px-4 border-r text-start">

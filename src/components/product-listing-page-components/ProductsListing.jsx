@@ -1359,7 +1359,7 @@ const ProductListing = () => {
                     >
                         {(() => {
                             const name = isProductGroup ? item.name : item.ProductName;
-                            return name.length > 35 ? name.slice(0, 35) + "..." : name;
+                            return name.length > 30 ? name.slice(0, 30) + "..." : name;
                         })()}
 
                     </h3>
@@ -1369,11 +1369,11 @@ const ProductListing = () => {
                         <p className="text-xs sm:text-sm text-gray-600 font-body">
                             SKU:{" "}
                             {isProductGroup
-                                ? item.sku.length > 8
-                                    ? `${item.sku.slice(0, 8)}...`
+                                ? item.sku.length > 6
+                                    ? `${item.sku.slice(0, 6)}...`
                                     : item.sku
-                                : item.sku.length > 8
-                                    ? `${item.sku.slice(0, 8)}...`
+                                : item.sku.length > 6
+                                    ? `${item.sku.slice(0, 6)}...`
                                     : item.sku}
                         </p>
 

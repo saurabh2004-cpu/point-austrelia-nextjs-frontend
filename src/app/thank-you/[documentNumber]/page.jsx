@@ -7,25 +7,22 @@ import useUserStore from '@/zustand/user';
 import { withAuth } from '@/components/withAuth';
 
 const OrderConfirmationUI = () => {
-    const [orderData, setOrderData] = useState([]); // Changed to array to hold multiple items
+    const [orderData, setOrderData] = useState([]);
     const [loading, setLoading] = useState(true);
     const params = useParams();
     const router = useRouter();
     const documentNumber = params.documentNumber;
     const currentUser = useUserStore((state) => state.user);
+    const [totalTaxAmount, setTotalTaxAmount] = useState(0);
 
-    // Try to get passed state first (instant display)
     useEffect(() => {
-        // Check if order data was passed via navigation state
         const navigationState = window.history.state?.state?.orderData;
 
         if (navigationState) {
-            // Use passed data immediately - INSTANT display!
             console.log("Using passed order data - instant load!", navigationState);
             setOrderData(navigationState);
             setLoading(false);
         } else if (documentNumber) {
-            // Fallback: fetch if no data was passed
             console.log("No passed data, fetching from API");
             fetchSalesOrderByDocumentNumber();
         }
@@ -40,7 +37,7 @@ const OrderConfirmationUI = () => {
             console.log("get sales order by document response ", response)
 
             if (response.data.statusCode === 200) {
-                setOrderData(response.data.data); // This is now an array of items
+                setOrderData(response.data.data);
             }
         } catch (error) {
             console.error('Error fetching sales order:', error);
@@ -53,16 +50,46 @@ const OrderConfirmationUI = () => {
         router.push('/my-account-review');
     }
 
-    // Calculate totals from all items
+    // Calculate order totals with tax
     const calculateOrderTotals = () => {
-        if (!orderData || orderData.length === 0) return { subtotal: 0, total: 0 };
+        if (!orderData || orderData.length === 0) {
+            return {
+                subtotal: 0,
+                taxAmount: 0,
+                total: 0,
+            };
+        }
 
-        const subtotal = orderData.reduce((sum, item) => sum + (item.amount || 0), 0);
-        // For now, just return subtotal as total to match original behavior
-        return { subtotal, total: subtotal };
+        let subtotal = 0;
+        let totalTaxAmount = 0;
+
+        // Calculate subtotal and tax for each item individually
+        orderData.forEach((item) => {
+            const amount = item.amount || 0;
+            const unitsQuantity = parseInt(item.unitsQuantity) || 1;
+            const packQuantity = parseInt(item.packQuantity) || 1;
+            const itemSubtotal = amount * unitsQuantity * packQuantity;
+
+            subtotal += itemSubtotal;
+
+            // Calculate tax based on individual product tax settings
+            if (item.taxApplied && item.taxPercentages > 0) {
+                const itemTax = itemSubtotal * (item.taxPercentages / 100);
+                totalTaxAmount += itemTax;
+            }
+        });
+
+        const total = subtotal + totalTaxAmount;
+
+        return {
+            subtotal: parseFloat(subtotal.toFixed(2)),
+            taxAmount: parseFloat(totalTaxAmount.toFixed(2)),
+            total: parseFloat(total.toFixed(2)),
+        };
     };
 
     const totals = calculateOrderTotals();
+
 
     // OPTIMIZED: Show success immediately with skeleton
     if (loading || !orderData || orderData.length === 0) {
@@ -107,41 +134,54 @@ const OrderConfirmationUI = () => {
         );
     }
 
-    // Get first item for common order details (since they're the same for all items)
+    // Get first item for common order details
     const firstItem = orderData[0];
+
+
 
     // Calculate items summary for all items
     const calculateItemsSummary = () => {
-        return orderData.map((item, index) => (
-            <div key={item._id || index} className="border-b pb-3 last:border-b-0">
-                <div className="flex justify-between mb-1">
-                    <span className="font-medium">{item.itemSku}</span>
-                    <span>${item.amount?.toFixed(2)}</span>
-                </div>
-                <div className="text-xs text-gray-600 space-y-1">
-                    <div className="flex justify-between">
-                        <span>Pack Type: {item.packType}</span>
-                        <span>Pack Qty: {item.packQuantity}</span>
+        return orderData.map((item, index) => {
+            // Calculate item total with quantities
+            const amount = item.amount || 0;
+            const unitsQuantity = parseInt(item.unitsQuantity) || 1;
+            const packQuantity = parseInt(item.packQuantity) || 1;
+            const itemTotal = amount * unitsQuantity * packQuantity;
+
+            return (
+                <div key={item._id || index} className="border-b pb-3 last:border-b-0 ">
+                    <div className="flex justify-between mb-1">
+                        <span className="font-medium">{item.itemSku}</span>
+                        <span>${itemTotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span>Units Qty: {item.unitsQuantity}</span>
-                        {item.discountType &&
-                            item.discountType !== "Compare Price" &&
-                            !(item.discountType === "Pricing Group Discount" && item.discountPercentages > 0) && (
-                                <span>
-                                    Discount: {item.discountType}
-                                    {item.discountType === "Pricing Group Discount" && item.discountPercentages <= 0
-                                        ? ` (${Math.abs(item.discountPercentages)}%)`
-                                        : item.discountType !== "Pricing Group Discount"
-                                            ? ` (${item.discountPercentages}%)`
-                                            : ''
-                                    }
-                                </span>
-                            )}
+                    <div className="text-xs text-gray-600 space-y-1">
+                        <div className="flex justify-between">
+                            <span>Pack Type: {item.packType}</span>
+                            <span>Pack Qty: {item.packQuantity}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Units Qty: {item.unitsQuantity}</span>
+                            <span>Price: ${amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            {item.discountType &&
+                                item.discountType !== "Compare Price" &&
+                                !(item.discountType === "Pricing Group Discount" && item.discountPercentages > 0) && (
+                                    <span>
+                                        Discount: {item.discountType}
+                                        {item.discountType === "Pricing Group Discount" && item.discountPercentages <= 0
+                                            ? ` (${Math.abs(item.discountPercentages)}%)`
+                                            : item.discountType !== "Pricing Group Discount"
+                                                ? ` (${item.discountPercentages}%)`
+                                                : ''
+                                        }
+                                    </span>
+                                )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        ));
+            );
+        });
     };
 
     return (
@@ -233,11 +273,17 @@ const OrderConfirmationUI = () => {
                                 <h2 className="text-[20px] font-heading font-semibold text-[#2D2C70] mb-4">
                                     Order Summary ({orderData.length} {orderData.length === 1 ? 'Item' : 'Items'})
                                 </h2>
-                                <div className="space-y-3">
+                                <div className="space-y-3 ">
                                     {calculateItemsSummary()}
-                                    <div className="flex justify-between font-semibold border-t pt-3 text-base">
-                                        <span className=' font-heading'>Total Amount:</span>
-                                        <span>${totals.total.toFixed(2)}</span>
+                                    {/* Order Totals */}
+                                    <div className="space-y-2 border-t pt-3 text-sm">
+                                        <div className="flex justify-between font-semibold text-base pt-2 border-t">
+                                            <div className='flex flex-col'>
+                                                <span className='font-heading'>SubTotal: </span>
+                                                <span className='font-body text-[12px]'>subtotal does not include GST </span>
+                                            </div>
+                                            <span>${totals.total.toFixed(2)}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
